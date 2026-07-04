@@ -1,0 +1,350 @@
+{
+  "generated_at": "2026-07-04T22:12:30",
+  "note": "WebAudioFont/Data wavetable assets for browser/WASM use. Four requested timbres: guitar, piano, bass, drum machine.",
+  "destination": "D:\\hack\\nes\\Kunio-kun no Nekketsu Soccer League\\wasm-game\\web\\public\\audio\\wavetables",
+  "files": [
+    {
+      "kind": "piano",
+      "file": "piano_acoustic_grand_fluidr3.js",
+      "bytes": 1238332,
+      "url": "https://raw.githubusercontent.com/surikov/webaudiofontdata/master/sound/0000_FluidR3_GM_sf2_file.js",
+      "source": "FluidR3 GM Acoustic Grand Piano"
+    },
+    {
+      "kind": "guitar",
+      "file": "guitar_clean_gibson_les_paul.js",
+      "bytes": 311747,
+      "url": "https://raw.githubusercontent.com/surikov/webaudiofontdata/master/sound/0270_Gibson_Les_Paul_sf2_file.js",
+      "source": "Gibson Les Paul Clean Guitar"
+    },
+    {
+      "kind": "bass",
+      "file": "bass_electric_finger_fluidr3.js",
+      "bytes": 448468,
+      "url": "https://raw.githubusercontent.com/surikov/webaudiofontdata/master/sound/0330_FluidR3_GM_sf2_file.js",
+      "source": "FluidR3 GM Electric Bass Finger"
+    },
+    {
+      "kind": "player",
+      "file": "webaudiofont_player.js",
+      "bytes": 124511,
+      "url": "https://surikov.github.io/webaudiofont/npm/dist/WebAudioFontPlayer.js",
+      "source": "WebAudioFontPlayer"
+    },
+    {
+      "kind": "drum_machine_tr808",
+      "file": "drum_tr808_fluidr3/12835_21_FluidR3_GM_sf2_file.js",
+      "bytes": 5287,
+      "url": "https://raw.githubusercontent.com/surikov/webaudiofontdata/master/sound/12835_21_FluidR3_GM_sf2_file.js",
+      "source": "FluidR3 GM TR-808 drum kit"
+    },
+    {
+      "kind": "drum_machine_tr808",
+      "file": "drum_tr808_fluidr3/12836_21_FluidR3_GM_sf2_file.js",
+      "bytes": 9246,
+      "url": "https://raw.githubusercontent.com/surikov/webaudiofontdata/master/sound/12836_21_FluidR3_GM_sf2_file.js",
+      "source": "FluidR3 GM TR-808 drum kit"
+    },
+    {
+      "kind": "drum_machine_tr808",
+      "file": "drum_tr808_fluidr3/12837_21_FluidR3_GM_sf2_file.js",
+      "bytes": 30794,
+      "url": "https://raw.githubusercontent.com/surikov/webaudiofontdata/master/sound/12837_21_FluidR3_GM_sf2_file.js",
+      "source": "FluidR3 GM TR-808 drum kit"
+    },
+    {
+      "kind": "drum_machine_tr808",
+      "file": "drum_tr808_fluidr3/12838_21_FluidR3_GM_sf2_file.js",
+      "bytes": 4591,
+      "url": "https://raw.githubusercontent.com/surikov/webaudiofontdata/master/sound/12838_21_FluidR3_GM_sf2_file.js",
+      "source": "FluidR3 GM TR-808 drum kit"
+    },
+    {
+      "kind": "drum_machine_tr808",
+      "file": "drum_tr808_fluidr3/12839_21_FluidR3_GM_sf2_file.js",
+      "bytes": 11156,
+      "url": "https://raw.githubusercontent.com/surikov/webaudiofontdata/master/sound/12839_21_FluidR3_GM_sf2_file.js",
+      "source": "FluidR3 GM TR-808 drum kit"
+    },
+    {
+      "kind": "drum_machine_tr808",
+      "file": "drum_tr808_fluidr3/12840_21_FluidR3_GM_sf2_file.js",
+      "bytes": 4243,
+      "url": "https://raw.githubusercontent.com/surikov/webaudiofontdata/master/sound/12840_21_FluidR3_GM_sf2_file.js",
+      "source": "FluidR3 GM TR-808 drum kit"
+    },
+    {
+      "kind": "drum_machine_tr808",
+      "file": "drum_tr808_fluidr3/12841_21_FluidR3_GM_sf2_file.js",
+      "bytes": 8899,
+      "url": "https://raw.githubusercontent.com/surikov/webaudiofontdata/master/sound/12841_21_FluidR3_GM_sf2_file.js",
+      "source": "FluidR3 GM TR-808 drum kit"
+    },
+    {
+      "kind": "drum_machine_tr808",
+      "file": "drum_tr808_fluidr3/12842_21_FluidR3_GM_sf2_file.js",
+      "bytes": 5570,
+      "url": "https://raw.githubusercontent.com/surikov/webaudiofontdata/master/sound/12842_21_FluidR3_GM_sf2_file.js",
+      "source": "FluidR3 GM TR-808 drum kit"
+    },
+    {
+      "kind": "drum_machine_tr808",
+      "file": "drum_tr808_fluidr3/12843_21_FluidR3_GM_sf2_file.js",
+      "bytes": 7091,
+      "url": "https://raw.githubusercontent.com/surikov/webaudiofontdata/master/sound/12843_21_FluidR3_GM_sf2_file.js",
+      "source": "FluidR3 GM TR-808 drum kit"
+    },
+    {
+      "kind": "drum_machine_tr808",
+      "file": "drum_tr808_fluidr3/12844_21_FluidR3_GM_sf2_file.js",
+      "bytes": 93708,
+      "url": "https://raw.githubusercontent.com/surikov/webaudiofontdata/master/sound/12844_21_FluidR3_GM_sf2_file.js",
+      "source": "FluidR3 GM TR-808 drum kit"
+    },
+    {
+      "kind": "drum_machine_tr808",
+      "file": "drum_tr808_fluidr3/12845_21_FluidR3_GM_sf2_file.js",
+      "bytes": 6187,
+      "url": "https://raw.githubusercontent.com/surikov/webaudiofontdata/master/sound/12845_21_FluidR3_GM_sf2_file.js",
+      "source": "FluidR3 GM TR-808 drum kit"
+    },
+    {
+      "kind": "drum_machine_tr808",
+      "file": "drum_tr808_fluidr3/12846_21_FluidR3_GM_sf2_file.js",
+      "bytes": 93708,
+      "url": "https://raw.githubusercontent.com/surikov/webaudiofontdata/master/sound/12846_21_FluidR3_GM_sf2_file.js",
+      "source": "FluidR3 GM TR-808 drum kit"
+    },
+    {
+      "kind": "drum_machine_tr808",
+      "file": "drum_tr808_fluidr3/12847_21_FluidR3_GM_sf2_file.js",
+      "bytes": 8829,
+      "url": "https://raw.githubusercontent.com/surikov/webaudiofontdata/master/sound/12847_21_FluidR3_GM_sf2_file.js",
+      "source": "FluidR3 GM TR-808 drum kit"
+    },
+    {
+      "kind": "drum_machine_tr808",
+      "file": "drum_tr808_fluidr3/12848_21_FluidR3_GM_sf2_file.js",
+      "bytes": 8341,
+      "url": "https://raw.githubusercontent.com/surikov/webaudiofontdata/master/sound/12848_21_FluidR3_GM_sf2_file.js",
+      "source": "FluidR3 GM TR-808 drum kit"
+    },
+    {
+      "kind": "drum_machine_tr808",
+      "file": "drum_tr808_fluidr3/12849_21_FluidR3_GM_sf2_file.js",
+      "bytes": 190717,
+      "url": "https://raw.githubusercontent.com/surikov/webaudiofontdata/master/sound/12849_21_FluidR3_GM_sf2_file.js",
+      "source": "FluidR3 GM TR-808 drum kit"
+    },
+    {
+      "kind": "drum_machine_tr808",
+      "file": "drum_tr808_fluidr3/12850_21_FluidR3_GM_sf2_file.js",
+      "bytes": 5145,
+      "url": "https://raw.githubusercontent.com/surikov/webaudiofontdata/master/sound/12850_21_FluidR3_GM_sf2_file.js",
+      "source": "FluidR3 GM TR-808 drum kit"
+    },
+    {
+      "kind": "drum_machine_tr808",
+      "file": "drum_tr808_fluidr3/12851_21_FluidR3_GM_sf2_file.js",
+      "bytes": 57492,
+      "url": "https://raw.githubusercontent.com/surikov/webaudiofontdata/master/sound/12851_21_FluidR3_GM_sf2_file.js",
+      "source": "FluidR3 GM TR-808 drum kit"
+    },
+    {
+      "kind": "drum_machine_tr808",
+      "file": "drum_tr808_fluidr3/12852_21_FluidR3_GM_sf2_file.js",
+      "bytes": 72578,
+      "url": "https://raw.githubusercontent.com/surikov/webaudiofontdata/master/sound/12852_21_FluidR3_GM_sf2_file.js",
+      "source": "FluidR3 GM TR-808 drum kit"
+    },
+    {
+      "kind": "drum_machine_tr808",
+      "file": "drum_tr808_fluidr3/12853_21_FluidR3_GM_sf2_file.js",
+      "bytes": 74335,
+      "url": "https://raw.githubusercontent.com/surikov/webaudiofontdata/master/sound/12853_21_FluidR3_GM_sf2_file.js",
+      "source": "FluidR3 GM TR-808 drum kit"
+    },
+    {
+      "kind": "drum_machine_tr808",
+      "file": "drum_tr808_fluidr3/12854_21_FluidR3_GM_sf2_file.js",
+      "bytes": 17121,
+      "url": "https://raw.githubusercontent.com/surikov/webaudiofontdata/master/sound/12854_21_FluidR3_GM_sf2_file.js",
+      "source": "FluidR3 GM TR-808 drum kit"
+    },
+    {
+      "kind": "drum_machine_tr808",
+      "file": "drum_tr808_fluidr3/12855_21_FluidR3_GM_sf2_file.js",
+      "bytes": 60345,
+      "url": "https://raw.githubusercontent.com/surikov/webaudiofontdata/master/sound/12855_21_FluidR3_GM_sf2_file.js",
+      "source": "FluidR3 GM TR-808 drum kit"
+    },
+    {
+      "kind": "drum_machine_tr808",
+      "file": "drum_tr808_fluidr3/12856_21_FluidR3_GM_sf2_file.js",
+      "bytes": 7787,
+      "url": "https://raw.githubusercontent.com/surikov/webaudiofontdata/master/sound/12856_21_FluidR3_GM_sf2_file.js",
+      "source": "FluidR3 GM TR-808 drum kit"
+    },
+    {
+      "kind": "drum_machine_tr808",
+      "file": "drum_tr808_fluidr3/12857_21_FluidR3_GM_sf2_file.js",
+      "bytes": 127857,
+      "url": "https://raw.githubusercontent.com/surikov/webaudiofontdata/master/sound/12857_21_FluidR3_GM_sf2_file.js",
+      "source": "FluidR3 GM TR-808 drum kit"
+    },
+    {
+      "kind": "drum_machine_tr808",
+      "file": "drum_tr808_fluidr3/12859_21_FluidR3_GM_sf2_file.js",
+      "bytes": 66184,
+      "url": "https://raw.githubusercontent.com/surikov/webaudiofontdata/master/sound/12859_21_FluidR3_GM_sf2_file.js",
+      "source": "FluidR3 GM TR-808 drum kit"
+    },
+    {
+      "kind": "drum_machine_tr808",
+      "file": "drum_tr808_fluidr3/12860_21_FluidR3_GM_sf2_file.js",
+      "bytes": 8068,
+      "url": "https://raw.githubusercontent.com/surikov/webaudiofontdata/master/sound/12860_21_FluidR3_GM_sf2_file.js",
+      "source": "FluidR3 GM TR-808 drum kit"
+    },
+    {
+      "kind": "drum_machine_tr808",
+      "file": "drum_tr808_fluidr3/12861_21_FluidR3_GM_sf2_file.js",
+      "bytes": 9456,
+      "url": "https://raw.githubusercontent.com/surikov/webaudiofontdata/master/sound/12861_21_FluidR3_GM_sf2_file.js",
+      "source": "FluidR3 GM TR-808 drum kit"
+    },
+    {
+      "kind": "drum_machine_tr808",
+      "file": "drum_tr808_fluidr3/12862_21_FluidR3_GM_sf2_file.js",
+      "bytes": 6398,
+      "url": "https://raw.githubusercontent.com/surikov/webaudiofontdata/master/sound/12862_21_FluidR3_GM_sf2_file.js",
+      "source": "FluidR3 GM TR-808 drum kit"
+    },
+    {
+      "kind": "drum_machine_tr808",
+      "file": "drum_tr808_fluidr3/12863_21_FluidR3_GM_sf2_file.js",
+      "bytes": 7721,
+      "url": "https://raw.githubusercontent.com/surikov/webaudiofontdata/master/sound/12863_21_FluidR3_GM_sf2_file.js",
+      "source": "FluidR3 GM TR-808 drum kit"
+    },
+    {
+      "kind": "drum_machine_tr808",
+      "file": "drum_tr808_fluidr3/12864_21_FluidR3_GM_sf2_file.js",
+      "bytes": 11961,
+      "url": "https://raw.githubusercontent.com/surikov/webaudiofontdata/master/sound/12864_21_FluidR3_GM_sf2_file.js",
+      "source": "FluidR3 GM TR-808 drum kit"
+    },
+    {
+      "kind": "drum_machine_tr808",
+      "file": "drum_tr808_fluidr3/12867_21_FluidR3_GM_sf2_file.js",
+      "bytes": 7825,
+      "url": "https://raw.githubusercontent.com/surikov/webaudiofontdata/master/sound/12867_21_FluidR3_GM_sf2_file.js",
+      "source": "FluidR3 GM TR-808 drum kit"
+    },
+    {
+      "kind": "drum_machine_tr808",
+      "file": "drum_tr808_fluidr3/12868_21_FluidR3_GM_sf2_file.js",
+      "bytes": 10432,
+      "url": "https://raw.githubusercontent.com/surikov/webaudiofontdata/master/sound/12868_21_FluidR3_GM_sf2_file.js",
+      "source": "FluidR3 GM TR-808 drum kit"
+    },
+    {
+      "kind": "drum_machine_tr808",
+      "file": "drum_tr808_fluidr3/12869_21_FluidR3_GM_sf2_file.js",
+      "bytes": 6609,
+      "url": "https://raw.githubusercontent.com/surikov/webaudiofontdata/master/sound/12869_21_FluidR3_GM_sf2_file.js",
+      "source": "FluidR3 GM TR-808 drum kit"
+    },
+    {
+      "kind": "drum_machine_tr808",
+      "file": "drum_tr808_fluidr3/12870_21_FluidR3_GM_sf2_file.js",
+      "bytes": 5426,
+      "url": "https://raw.githubusercontent.com/surikov/webaudiofontdata/master/sound/12870_21_FluidR3_GM_sf2_file.js",
+      "source": "FluidR3 GM TR-808 drum kit"
+    },
+    {
+      "kind": "drum_machine_tr808",
+      "file": "drum_tr808_fluidr3/12871_21_FluidR3_GM_sf2_file.js",
+      "bytes": 6613,
+      "url": "https://raw.githubusercontent.com/surikov/webaudiofontdata/master/sound/12871_21_FluidR3_GM_sf2_file.js",
+      "source": "FluidR3 GM TR-808 drum kit"
+    },
+    {
+      "kind": "drum_machine_tr808",
+      "file": "drum_tr808_fluidr3/12872_21_FluidR3_GM_sf2_file.js",
+      "bytes": 12592,
+      "url": "https://raw.githubusercontent.com/surikov/webaudiofontdata/master/sound/12872_21_FluidR3_GM_sf2_file.js",
+      "source": "FluidR3 GM TR-808 drum kit"
+    },
+    {
+      "kind": "drum_machine_tr808",
+      "file": "drum_tr808_fluidr3/12873_21_FluidR3_GM_sf2_file.js",
+      "bytes": 5705,
+      "url": "https://raw.githubusercontent.com/surikov/webaudiofontdata/master/sound/12873_21_FluidR3_GM_sf2_file.js",
+      "source": "FluidR3 GM TR-808 drum kit"
+    },
+    {
+      "kind": "drum_machine_tr808",
+      "file": "drum_tr808_fluidr3/12874_21_FluidR3_GM_sf2_file.js",
+      "bytes": 16211,
+      "url": "https://raw.githubusercontent.com/surikov/webaudiofontdata/master/sound/12874_21_FluidR3_GM_sf2_file.js",
+      "source": "FluidR3 GM TR-808 drum kit"
+    },
+    {
+      "kind": "drum_machine_tr808",
+      "file": "drum_tr808_fluidr3/12875_21_FluidR3_GM_sf2_file.js",
+      "bytes": 2573,
+      "url": "https://raw.githubusercontent.com/surikov/webaudiofontdata/master/sound/12875_21_FluidR3_GM_sf2_file.js",
+      "source": "FluidR3 GM TR-808 drum kit"
+    },
+    {
+      "kind": "drum_machine_tr808",
+      "file": "drum_tr808_fluidr3/12876_21_FluidR3_GM_sf2_file.js",
+      "bytes": 7481,
+      "url": "https://raw.githubusercontent.com/surikov/webaudiofontdata/master/sound/12876_21_FluidR3_GM_sf2_file.js",
+      "source": "FluidR3 GM TR-808 drum kit"
+    },
+    {
+      "kind": "drum_machine_tr808",
+      "file": "drum_tr808_fluidr3/12877_21_FluidR3_GM_sf2_file.js",
+      "bytes": 7864,
+      "url": "https://raw.githubusercontent.com/surikov/webaudiofontdata/master/sound/12877_21_FluidR3_GM_sf2_file.js",
+      "source": "FluidR3 GM TR-808 drum kit"
+    },
+    {
+      "kind": "drum_machine_tr808",
+      "file": "drum_tr808_fluidr3/12878_21_FluidR3_GM_sf2_file.js",
+      "bytes": 31288,
+      "url": "https://raw.githubusercontent.com/surikov/webaudiofontdata/master/sound/12878_21_FluidR3_GM_sf2_file.js",
+      "source": "FluidR3 GM TR-808 drum kit"
+    },
+    {
+      "kind": "drum_machine_tr808",
+      "file": "drum_tr808_fluidr3/12879_21_FluidR3_GM_sf2_file.js",
+      "bytes": 39725,
+      "url": "https://raw.githubusercontent.com/surikov/webaudiofontdata/master/sound/12879_21_FluidR3_GM_sf2_file.js",
+      "source": "FluidR3 GM TR-808 drum kit"
+    },
+    {
+      "kind": "drum_machine_tr808",
+      "file": "drum_tr808_fluidr3/12880_21_FluidR3_GM_sf2_file.js",
+      "bytes": 41660,
+      "url": "https://raw.githubusercontent.com/surikov/webaudiofontdata/master/sound/12880_21_FluidR3_GM_sf2_file.js",
+      "source": "FluidR3 GM TR-808 drum kit"
+    },
+    {
+      "kind": "drum_machine_tr808",
+      "file": "drum_tr808_fluidr3/12881_21_FluidR3_GM_sf2_file.js",
+      "bytes": 41660,
+      "url": "https://raw.githubusercontent.com/surikov/webaudiofontdata/master/sound/12881_21_FluidR3_GM_sf2_file.js",
+      "source": "FluidR3 GM TR-808 drum kit"
+    },
+    {
+      "kind": "drum_machine_tr808_index",
+      "file": "drum_tr808_fluidr3.html",
+      "bytes": 11434,
+      "url": "https://raw.githubusercontent.com/surikov/webaudiofontdata/master/sound/drums_21_FluidR3_GM_sf2_fileTR_808.html",
+      "source": "WebAudioFontData TR-808 kit index"
+    }
+  ]
+}
