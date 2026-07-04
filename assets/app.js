@@ -280,7 +280,7 @@ function drawOriginalTile(tileIndex, x, y, size = 16, alt = false) {
   return true;
 }
 
-function drawMetaSprite(frame, x, y, team, controlled = false, flip = false) {
+function drawMetaSprite(frame, x, y, team, controlled = false, flip = false, teamMirror = true) {
   if (!frame) return false;
   const img = team === 1 ? originalAssets.chrAlt : originalAssets.chr;
   if (!img) return false;
@@ -297,7 +297,7 @@ function drawMetaSprite(frame, x, y, team, controlled = false, flip = false) {
     const vFlip = (attr & 0x80) !== 0;
     const rawX = frame.x[i] * drawScale;
     const rawY = frame.y[i] * drawScale;
-    const mirror = flip || team === 1;
+    const mirror = flip || (teamMirror && team === 1);
     const dx = mirror ? x - rawX - destTileSize : x + rawX;
     const dy = y + rawY;
 
@@ -310,9 +310,23 @@ function drawMetaSprite(frame, x, y, team, controlled = false, flip = false) {
   return true;
 }
 
-function drawOriginalPlayer(x, y, team, controlled = false, frameHint = 0, moving = false, facingX = 1, action = ACTION.STAND) {
-  const frames = originalAssets.metasprites;
+function drawOriginalPlayer(x, y, team, controlled = false, frameHint = 0, moving = false, facingX = 1, action = ACTION.STAND, originalAnimation = null) {
+  const frames = originalAssets.metasprites;
   if (frames.length) {
+    if (Number.isFinite(originalAnimation)) {
+      const originalIdx = originalAnimation & 0x7F;
+      if (originalIdx < frames.length) {
+        const flip = (originalAnimation & 0x80) !== 0;
+        if (drawMetaSprite(frames[originalIdx], x, y, team, controlled, flip, false)) {
+          if (controlled) {
+            ctx.strokeStyle = "#ffff66";
+            ctx.lineWidth = 2;
+            ctx.beginPath(); ctx.arc(x, y - 34, 13, 0, Math.PI * 2); ctx.stroke();
+          }
+          return;
+        }
+      }
+    }
     const runFrames = [0, 1, 2, 1];
     let idx = moving ? runFrames[Math.abs(frameHint) % runFrames.length] : 0;
     if (action === ACTION.KICK) idx = 3;
@@ -587,7 +601,8 @@ function render(api) {
     const moving = Math.abs(vx) + Math.abs(vy) > 1;
     const facingX = api.player_facing_x ? api.player_facing_x(i) : (api.player_team && api.player_team(i) ? -1 : 1);
     const p = worldToScreen(view, api.player_x(i), api.player_y(i));
-    drawOriginalPlayer(p.x, p.y, api.player_team ? api.player_team(i) : 0, i === controlled, Math.floor(api.game_tick_count() / 10) + i, moving, facingX, action);
+    const originalAnimation = api.original_player_animation ? api.original_player_animation(i) : null;
+    drawOriginalPlayer(p.x, p.y, api.player_team ? api.player_team(i) : 0, i === controlled, Math.floor(api.game_tick_count() / 10) + i, moving, facingX, action, originalAnimation);
     if (action === ACTION.CELEBRATE) {
       ctx.save();
       ctx.strokeStyle = "rgba(255,230,70,.85)";
