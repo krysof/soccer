@@ -36,6 +36,15 @@ const ACTION = {
 };
 const TEAM_NAMES = ["熱血", "花園", "連合", "工業", "選抜", "世界"];
 const WEATHER_NAMES = ["CLEAR", "RAIN", "MUD", "SNOW", "WIND"];
+const ROLE_NAMES = ["GK", "DF", "DF", "FW", "WG", "WG"];
+const PLAYER_NAMES = [
+  ["ごだい", "ひろし", "こうじ", "くにお", "すすむ", "まさ"],
+  ["まえだ", "いしだ", "たけし", "りき", "さおとめ", "よしの"],
+  ["ごうだ", "にしむら", "さわぐち", "くまだ", "はやさか", "もちづき"],
+  ["おにづか", "こばやし", "たいら", "きのした", "望月", "小林"],
+  ["じんない", "あいはら", "みどう", "ゆうじ", "まもる", "けん"],
+  ["ジョン", "マイク", "ピエール", "カルロス", "リー", "アレックス"],
+];
 const keys = new Set();
 const canvas = document.querySelector("#game");
 const ctx = canvas.getContext("2d");
@@ -411,6 +420,15 @@ function drawOverlay(title, lines = []) {
   lines.forEach((line, i) => ctx.fillText(line, canvas.width / 2, 230 + i * 32));
   ctx.textAlign = "left";
 }
+function playerLabel(api, index) {
+  if (index == null || index >= 255) return "—";
+  const role = index % 6;
+  const team = api.player_team ? api.player_team(index) : (index < 6 ? 0 : 1);
+  const cpuTeam = api.cpu_team_id ? api.cpu_team_id() : 1;
+  const teamId = team === 0 ? 0 : cpuTeam;
+  const name = (PLAYER_NAMES[teamId] && PLAYER_NAMES[teamId][role]) || `P${index}`;
+  return `${name} ${ROLE_NAMES[role] || ""}`.trim();
+}
 function drawMenuOverlay(api) {
   const selected = api.menu_opponent_id ? api.menu_opponent_id() : (api.cpu_team_id ? api.cpu_team_id() : 1);
   const wins = api.tournament_wins ? api.tournament_wins() : 0;
@@ -445,6 +463,8 @@ function drawMenuOverlay(api) {
       ctx.font = "13px ui-monospace, Consolas, monospace";
       ctx.fillStyle = "#b8d5ff";
       ctx.fillText(`SPD ${speed}  POW ${pow}  KEEPER ${api.team_keeper ? api.team_keeper(1) : "?"}  SPECIAL ${api.team_special_curve ? api.team_special_curve(1) : "?"}`, canvas.width / 2, y + 20);
+      const captain = (PLAYER_NAMES[team] && PLAYER_NAMES[team][3]) || "CAPTAIN";
+      ctx.fillText(`CAPTAIN ${captain}`, canvas.width / 2 + 188, y + 20);
     }
   }
   ctx.fillStyle = "#fff";
@@ -468,7 +488,8 @@ function drawMatchIntroOverlay(api) {
   ctx.font = "17px ui-monospace, Consolas, monospace";
   ctx.fillStyle = "#d7f7ff";
   ctx.fillText(`FIELD ${WEATHER_NAMES[weather] || "?"}   SPD ${api.team_speed ? api.team_speed(1) : "?"}  POW ${api.team_power ? api.team_power(1) : "?"}  GK ${api.team_keeper ? api.team_keeper(1) : "?"}`, canvas.width / 2, 230);
-  ctx.fillText(`SPECIAL ${api.team_special_curve ? api.team_special_curve(1) : "?"}   READY ${Math.ceil(timer / 60)}`, canvas.width / 2, 260);
+  ctx.fillText(`CAPTAIN ${PLAYER_NAMES[0][3]}  /  ${PLAYER_NAMES[cpuTeam]?.[3] || "CPU"}    SPECIAL ${api.team_special_curve ? api.team_special_curve(1) : "?"}`, canvas.width / 2, 260);
+  ctx.fillText(`READY ${Math.ceil(timer / 60)}`, canvas.width / 2, 290);
   ctx.font = "16px system-ui, sans-serif";
   ctx.fillStyle = "#fff";
   ctx.fillText("按 J / Z / Enter 跳过出场演出", canvas.width / 2, 326);
@@ -573,8 +594,8 @@ function render(api) {
     const own = api.last_goal_is_own ? api.last_goal_is_own() : 0;
     drawOverlay("GOAL!", [
       `比分 ${api.score_left()} - ${api.score_right()}`,
-      own ? "OWN GOAL" : `SCORER P${scorer}`,
-      assist < 255 ? `ASSIST P${assist}` : "NO ASSIST",
+      own ? "OWN GOAL" : `SCORER ${playerLabel(api, scorer)}`,
+      assist < 255 ? `ASSIST ${playerLabel(api, assist)}` : "NO ASSIST",
     ]);
   }
   if (phase === PHASE.HALFTIME) drawOverlay("HALF TIME", ["换边，下半场准备", "按 J / Z 继续"]);
