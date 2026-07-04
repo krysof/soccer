@@ -207,7 +207,7 @@ function inputBits() {
 }
 
 async function loadWasm() {
-  const response = await fetch("../game_core.212145.wasm");
+  const response = await fetch("../game_core.212548.wasm");
   const bytes = await response.arrayBuffer();
   const result = await WebAssembly.instantiate(bytes, {});
   return result.instance.exports;
