@@ -210,7 +210,7 @@ function inputBits() {
 }
 
 async function loadWasm() {
-  const response = await fetch(assetUrl("../game_core.221090.wasm"));
+  const response = await fetch(assetUrl("../game_core.221473.wasm"));
   const bytes = await response.arrayBuffer();
   const result = await WebAssembly.instantiate(bytes, {});
   return result.instance.exports;
@@ -706,6 +706,9 @@ function render(api) {
   const pauseReturn = api.pause_return_phase ? api.pause_return_phase() : 3;
   const script = api.original_game_script ? api.original_game_script().toString(16).padStart(2, "0") : "??";
   const ballObj = api.original_ball_object_id ? api.original_ball_object_id().toString(16).padStart(2, "0") : "??";
+  const ballDispatch = api.original_ball_current_motion_dispatch_addr
+    ? api.original_ball_current_motion_dispatch_addr().toString(16).padStart(4, "0")
+    : "????";
   const ballRam = api.original_ball_x_lo
     ? `${api.original_ball_x_hi().toString(16).padStart(2, "0")}${api.original_ball_x_lo().toString(16).padStart(2, "0")}/${api.original_ball_y_hi().toString(16).padStart(2, "0")}${api.original_ball_y_lo().toString(16).padStart(2, "0")}/${api.original_ball_z_hi().toString(16).padStart(2, "0")}${api.original_ball_z_lo().toString(16).padStart(2, "0")}`
     : "????/????/????";
@@ -718,7 +721,7 @@ function render(api) {
   const ballSpeedRam = api.original_ball_spd_x_lo
     ? `${api.original_ball_spd_x_hi().toString(16).padStart(2, "0")}${api.original_ball_spd_x_lo().toString(16).padStart(2, "0")}/${api.original_ball_spd_y_hi().toString(16).padStart(2, "0")}${api.original_ball_spd_y_lo().toString(16).padStart(2, "0")}/${api.original_ball_spd_z_hi().toString(16).padStart(2, "0")}${api.original_ball_spd_z_lo().toString(16).padStart(2, "0")}/g${api.original_ball_gravity_hi().toString(16).padStart(2, "0")}${api.original_ball_gravity_lo().toString(16).padStart(2, "0")}`
     : "????/????/????/g????";
-  stats.textContent = `phase=${phase} script=$${script} pauseRet=${pauseReturn} period=${period} swap=${swapped} cpu=${cpuTeam} menu=${menuTeam} wins=${wins} weather=${weather} hazards=${hazards} wind=${wind} score=${api.score_left()}-${api.score_right()} goal=${goalInfo} fouls=${fouls} foulTeam=${foulTeam} injuries=${injuries} lastHurt=${lastHurt} spShots=${specialShots} lastSp=${lastSpecial} time=${api.match_seconds_left()} tick=${api.game_tick_count()} players=${count} role=${roleInfo} pOrig=${playerOrig}@${playerDispatch}/${playerMainDispatch}/${playerAnimDispatch} pRam=${playerRam} ballObj=$${ballObj} ballRam=${ballRam} ballState=${ballState} ballAnim=${ballAnim} ballSpeed=${ballSpeedRam} owner=${originalOwner} ball=(${bx},${by},z=${bz}) curve=${curve} special=${special} act=${action} charge=${charge} keeper=${keeper}/${hold} touch=${lastTouch}/${lastTouchPlayer} restart=${restart}`;
+  stats.textContent = `phase=${phase} script=$${script} pauseRet=${pauseReturn} period=${period} swap=${swapped} cpu=${cpuTeam} menu=${menuTeam} wins=${wins} weather=${weather} hazards=${hazards} wind=${wind} score=${api.score_left()}-${api.score_right()} goal=${goalInfo} fouls=${fouls} foulTeam=${foulTeam} injuries=${injuries} lastHurt=${lastHurt} spShots=${specialShots} lastSp=${lastSpecial} time=${api.match_seconds_left()} tick=${api.game_tick_count()} players=${count} role=${roleInfo} pOrig=${playerOrig}@${playerDispatch}/${playerMainDispatch}/${playerAnimDispatch} pRam=${playerRam} ballObj=$${ballObj}@${ballDispatch} ballRam=${ballRam} ballState=${ballState} ballAnim=${ballAnim} ballSpeed=${ballSpeedRam} owner=${originalOwner} ball=(${bx},${by},z=${bz}) curve=${curve} special=${special} act=${action} charge=${charge} keeper=${keeper}/${hold} touch=${lastTouch}/${lastTouchPlayer} restart=${restart}`;
 }
 
 async function main() {
