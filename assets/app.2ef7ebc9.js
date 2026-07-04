@@ -61,7 +61,16 @@ const DEBUG = new URLSearchParams(window.location.search).get("debug") === "1";
 document.body.classList.toggle("debug", DEBUG);
 stats.hidden = !DEBUG;
 
-const touch = { stickPointer: null, axisX: 0, axisY: 0, kick: false, sprint: false };
+const TOUCH_TAP_LATCH_TICKS = 4;
+const touch = {
+  stickPointer: null,
+  axisX: 0,
+  axisY: 0,
+  kick: false,
+  sprint: false,
+  kickLatchTicks: 0,
+  sprintLatchTicks: 0,
+};
 const originalAssets = { chr: null, chrAlt: null, field: null, tileSize: 16, columns: 128, metasprites: [] };
 const sfx = { ctx: null, lastScore: "0-0", lastPhase: PHASE.TITLE, lastSpecial: 0, lastAction: ACTION.STAND, lastKeeper: 0 };
 
@@ -118,7 +127,15 @@ window.addEventListener("keydown", (event) => {
 window.addEventListener("keyup", (event) => keys.delete(event.code));
 
 function setTouchButton(button, prop) {
-  const down = (event) => { event.preventDefault(); ensureAudio(); button.setPointerCapture?.(event.pointerId); touch[prop] = true; button.classList.add("active"); };
+  const latchProp = `${prop}LatchTicks`;
+  const down = (event) => {
+    event.preventDefault();
+    ensureAudio();
+    button.setPointerCapture?.(event.pointerId);
+    touch[prop] = true;
+    touch[latchProp] = TOUCH_TAP_LATCH_TICKS;
+    button.classList.add("active");
+  };
   const up = (event) => { event.preventDefault(); touch[prop] = false; button.classList.remove("active"); };
   button.addEventListener("pointerdown", down);
   button.addEventListener("pointerup", up);
@@ -233,9 +250,11 @@ function inputBits() {
   if (keys.has("ArrowDown") || keys.has("KeyS") || touch.axisY > 0) bits |= INPUT.DOWN;
   if (keys.has("ArrowLeft") || keys.has("KeyA") || touch.axisX < 0) bits |= INPUT.LEFT;
   if (keys.has("ArrowRight") || keys.has("KeyD") || touch.axisX > 0) bits |= INPUT.RIGHT;
-  if (keys.has("KeyJ") || keys.has("KeyZ") || touch.kick) bits |= INPUT.KICK;
-  if (keys.has("KeyK") || keys.has("KeyX") || touch.sprint) bits |= INPUT.SPRINT;
+  if (keys.has("KeyJ") || keys.has("KeyZ") || touch.kick || touch.kickLatchTicks > 0) bits |= INPUT.KICK;
+  if (keys.has("KeyK") || keys.has("KeyX") || touch.sprint || touch.sprintLatchTicks > 0) bits |= INPUT.SPRINT;
   if (keys.has("Enter") || keys.has("Space")) bits |= INPUT.START;
+  if (touch.kickLatchTicks > 0) touch.kickLatchTicks -= 1;
+  if (touch.sprintLatchTicks > 0) touch.sprintLatchTicks -= 1;
   return bits;
 }
 
