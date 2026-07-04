@@ -328,7 +328,10 @@ function render(api) {
   const lastTouch = api.last_touch_team ? api.last_touch_team() : 0;
   const action = api.player_action ? api.player_action(controlled) : 0;
   const charge = api.shot_charge ? api.shot_charge() : 0;
-  stats.textContent = `phase=${phase} score=${api.score_left()}-${api.score_right()} time=${api.match_seconds_left()} tick=${api.game_tick_count()} players=${count} ball=(${bx},${by},z=${bz}) act=${action} charge=${charge} touch=${lastTouch} restart=${restart}`;
+  const curve = api.ball_curve ? api.ball_curve() : 0;
+  const keeper = api.keeper_outcome ? api.keeper_outcome() : 0;
+  const hold = api.keeper_hold_timer ? api.keeper_hold_timer() : 0;
+  stats.textContent = `phase=${phase} score=${api.score_left()}-${api.score_right()} time=${api.match_seconds_left()} tick=${api.game_tick_count()} players=${count} ball=(${bx},${by},z=${bz}) curve=${curve} act=${action} charge=${charge} keeper=${keeper}/${hold} touch=${lastTouch} restart=${restart}`;
 }
 async function main() {
   const [api, chr, chrAlt, field, metasprites] = await Promise.all([
