@@ -221,7 +221,7 @@ function drawOriginalPlayer(x, y, team, controlled = false, frameHint = 0, movin
   const tiles = [base, base + 1, base + 0x20, base + 0x21, base + 0x40, base + 0x41];
   for (let i = 0; i < tiles.length; i++) drawOriginalTile(tiles[i], ox + (i % 2) * size, oy + Math.floor(i / 2) * size, size, team === 1);
 }
-function drawOriginalBall(x, y, z = 0, spin = 0) {
+function drawOriginalBall(x, y, z = 0, spin = 0, special = 0) {
   const visualY = y - z;
   const shadowScale = Math.max(0.35, 1 - z / 90);
   ctx.save();
@@ -231,8 +231,17 @@ function drawOriginalBall(x, y, z = 0, spin = 0) {
   ctx.fill();
   ctx.restore();
   const tile = 0x1AEC;
-  const size = z > 0 ? 18 : 16;
+  const size = (z > 0 ? 18 : 16) + (special > 0 ? 4 : 0);
   const bob = z > 0 ? Math.sin(spin * 0.9) * 1.5 : 0;
+  if (special > 0) {
+    ctx.save();
+    ctx.strokeStyle = "rgba(255,245,120,.85)";
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.arc(Math.round(x), Math.round(visualY + bob), size * 0.8 + Math.sin(spin) * 2, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.restore();
+  }
   const ok = drawOriginalTile(tile, Math.round(x - size / 2), Math.round(visualY - size / 2 + bob), size, false);
   if (!ok) {
     ctx.save();
@@ -285,6 +294,7 @@ function render(api) {
   const by = api.ball_y();
   const bz = api.ball_z ? api.ball_z() : 0;
   const bspin = api.ball_spin ? api.ball_spin() : Math.floor(api.game_tick_count() / 6);
+  const bspecial = api.ball_special_timer ? api.ball_special_timer() : 0;
   const view = drawField(screenW, screenH, worldW, worldH, bx);
   const controlled = api.controlled_player ? api.controlled_player() : 0;
   const count = api.player_count ? api.player_count() : 1;
@@ -302,7 +312,7 @@ function render(api) {
   for (const entity of entities) {
     if (entity.type === "ball") {
       const b = worldToScreen(view, bx, by);
-      drawOriginalBall(b.x, b.y, bz, bspin);
+      drawOriginalBall(b.x, b.y, bz, bspin, bspecial);
       continue;
     }
     const i = entity.index;
@@ -336,9 +346,10 @@ function render(api) {
   const curve = api.ball_curve ? api.ball_curve() : 0;
   const keeper = api.keeper_outcome ? api.keeper_outcome() : 0;
   const hold = api.keeper_hold_timer ? api.keeper_hold_timer() : 0;
+  const special = api.ball_special_timer ? api.ball_special_timer() : 0;
   const period = api.current_period ? api.current_period() : 1;
   const swapped = api.side_swapped ? api.side_swapped() : 0;
-  stats.textContent = `phase=${phase} period=${period} swap=${swapped} score=${api.score_left()}-${api.score_right()} time=${api.match_seconds_left()} tick=${api.game_tick_count()} players=${count} ball=(${bx},${by},z=${bz}) curve=${curve} act=${action} charge=${charge} keeper=${keeper}/${hold} touch=${lastTouch} restart=${restart}`;
+  stats.textContent = `phase=${phase} period=${period} swap=${swapped} score=${api.score_left()}-${api.score_right()} time=${api.match_seconds_left()} tick=${api.game_tick_count()} players=${count} ball=(${bx},${by},z=${bz}) curve=${curve} special=${special} act=${action} charge=${charge} keeper=${keeper}/${hold} touch=${lastTouch} restart=${restart}`;
 }
 async function main() {
   const [api, chr, chrAlt, field, metasprites] = await Promise.all([
