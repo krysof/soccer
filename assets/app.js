@@ -18,6 +18,7 @@ const PHASE = {
   GOAL_KICK: 7,
   CORNER_KICK: 8,
   HALFTIME: 9,
+  FREE_KICK: 10,
 };
 const ACTION = {
   STAND: 0,
@@ -273,6 +274,9 @@ function drawScore(api, w) {
   ctx.fillText(`${TEAM_NAMES[0]} ${leftScore} - ${rightScore} ${TEAM_NAMES[cpuTeam] || "CPU"}`, w / 2, 32);
   ctx.font = "12px ui-monospace, Consolas, monospace";
   ctx.fillText(`${period}H  ${mm}:${ss}`, w / 2, 50);
+  const foulsL = api.foul_count_left ? api.foul_count_left() : 0;
+  const foulsR = api.foul_count_right ? api.foul_count_right() : 0;
+  ctx.fillText(`F ${foulsL}-${foulsR}`, w / 2 + 104, 50);
   ctx.textAlign = "left";
 }
 function drawOverlay(title, lines = []) {
@@ -343,6 +347,7 @@ function render(api) {
   if (phase === PHASE.THROW_IN) drawOverlay("THROW IN", ["按 J / Z 继续"]);
   if (phase === PHASE.GOAL_KICK) drawOverlay("GOAL KICK", ["按 J / Z 继续"]);
   if (phase === PHASE.CORNER_KICK) drawOverlay("CORNER KICK", ["按 J / Z 继续"]);
+  if (phase === PHASE.FREE_KICK) drawOverlay("FREE KICK", [`犯规队 ${api.foul_team ? TEAM_NAMES[api.foul_team()] || api.foul_team() : "?"}`, "按 J / Z 继续"]);
   const restart = api.restart_team ? api.restart_team() : 0;
   const lastTouch = api.last_touch_team ? api.last_touch_team() : 0;
   const action = api.player_action ? api.player_action(controlled) : 0;
@@ -353,7 +358,9 @@ function render(api) {
   const special = api.ball_special_timer ? api.ball_special_timer() : 0;
   const period = api.current_period ? api.current_period() : 1;
   const swapped = api.side_swapped ? api.side_swapped() : 0;
-  stats.textContent = `phase=${phase} period=${period} swap=${swapped} cpu=${cpuTeam} wins=${wins} score=${api.score_left()}-${api.score_right()} time=${api.match_seconds_left()} tick=${api.game_tick_count()} players=${count} ball=(${bx},${by},z=${bz}) curve=${curve} special=${special} act=${action} charge=${charge} keeper=${keeper}/${hold} touch=${lastTouch} restart=${restart}`;
+  const fouls = `${api.foul_count_left ? api.foul_count_left() : 0}-${api.foul_count_right ? api.foul_count_right() : 0}`;
+  const foulTeam = api.foul_team ? api.foul_team() : 0;
+  stats.textContent = `phase=${phase} period=${period} swap=${swapped} cpu=${cpuTeam} wins=${wins} score=${api.score_left()}-${api.score_right()} fouls=${fouls} foulTeam=${foulTeam} time=${api.match_seconds_left()} tick=${api.game_tick_count()} players=${count} ball=(${bx},${by},z=${bz}) curve=${curve} special=${special} act=${action} charge=${charge} keeper=${keeper}/${hold} touch=${lastTouch} restart=${restart}`;
 }
 async function main() {
   const [api, chr, chrAlt, field, metasprites] = await Promise.all([
