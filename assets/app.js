@@ -19,6 +19,7 @@ const PHASE = {
   CORNER_KICK: 8,
   HALFTIME: 9,
   FREE_KICK: 10,
+  PENALTY_KICK: 11,
 };
 const ACTION = {
   STAND: 0,
@@ -348,6 +349,7 @@ function render(api) {
   if (phase === PHASE.GOAL_KICK) drawOverlay("GOAL KICK", ["按 J / Z 继续"]);
   if (phase === PHASE.CORNER_KICK) drawOverlay("CORNER KICK", ["按 J / Z 继续"]);
   if (phase === PHASE.FREE_KICK) drawOverlay("FREE KICK", [`犯规队 ${api.foul_team ? TEAM_NAMES[api.foul_team()] || api.foul_team() : "?"}`, "按 J / Z 继续"]);
+  if (phase === PHASE.PENALTY_KICK) drawOverlay("PENALTY KICK", [`禁区犯规：${api.foul_team ? TEAM_NAMES[api.foul_team()] || api.foul_team() : "?"}`, "按 J / Z 射门"]);
   const restart = api.restart_team ? api.restart_team() : 0;
   const lastTouch = api.last_touch_team ? api.last_touch_team() : 0;
   const action = api.player_action ? api.player_action(controlled) : 0;
