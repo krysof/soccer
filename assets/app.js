@@ -423,8 +423,8 @@ function drawOverlay(title, lines = []) {
 }
 function playerLabel(api, index) {
   if (index == null || index >= 255) return "—";
-  const role = index % 6;
-  const team = api.player_team ? api.player_team(index) : (index < 6 ? 0 : 1);
+  const role = api.original_player_role ? api.original_player_role(index) : index % 6;
+  const team = api.player_team ? api.player_team(index) : (index % 2 === 0 ? 0 : 1);
   const cpuTeam = api.cpu_team_id ? api.cpu_team_id() : 1;
   const teamId = team === 0 ? 0 : cpuTeam;
   const name = (PLAYER_NAMES[teamId] && PLAYER_NAMES[teamId][role]) || `P${index}`;
@@ -631,7 +631,11 @@ function render(api) {
   const roleInfo = api.player_role_speed ? `${api.player_role_speed(controlled)}/${api.player_role_power(controlled)}/${api.player_role_stamina(controlled)}/${api.player_role_tackle(controlled)}/${api.player_role_keeper(controlled)}` : "0";
   const pauseReturn = api.pause_return_phase ? api.pause_return_phase() : 3;
   const script = api.original_game_script ? api.original_game_script().toString(16).padStart(2, "0") : "??";
-  stats.textContent = `phase=${phase} script=$${script} pauseRet=${pauseReturn} period=${period} swap=${swapped} cpu=${cpuTeam} menu=${menuTeam} wins=${wins} weather=${weather} hazards=${hazards} wind=${wind} score=${api.score_left()}-${api.score_right()} goal=${goalInfo} fouls=${fouls} foulTeam=${foulTeam} injuries=${injuries} lastHurt=${lastHurt} spShots=${specialShots} lastSp=${lastSpecial} time=${api.match_seconds_left()} tick=${api.game_tick_count()} players=${count} role=${roleInfo} ball=(${bx},${by},z=${bz}) curve=${curve} special=${special} act=${action} charge=${charge} keeper=${keeper}/${hold} touch=${lastTouch}/${lastTouchPlayer} restart=${restart}`;
+  const ballObj = api.original_ball_object_id ? api.original_ball_object_id().toString(16).padStart(2, "0") : "??";
+  const ballRam = api.original_ball_x_lo
+    ? `${api.original_ball_x_hi().toString(16).padStart(2, "0")}${api.original_ball_x_lo().toString(16).padStart(2, "0")}/${api.original_ball_y_hi().toString(16).padStart(2, "0")}${api.original_ball_y_lo().toString(16).padStart(2, "0")}/${api.original_ball_z_hi().toString(16).padStart(2, "0")}${api.original_ball_z_lo().toString(16).padStart(2, "0")}`
+    : "????/????/????";
+  stats.textContent = `phase=${phase} script=$${script} pauseRet=${pauseReturn} period=${period} swap=${swapped} cpu=${cpuTeam} menu=${menuTeam} wins=${wins} weather=${weather} hazards=${hazards} wind=${wind} score=${api.score_left()}-${api.score_right()} goal=${goalInfo} fouls=${fouls} foulTeam=${foulTeam} injuries=${injuries} lastHurt=${lastHurt} spShots=${specialShots} lastSp=${lastSpecial} time=${api.match_seconds_left()} tick=${api.game_tick_count()} players=${count} role=${roleInfo} ballObj=$${ballObj} ballRam=${ballRam} ball=(${bx},${by},z=${bz}) curve=${curve} special=${special} act=${action} charge=${charge} keeper=${keeper}/${hold} touch=${lastTouch}/${lastTouchPlayer} restart=${restart}`;
 }
 async function main() {
   const [api, chr, chrAlt, field, metasprites] = await Promise.all([
