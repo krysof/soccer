@@ -409,6 +409,47 @@ function drawOverlay(title, lines = []) {
   lines.forEach((line, i) => ctx.fillText(line, canvas.width / 2, 230 + i * 32));
   ctx.textAlign = "left";
 }
+function drawMenuOverlay(api) {
+  const selected = api.menu_opponent_id ? api.menu_opponent_id() : (api.cpu_team_id ? api.cpu_team_id() : 1);
+  const wins = api.tournament_wins ? api.tournament_wins() : 0;
+  ctx.fillStyle = "rgba(0,0,0,.72)";
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  ctx.textAlign = "center";
+  ctx.fillStyle = "#fff";
+  ctx.font = "bold 36px system-ui, sans-serif";
+  ctx.fillText("SELECT TEAM", canvas.width / 2, 104);
+  ctx.font = "15px ui-monospace, Consolas, monospace";
+  ctx.fillStyle = "#d7f7ff";
+  ctx.fillText(`熱血  VS  ${TEAM_NAMES[selected] || "CPU"}     WIN ${wins}`, canvas.width / 2, 134);
+  const startY = 176;
+  for (let team = 1; team < TEAM_NAMES.length; team++) {
+    const y = startY + (team - 1) * 48;
+    const active = team === selected;
+    const weatherId = team === 2 ? 1 : team === 3 ? 2 : team === 4 ? 3 : team === 5 ? 4 : 0;
+    if (active) {
+      ctx.fillStyle = "rgba(255,230,70,.22)";
+      ctx.fillRect(canvas.width / 2 - 236, y - 26, 472, 38);
+      ctx.strokeStyle = "rgba(255,230,70,.85)";
+      ctx.strokeRect(canvas.width / 2 - 236, y - 26, 472, 38);
+    }
+    ctx.fillStyle = active ? "#ffe64a" : "#ffffff";
+    ctx.font = active ? "bold 20px ui-monospace, Consolas, monospace" : "18px ui-monospace, Consolas, monospace";
+    const cursor = active ? "▶" : " ";
+    const spd = api.team_speed ? api.team_speedForMenu?.(team) : null;
+    const speed = api.team_speed ? (team === selected ? api.team_speed(1) : "") : "";
+    const pow = api.team_power ? (team === selected ? api.team_power(1) : "") : "";
+    ctx.fillText(`${cursor} ${TEAM_NAMES[team]}   FIELD ${WEATHER_NAMES[weatherId]}`, canvas.width / 2, y);
+    if (active) {
+      ctx.font = "13px ui-monospace, Consolas, monospace";
+      ctx.fillStyle = "#b8d5ff";
+      ctx.fillText(`SPD ${speed}  POW ${pow}  KEEPER ${api.team_keeper ? api.team_keeper(1) : "?"}  SPECIAL ${api.team_special_curve ? api.team_special_curve(1) : "?"}`, canvas.width / 2, y + 20);
+    }
+  }
+  ctx.fillStyle = "#fff";
+  ctx.font = "16px system-ui, sans-serif";
+  ctx.fillText("方向键/摇杆选择对手，J/Z/Enter 开赛", canvas.width / 2, startY + 5 * 48 + 18);
+  ctx.textAlign = "left";
+}
 function render(api) {
   const worldW = api.game_field_w();
   const worldH = api.game_field_h();
@@ -416,6 +457,7 @@ function render(api) {
   const screenH = canvas.height;
   const phase = api.game_phase ? api.game_phase() : PHASE.PLAYING;
   const cpuTeam = api.cpu_team_id ? api.cpu_team_id() : 1;
+  const menuTeam = api.menu_opponent_id ? api.menu_opponent_id() : cpuTeam;
   const wins = api.tournament_wins ? api.tournament_wins() : 0;
   const bx = api.ball_x();
   const by = api.ball_y();
@@ -498,7 +540,7 @@ function render(api) {
     ctx.fillText(`ROLE SPD ${rs} POW ${rp} TKL ${rt} GK ${rk}`, 20, 49);
   }
   if (phase === PHASE.TITLE) drawOverlay("熱血足球リーグ", ["WASM 高保真复刻工程", "按 J / Z / Enter 开始"]);
-  if (phase === PHASE.MENU) drawOverlay("MATCH", [`${TEAM_NAMES[0]} vs ${TEAM_NAMES[cpuTeam] || "CPU"}`, `连胜 ${wins}  CPU: SPD ${api.team_speed ? api.team_speed(1) : 1000} / POW ${api.team_power ? api.team_power(1) : 1000}`, `SPECIAL ${api.team_special_curve ? api.team_special_curve(1) : 1000}  FIELD ${WEATHER_NAMES[api.field_weather ? api.field_weather() : 0] || "?"}`, "按 J / Z / Enter 开赛"]);
+  if (phase === PHASE.MENU) drawMenuOverlay(api);
   if (phase === PHASE.KICKOFF) drawOverlay("KICK OFF", ["按 J / Z 开球"]);
   if (phase === PHASE.GOAL) {
     const scorer = api.last_goal_player ? api.last_goal_player() : 255;
@@ -539,7 +581,7 @@ function render(api) {
   const lastTouchPlayer = api.last_touch_player ? api.last_touch_player() : 255;
   const goalInfo = `${api.last_goal_team ? api.last_goal_team() : 0}/${api.last_goal_player ? api.last_goal_player() : 255}/${api.last_assist_player ? api.last_assist_player() : 255}/${api.last_goal_is_own ? api.last_goal_is_own() : 0}`;
   const roleInfo = api.player_role_speed ? `${api.player_role_speed(controlled)}/${api.player_role_power(controlled)}/${api.player_role_stamina(controlled)}/${api.player_role_tackle(controlled)}/${api.player_role_keeper(controlled)}` : "0";
-  stats.textContent = `phase=${phase} period=${period} swap=${swapped} cpu=${cpuTeam} wins=${wins} weather=${weather} hazards=${hazards} wind=${wind} score=${api.score_left()}-${api.score_right()} goal=${goalInfo} fouls=${fouls} foulTeam=${foulTeam} injuries=${injuries} lastHurt=${lastHurt} spShots=${specialShots} lastSp=${lastSpecial} time=${api.match_seconds_left()} tick=${api.game_tick_count()} players=${count} role=${roleInfo} ball=(${bx},${by},z=${bz}) curve=${curve} special=${special} act=${action} charge=${charge} keeper=${keeper}/${hold} touch=${lastTouch}/${lastTouchPlayer} restart=${restart}`;
+  stats.textContent = `phase=${phase} period=${period} swap=${swapped} cpu=${cpuTeam} menu=${menuTeam} wins=${wins} weather=${weather} hazards=${hazards} wind=${wind} score=${api.score_left()}-${api.score_right()} goal=${goalInfo} fouls=${fouls} foulTeam=${foulTeam} injuries=${injuries} lastHurt=${lastHurt} spShots=${specialShots} lastSp=${lastSpecial} time=${api.match_seconds_left()} tick=${api.game_tick_count()} players=${count} role=${roleInfo} ball=(${bx},${by},z=${bz}) curve=${curve} special=${special} act=${action} charge=${charge} keeper=${keeper}/${hold} touch=${lastTouch}/${lastTouchPlayer} restart=${restart}`;
 }
 async function main() {
   const [api, chr, chrAlt, field, metasprites] = await Promise.all([
