@@ -7,6 +7,7 @@ const INPUT = {
   SPRINT: 1 << 5,
   START: 1 << 6,
 };
+
 const PHASE = {
   TITLE: 0,
   MENU: 1,
@@ -23,6 +24,7 @@ const PHASE = {
   PAUSE: 12,
   MATCH_INTRO: 13,
 };
+
 const ACTION = {
   STAND: 0,
   RUN: 1,
@@ -34,6 +36,7 @@ const ACTION = {
   CELEBRATE: 7,
   DEJECT: 8,
 };
+
 const TEAM_NAMES = ["熱血", "花園", "連合", "工業", "選抜", "世界"];
 const WEATHER_NAMES = ["CLEAR", "RAIN", "MUD", "SNOW", "WIND"];
 const ROLE_NAMES = ["GK", "DF", "DF", "FW", "WG", "WG"];
@@ -45,6 +48,7 @@ const PLAYER_NAMES = [
   ["じんない", "あいはら", "みどう", "ゆうじ", "まもる", "けん"],
   ["ジョン", "マイク", "ピエール", "カルロス", "リー", "アレックス"],
 ];
+
 const keys = new Set();
 const canvas = document.querySelector("#game");
 const ctx = canvas.getContext("2d");
@@ -53,9 +57,11 @@ const stick = document.querySelector("#stick");
 const knob = document.querySelector("#knob");
 const btnKick = document.querySelector("#btnKick");
 const btnSprint = document.querySelector("#btnSprint");
+
 const touch = { stickPointer: null, axisX: 0, axisY: 0, kick: false, sprint: false };
 const originalAssets = { chr: null, chrAlt: null, field: null, tileSize: 16, columns: 128, metasprites: [] };
 const sfx = { ctx: null, lastScore: "0-0", lastPhase: PHASE.TITLE, lastSpecial: 0, lastAction: ACTION.STAND, lastKeeper: 0 };
+
 function loadImage(src) {
   return new Promise((resolve, reject) => {
     const img = new Image();
@@ -64,17 +70,20 @@ function loadImage(src) {
     img.src = src;
   });
 }
+
 async function loadJson(src) {
   const response = await fetch(src);
   if (!response.ok) throw new Error(`failed to load ${src}: ${response.status}`);
   return response.json();
 }
+
 window.addEventListener("keydown", (event) => {
   ensureAudio();
   keys.add(event.code);
   if (["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", "Space"].includes(event.code)) event.preventDefault();
 });
 window.addEventListener("keyup", (event) => keys.delete(event.code));
+
 function setTouchButton(button, prop) {
   const down = (event) => { event.preventDefault(); ensureAudio(); button.setPointerCapture?.(event.pointerId); touch[prop] = true; button.classList.add("active"); };
   const up = (event) => { event.preventDefault(); touch[prop] = false; button.classList.remove("active"); };
@@ -85,6 +94,7 @@ function setTouchButton(button, prop) {
 }
 setTouchButton(btnKick, "kick");
 setTouchButton(btnSprint, "sprint");
+
 function ensureAudio() {
   if (sfx.ctx) {
     if (sfx.ctx.state === "suspended") sfx.ctx.resume?.();
@@ -95,6 +105,7 @@ function ensureAudio() {
   sfx.ctx = new AudioCtor();
   return sfx.ctx;
 }
+
 function tone(freq, duration = 0.08, type = "square", gain = 0.045, delay = 0) {
   const ctx = sfx.ctx;
   if (!ctx || ctx.state === "suspended") return;
@@ -110,6 +121,7 @@ function tone(freq, duration = 0.08, type = "square", gain = 0.045, delay = 0) {
   osc.start(now);
   osc.stop(now + duration + 0.02);
 }
+
 function noise(duration = 0.06, gain = 0.035, delay = 0) {
   const ctx = sfx.ctx;
   if (!ctx || ctx.state === "suspended") return;
@@ -124,6 +136,7 @@ function noise(duration = 0.06, gain = 0.035, delay = 0) {
   src.connect(amp).connect(ctx.destination);
   src.start(ctx.currentTime + delay);
 }
+
 function playSfx(name) {
   if (!sfx.ctx || sfx.ctx.state === "suspended") return;
   if (name === "kick") { tone(190, 0.045, "square", 0.035); noise(0.035, 0.018); }
@@ -133,6 +146,7 @@ function playSfx(name) {
   if (name === "whistle") { tone(1350, 0.12, "square", 0.028); tone(1750, 0.08, "square", 0.022, 0.10); }
   if (name === "goal") { tone(523, 0.10, "square", 0.045); tone(659, 0.10, "square", 0.045, 0.10); tone(784, 0.18, "square", 0.05, 0.20); noise(0.22, 0.025, 0.06); }
 }
+
 function updateSfx(api) {
   if (!sfx.ctx || sfx.ctx.state === "suspended") return;
   const score = `${api.score_left()}-${api.score_right()}`;
@@ -152,12 +166,14 @@ function updateSfx(api) {
   sfx.lastAction = action;
   sfx.lastKeeper = keeper;
 }
+
 function resetStick() {
   touch.stickPointer = null;
   touch.axisX = 0;
   touch.axisY = 0;
   knob.style.transform = "translate(-50%, -50%)";
 }
+
 function updateStick(event) {
   const rect = stick.getBoundingClientRect();
   const cx = rect.left + rect.width / 2;
@@ -171,11 +187,13 @@ function updateStick(event) {
   touch.axisY = Math.abs(dy) < max * 0.22 ? 0 : Math.sign(dy);
   knob.style.transform = `translate(calc(-50% + ${dx}px), calc(-50% + ${dy}px))`;
 }
+
 stick.addEventListener("pointerdown", (event) => { event.preventDefault(); touch.stickPointer = event.pointerId; stick.setPointerCapture?.(event.pointerId); updateStick(event); });
 stick.addEventListener("pointermove", (event) => { if (touch.stickPointer === event.pointerId) { event.preventDefault(); updateStick(event); } });
 for (const name of ["pointerup", "pointercancel", "lostpointercapture"]) {
   stick.addEventListener(name, (event) => { if (touch.stickPointer === event.pointerId || name === "lostpointercapture") { event.preventDefault(); resetStick(); } });
 }
+
 function inputBits() {
   let bits = 0;
   if (keys.has("ArrowUp") || keys.has("KeyW") || touch.axisY < 0) bits |= INPUT.UP;
@@ -187,15 +205,18 @@ function inputBits() {
   if (keys.has("Enter") || keys.has("Space")) bits |= INPUT.START;
   return bits;
 }
+
 async function loadWasm() {
-  const response = await fetch("/game_core.wasm");
+  const response = await fetch("../game_core.wasm");
   const bytes = await response.arrayBuffer();
   const result = await WebAssembly.instantiate(bytes, {});
   return result.instance.exports;
 }
+
 function clamp(value, min, max) {
   return Math.max(min, Math.min(max, value));
 }
+
 function drawField(screenW, screenH, worldW = screenW, worldH = screenH, focusX = worldW / 2) {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
   if (originalAssets.field) {
@@ -229,6 +250,7 @@ function drawField(screenW, screenH, worldW = screenW, worldH = screenH, focusX 
   ctx.strokeRect(screenW - 118, screenH / 2 - 82, 88, 164);
   return { sourceX: 0, sourceW: screenW, sourceH: screenH, fullW: screenW, fullH: screenH, screenW, screenH, worldW, worldH, original: false };
 }
+
 function worldToScreen(view, x, y) {
   if (!view || !view.original) {
     return { x: x / view.worldW * view.screenW, y: y / view.worldH * view.screenH };
@@ -240,9 +262,11 @@ function worldToScreen(view, x, y) {
     y: sy * (view.screenH / view.sourceH),
   };
 }
+
 function drawCircle(x, y, r, fill, stroke = "rgba(0,0,0,.35)") {
   ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2); ctx.fillStyle = fill; ctx.fill(); ctx.lineWidth = 2; ctx.strokeStyle = stroke; ctx.stroke();
 }
+
 function drawOriginalTile(tileIndex, x, y, size = 16, alt = false) {
   const img = alt ? originalAssets.chrAlt : originalAssets.chr;
   if (!img) return false;
@@ -252,6 +276,7 @@ function drawOriginalTile(tileIndex, x, y, size = 16, alt = false) {
   ctx.drawImage(img, sx, sy, ts, ts, x, y, size, size);
   return true;
 }
+
 function drawMetaSprite(frame, x, y, team, controlled = false, flip = false) {
   if (!frame) return false;
   const img = team === 1 ? originalAssets.chrAlt : originalAssets.chr;
@@ -259,6 +284,7 @@ function drawMetaSprite(frame, x, y, team, controlled = false, flip = false) {
   const srcTileSize = originalAssets.tileSize;
   const drawScale = controlled ? 2.2 : 2.0;
   const destTileSize = 8 * drawScale;
+
   for (let i = 0; i < frame.count; i++) {
     const tileIndex = frame.tile[i];
     const sx = (tileIndex % originalAssets.columns) * srcTileSize;
@@ -271,6 +297,7 @@ function drawMetaSprite(frame, x, y, team, controlled = false, flip = false) {
     const mirror = flip || team === 1;
     const dx = mirror ? x - rawX - destTileSize : x + rawX;
     const dy = y + rawY;
+
     ctx.save();
     ctx.translate(dx + destTileSize / 2, dy + destTileSize / 2);
     ctx.scale((hFlip ? -1 : 1) * (mirror ? -1 : 1), vFlip ? -1 : 1);
@@ -279,8 +306,9 @@ function drawMetaSprite(frame, x, y, team, controlled = false, flip = false) {
   }
   return true;
 }
+
 function drawOriginalPlayer(x, y, team, controlled = false, frameHint = 0, moving = false, facingX = 1, action = ACTION.STAND) {
-  const frames = originalAssets.metasprites;
+  const frames = originalAssets.metasprites;
   if (frames.length) {
     const runFrames = [0, 1, 2, 1];
     let idx = moving ? runFrames[Math.abs(frameHint) % runFrames.length] : 0;
@@ -302,6 +330,7 @@ function drawOriginalPlayer(x, y, team, controlled = false, frameHint = 0, movin
       return;
     }
   }
+
   const base = 0x120;
   const size = controlled ? 20 : 18;
   const ox = Math.round(x - size);
@@ -309,7 +338,8 @@ function drawOriginalPlayer(x, y, team, controlled = false, frameHint = 0, movin
   const tiles = [base, base + 1, base + 0x20, base + 0x21, base + 0x40, base + 0x41];
   for (let i = 0; i < tiles.length; i++) drawOriginalTile(tiles[i], ox + (i % 2) * size, oy + Math.floor(i / 2) * size, size, team === 1);
 }
-function drawOriginalBall(x, y, z = 0, spin = 0, special = 0) {
+
+function drawOriginalBall(x, y, z = 0, spin = 0, special = 0) {
   const visualY = y - z;
   const shadowScale = Math.max(0.35, 1 - z / 90);
   ctx.save();
@@ -317,7 +347,7 @@ function drawOriginalBall(x, y, z = 0, spin = 0, special = 0) {
   ctx.beginPath();
   ctx.ellipse(Math.round(x), Math.round(y + 5), 9 * shadowScale, 4 * shadowScale, 0, 0, Math.PI * 2);
   ctx.fill();
-  ctx.restore();
+  ctx.restore();
   const tile = 0x1AEC;
   const size = (z > 0 ? 18 : 16) + (special > 0 ? 4 : 0);
   const bob = z > 0 ? Math.sin(spin * 0.9) * 1.5 : 0;
@@ -344,6 +374,7 @@ function drawOriginalBall(x, y, z = 0, spin = 0, special = 0) {
     ctx.restore();
   }
 }
+
 function drawWeather(api, view, screenW, screenH) {
   const weather = api.field_weather ? api.field_weather() : 0;
   const hazards = api.field_hazard_count ? api.field_hazard_count() : 0;
@@ -388,6 +419,7 @@ function drawWeather(api, view, screenW, screenH) {
     ctx.restore();
   }
 }
+
 function drawScore(api, w) {
   const leftScore = api.score_left();
   const rightScore = api.score_right();
@@ -410,6 +442,7 @@ function drawScore(api, w) {
   ctx.fillText(`F ${foulsL}-${foulsR}`, w / 2 + 104, 50);
   ctx.textAlign = "left";
 }
+
 function drawOverlay(title, lines = []) {
   ctx.fillStyle = "rgba(0,0,0,.68)";
   ctx.fillRect(0, 0, canvas.width, canvas.height);
@@ -421,6 +454,7 @@ function drawOverlay(title, lines = []) {
   lines.forEach((line, i) => ctx.fillText(line, canvas.width / 2, 230 + i * 32));
   ctx.textAlign = "left";
 }
+
 function playerLabel(api, index) {
   if (index == null || index >= 255) return "—";
   const role = api.original_player_role ? api.original_player_role(index) : index % 6;
@@ -430,6 +464,7 @@ function playerLabel(api, index) {
   const name = (PLAYER_NAMES[teamId] && PLAYER_NAMES[teamId][role]) || `P${index}`;
   return `${name} ${ROLE_NAMES[role] || ""}`.trim();
 }
+
 function drawMenuOverlay(api) {
   const selected = api.menu_opponent_id ? api.menu_opponent_id() : (api.cpu_team_id ? api.cpu_team_id() : 1);
   const wins = api.tournament_wins ? api.tournament_wins() : 0;
@@ -442,6 +477,7 @@ function drawMenuOverlay(api) {
   ctx.font = "15px ui-monospace, Consolas, monospace";
   ctx.fillStyle = "#d7f7ff";
   ctx.fillText(`熱血  VS  ${TEAM_NAMES[selected] || "CPU"}     WIN ${wins}`, canvas.width / 2, 134);
+
   const startY = 176;
   for (let team = 1; team < TEAM_NAMES.length; team++) {
     const y = startY + (team - 1) * 48;
@@ -473,6 +509,7 @@ function drawMenuOverlay(api) {
   ctx.fillText("方向键/摇杆选择对手，J/Z/Enter 开赛", canvas.width / 2, startY + 5 * 48 + 18);
   ctx.textAlign = "left";
 }
+
 function drawMatchIntroOverlay(api) {
   const cpuTeam = api.cpu_team_id ? api.cpu_team_id() : 1;
   const weather = api.field_weather ? api.field_weather() : 0;
@@ -496,6 +533,7 @@ function drawMatchIntroOverlay(api) {
   ctx.fillText("按 J / Z / Enter 跳过出场演出", canvas.width / 2, 326);
   ctx.textAlign = "left";
 }
+
 function render(api) {
   const worldW = api.game_field_w();
   const worldH = api.game_field_h();
@@ -505,6 +543,7 @@ function render(api) {
   const cpuTeam = api.cpu_team_id ? api.cpu_team_id() : 1;
   const menuTeam = api.menu_opponent_id ? api.menu_opponent_id() : cpuTeam;
   const wins = api.tournament_wins ? api.tournament_wins() : 0;
+
   const bx = api.ball_x();
   const by = api.ball_y();
   const bz = api.ball_z ? api.ball_z() : 0;
@@ -531,6 +570,7 @@ function render(api) {
     entities.push({ type: "player", index: i, groundY: api.player_y(i) });
   }
   entities.sort((a, b) => a.groundY - b.groundY);
+
   for (const entity of entities) {
     if (entity.type === "ball") {
       const b = worldToScreen(view, bx, by);
@@ -566,6 +606,7 @@ function render(api) {
     }
   }
   drawScore(api, screenW);
+
   const stamina = api.player_stamina(controlled);
   const controlledInjury = api.player_injury ? api.player_injury(controlled) : 0;
   ctx.fillStyle = "rgba(0,0,0,.45)";
@@ -585,6 +626,7 @@ function render(api) {
     const rk = api.player_role_keeper(controlled);
     ctx.fillText(`ROLE SPD ${rs} POW ${rp} TKL ${rt} GK ${rk}`, 20, 49);
   }
+
   if (phase === PHASE.TITLE) drawOverlay("熱血足球リーグ", ["WASM 高保真复刻工程", "按 J / Z / Enter 开始"]);
   if (phase === PHASE.MENU) drawMenuOverlay(api);
   if (phase === PHASE.MATCH_INTRO) drawMatchIntroOverlay(api);
@@ -607,6 +649,7 @@ function render(api) {
   if (phase === PHASE.FREE_KICK) drawOverlay("FREE KICK", [`犯规队 ${api.foul_team ? TEAM_NAMES[api.foul_team()] || api.foul_team() : "?"}`, "按 J / Z 继续"]);
   if (phase === PHASE.PENALTY_KICK) drawOverlay("PENALTY KICK", [`禁区犯规：${api.foul_team ? TEAM_NAMES[api.foul_team()] || api.foul_team() : "?"}`, "按 J / Z 射门"]);
   if (phase === PHASE.PAUSE) drawOverlay("PAUSE", ["Start / J / Z 继续", "Sprint + Start：比赛中切换控制球员"]);
+
   const restart = api.restart_team ? api.restart_team() : 0;
   const lastTouch = api.last_touch_team ? api.last_touch_team() : 0;
   const action = api.player_action ? api.player_action(controlled) : 0;
@@ -653,13 +696,14 @@ function render(api) {
     : "????/????/????/g????";
   stats.textContent = `phase=${phase} script=$${script} pauseRet=${pauseReturn} period=${period} swap=${swapped} cpu=${cpuTeam} menu=${menuTeam} wins=${wins} weather=${weather} hazards=${hazards} wind=${wind} score=${api.score_left()}-${api.score_right()} goal=${goalInfo} fouls=${fouls} foulTeam=${foulTeam} injuries=${injuries} lastHurt=${lastHurt} spShots=${specialShots} lastSp=${lastSpecial} time=${api.match_seconds_left()} tick=${api.game_tick_count()} players=${count} role=${roleInfo} pOrig=${playerOrig}@${playerDispatch}/${playerMainDispatch}/${playerAnimDispatch} pRam=${playerRam} ballObj=$${ballObj} ballRam=${ballRam} ballState=${ballState} ballSpeed=${ballSpeedRam} owner=${originalOwner} ball=(${bx},${by},z=${bz}) curve=${curve} special=${special} act=${action} charge=${charge} keeper=${keeper}/${hold} touch=${lastTouch}/${lastTouchPlayer} restart=${restart}`;
 }
+
 async function main() {
   const [api, chr, chrAlt, field, metasprites] = await Promise.all([
     loadWasm(),
-    loadImage("/original/chr_sprite_pal_01.png"),
-    loadImage("/original/chr_sprite_pal_08.png"),
-    loadImage("/original/field_grass.png"),
-    loadJson("/original/metasprites.json"),
+    loadImage("../original/chr_sprite_pal_01.png"),
+    loadImage("../original/chr_sprite_pal_08.png"),
+    loadImage("../original/field_grass.png"),
+    loadJson("../original/metasprites.json"),
   ]);
   originalAssets.chr = chr;
   originalAssets.chrAlt = chrAlt;
@@ -668,6 +712,7 @@ async function main() {
   api.game_init();
   sfx.lastScore = `${api.score_left()}-${api.score_right()}`;
   sfx.lastPhase = api.game_phase ? api.game_phase() : PHASE.TITLE;
+
   let last = performance.now();
   let acc = 0;
   const stepMs = 1000 / 60;
@@ -681,4 +726,5 @@ async function main() {
   }
   requestAnimationFrame(frame);
 }
+
 main().catch((err) => { console.error(err); stats.textContent = `启动失败：${err.message}`; });
