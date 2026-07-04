@@ -633,7 +633,9 @@ function render(api) {
   const playerOrig = api.original_player_motion ? `${api.original_player_motion(controlled).toString(16).padStart(2, "0")}/${api.original_player_action(controlled).toString(16).padStart(2, "0")}/${api.original_player_state(controlled).toString(16).padStart(2, "0")}` : "??/??/??";
   const playerDispatch = api.original_player_current_motion_dispatch_addr ? api.original_player_current_motion_dispatch_addr(controlled).toString(16).padStart(4, "0") : "????";
   const playerMainDispatch = api.original_player_current_main_motion_dispatch_addr ? api.original_player_current_main_motion_dispatch_addr(controlled).toString(16).padStart(4, "0") : "????";
-  const playerAnimDispatch = api.original_player_current_animation_script_dispatch_addr ? api.original_player_current_animation_script_dispatch_addr(controlled).toString(16).padStart(4, "0") : "????";
+  const playerAnimDispatch = api.original_player_current_animation_script_addr
+    ? api.original_player_current_animation_script_addr(controlled).toString(16).padStart(4, "0")
+    : (api.original_player_current_animation_script_dispatch_addr ? api.original_player_current_animation_script_dispatch_addr(controlled).toString(16).padStart(4, "0") : "????");
   const playerRam = api.original_player_x_lo
     ? `${api.original_player_x_hi(controlled).toString(16).padStart(2, "0")}${api.original_player_x_lo(controlled).toString(16).padStart(2, "0")}/${api.original_player_y_hi(controlled).toString(16).padStart(2, "0")}${api.original_player_y_lo(controlled).toString(16).padStart(2, "0")}/${api.original_player_z_hi(controlled).toString(16).padStart(2, "0")}${api.original_player_z_lo(controlled).toString(16).padStart(2, "0")}`
     : "????/????/????";
