@@ -394,8 +394,9 @@ function drawScore(api, w) {
   const seconds = api.match_seconds_left ? api.match_seconds_left() : 0;
   const period = api.current_period ? api.current_period() : 1;
   const cpuTeam = api.cpu_team_id ? api.cpu_team_id() : 1;
-  const mm = String(Math.floor(seconds / 60)).padStart(1, "0");
-  const ss = String(seconds % 60).padStart(2, "0");
+  const timeText = api.original_time_minutes
+    ? `${api.original_time_minutes()}:${api.original_time_seconds_tens()}${api.original_time_seconds_ones()}`
+    : `${String(Math.floor(seconds / 60)).padStart(1, "0")}:${String(seconds % 60).padStart(2, "0")}`;
   ctx.fillStyle = "rgba(0,0,0,.62)";
   ctx.fillRect(w / 2 - 138, 10, 276, 46);
   ctx.fillStyle = "#fff";
@@ -403,7 +404,7 @@ function drawScore(api, w) {
   ctx.textAlign = "center";
   ctx.fillText(`${TEAM_NAMES[0]} ${leftScore} - ${rightScore} ${TEAM_NAMES[cpuTeam] || "CPU"}`, w / 2, 32);
   ctx.font = "12px ui-monospace, Consolas, monospace";
-  ctx.fillText(`${period}H  ${mm}:${ss}`, w / 2, 50);
+  ctx.fillText(`${period}H  ${timeText}`, w / 2, 50);
   const foulsL = api.foul_count_left ? api.foul_count_left() : 0;
   const foulsR = api.foul_count_right ? api.foul_count_right() : 0;
   ctx.fillText(`F ${foulsL}-${foulsR}`, w / 2 + 104, 50);
