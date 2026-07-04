@@ -28,6 +28,7 @@ const ACTION = {
   KEEPER_SAVE: 5,
   HEADER: 6,
 };
+const TEAM_NAMES = ["熱血", "花園", "連合", "工業", "選抜", "世界"];
 const keys = new Set();
 const canvas = document.querySelector("#game");
 const ctx = canvas.getContext("2d");
@@ -261,16 +262,17 @@ function drawScore(api, w) {
   const rightScore = api.score_right();
   const seconds = api.match_seconds_left ? api.match_seconds_left() : 0;
   const period = api.current_period ? api.current_period() : 1;
+  const cpuTeam = api.cpu_team_id ? api.cpu_team_id() : 1;
   const mm = String(Math.floor(seconds / 60)).padStart(1, "0");
   const ss = String(seconds % 60).padStart(2, "0");
   ctx.fillStyle = "rgba(0,0,0,.62)";
-  ctx.fillRect(w / 2 - 92, 10, 184, 42);
+  ctx.fillRect(w / 2 - 138, 10, 276, 46);
   ctx.fillStyle = "#fff";
-  ctx.font = "bold 22px ui-monospace, Consolas, monospace";
+  ctx.font = "bold 18px ui-monospace, Consolas, monospace";
   ctx.textAlign = "center";
-  ctx.fillText(`${leftScore} - ${rightScore}`, w / 2, 33);
+  ctx.fillText(`${TEAM_NAMES[0]} ${leftScore} - ${rightScore} ${TEAM_NAMES[cpuTeam] || "CPU"}`, w / 2, 32);
   ctx.font = "12px ui-monospace, Consolas, monospace";
-  ctx.fillText(`${period}H  ${mm}:${ss}`, w / 2, 48);
+  ctx.fillText(`${period}H  ${mm}:${ss}`, w / 2, 50);
   ctx.textAlign = "left";
 }
 function drawOverlay(title, lines = []) {
@@ -290,6 +292,8 @@ function render(api) {
   const screenW = canvas.width;
   const screenH = canvas.height;
   const phase = api.game_phase ? api.game_phase() : PHASE.PLAYING;
+  const cpuTeam = api.cpu_team_id ? api.cpu_team_id() : 1;
+  const wins = api.tournament_wins ? api.tournament_wins() : 0;
   const bx = api.ball_x();
   const by = api.ball_y();
   const bz = api.ball_z ? api.ball_z() : 0;
@@ -331,11 +335,11 @@ function render(api) {
   ctx.fillStyle = stamina > 30 ? "#62e572" : "#ffcc4d";
   ctx.fillRect(18, 18, Math.max(0, stamina) * 1.28, 12);
   if (phase === PHASE.TITLE) drawOverlay("熱血足球リーグ", ["WASM 高保真复刻工程", "按 J / Z / Enter 开始"]);
-  if (phase === PHASE.MENU) drawOverlay("MATCH", ["1P vs CPU", "按 J / Z / Enter 开赛"]);
+  if (phase === PHASE.MENU) drawOverlay("MATCH", [`${TEAM_NAMES[0]} vs ${TEAM_NAMES[cpuTeam] || "CPU"}`, `连胜 ${wins}  CPU: SPD ${api.team_speed ? api.team_speed(1) : 1000} / POW ${api.team_power ? api.team_power(1) : 1000}`, "按 J / Z / Enter 开赛"]);
   if (phase === PHASE.KICKOFF) drawOverlay("KICK OFF", ["按 J / Z 开球"]);
   if (phase === PHASE.GOAL) drawOverlay("GOAL!", [`比分 ${api.score_left()} - ${api.score_right()}`]);
   if (phase === PHASE.HALFTIME) drawOverlay("HALF TIME", ["换边，下半场准备", "按 J / Z 继续"]);
-  if (phase === PHASE.FULL_TIME) drawOverlay("FULL TIME", [`最终比分 ${api.score_left()} - ${api.score_right()}`, "按 J / Z 返回菜单"]);
+  if (phase === PHASE.FULL_TIME) drawOverlay("FULL TIME", [`最终比分 ${api.score_left()} - ${api.score_right()}`, api.score_left() > api.score_right() ? "胜利：下场对手升级" : "败北/平局：重新挑战", "按 J / Z 返回菜单"]);
   if (phase === PHASE.THROW_IN) drawOverlay("THROW IN", ["按 J / Z 继续"]);
   if (phase === PHASE.GOAL_KICK) drawOverlay("GOAL KICK", ["按 J / Z 继续"]);
   if (phase === PHASE.CORNER_KICK) drawOverlay("CORNER KICK", ["按 J / Z 继续"]);
@@ -349,7 +353,7 @@ function render(api) {
   const special = api.ball_special_timer ? api.ball_special_timer() : 0;
   const period = api.current_period ? api.current_period() : 1;
   const swapped = api.side_swapped ? api.side_swapped() : 0;
-  stats.textContent = `phase=${phase} period=${period} swap=${swapped} score=${api.score_left()}-${api.score_right()} time=${api.match_seconds_left()} tick=${api.game_tick_count()} players=${count} ball=(${bx},${by},z=${bz}) curve=${curve} special=${special} act=${action} charge=${charge} keeper=${keeper}/${hold} touch=${lastTouch} restart=${restart}`;
+  stats.textContent = `phase=${phase} period=${period} swap=${swapped} cpu=${cpuTeam} wins=${wins} score=${api.score_left()}-${api.score_right()} time=${api.match_seconds_left()} tick=${api.game_tick_count()} players=${count} ball=(${bx},${by},z=${bz}) curve=${curve} special=${special} act=${action} charge=${charge} keeper=${keeper}/${hold} touch=${lastTouch} restart=${restart}`;
 }
 async function main() {
   const [api, chr, chrAlt, field, metasprites] = await Promise.all([
