@@ -25,6 +25,7 @@ const ACTION = {
   TACKLE: 3,
   FALL: 4,
   KEEPER_SAVE: 5,
+  HEADER: 6,
 };
 const keys = new Set();
 const canvas = document.querySelector("#game");
@@ -200,6 +201,7 @@ function drawOriginalPlayer(x, y, team, controlled = false, frameHint = 0, movin
     if (action === ACTION.TACKLE) idx = 8;
     if (action === ACTION.FALL) idx = 4;
     if (action === ACTION.KEEPER_SAVE) idx = 10;
+    if (action === ACTION.HEADER) idx = 6;
     idx = Math.min(idx, frames.length - 1);
     const flip = facingX < 0;
     if (drawMetaSprite(frames[idx], x, y, team, controlled, flip)) {
