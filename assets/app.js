@@ -357,6 +357,12 @@ function render(api) {
     if (api.player_active && !api.player_active(i)) continue;
     const p = worldToScreen(view, api.player_x(i), api.player_y(i));
     drawCircle(p.x + 3, p.y + 5, api.player_radius(i), "rgba(0,0,0,.20)", "transparent");
+    const injury = api.player_injury ? api.player_injury(i) : 0;
+    if (injury > 0) {
+      ctx.strokeStyle = `rgba(255,70,70,${Math.min(0.85, 0.25 + injury / 130)})`;
+      ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.arc(p.x, p.y - 18, 8 + injury / 12, 0, Math.PI * 2); ctx.stroke();
+    }
   }
   const entities = [{ type: "ball", groundY: by }];
   for (let i = 0; i < count; i++) {
@@ -381,10 +387,14 @@ function render(api) {
   }
   drawScore(api, screenW);
   const stamina = api.player_stamina(controlled);
+  const controlledInjury = api.player_injury ? api.player_injury(controlled) : 0;
   ctx.fillStyle = "rgba(0,0,0,.45)";
   ctx.fillRect(16, 16, 132, 16);
   ctx.fillStyle = stamina > 30 ? "#62e572" : "#ffcc4d";
   ctx.fillRect(18, 18, Math.max(0, stamina) * 1.28, 12);
+  ctx.fillStyle = "#ff7777";
+  ctx.font = "11px ui-monospace, Consolas, monospace";
+  ctx.fillText(`INJ ${controlledInjury}`, 154, 28);
   if (phase === PHASE.TITLE) drawOverlay("熱血足球リーグ", ["WASM 高保真复刻工程", "按 J / Z / Enter 开始"]);
   if (phase === PHASE.MENU) drawOverlay("MATCH", [`${TEAM_NAMES[0]} vs ${TEAM_NAMES[cpuTeam] || "CPU"}`, `连胜 ${wins}  CPU: SPD ${api.team_speed ? api.team_speed(1) : 1000} / POW ${api.team_power ? api.team_power(1) : 1000}`, `SPECIAL ${api.team_special_curve ? api.team_special_curve(1) : 1000}  FIELD ${WEATHER_NAMES[api.field_weather ? api.field_weather() : 0] || "?"}`, "按 J / Z / Enter 开赛"]);
   if (phase === PHASE.KICKOFF) drawOverlay("KICK OFF", ["按 J / Z 开球"]);
@@ -413,7 +423,9 @@ function render(api) {
   const wind = `${api.field_wind_x ? api.field_wind_x() : 0}/${api.field_wind_y ? api.field_wind_y() : 0}`;
   const specialShots = `${api.special_count_left ? api.special_count_left() : 0}-${api.special_count_right ? api.special_count_right() : 0}`;
   const lastSpecial = api.last_special_team ? api.last_special_team() : 0;
-  stats.textContent = `phase=${phase} period=${period} swap=${swapped} cpu=${cpuTeam} wins=${wins} weather=${weather} hazards=${hazards} wind=${wind} score=${api.score_left()}-${api.score_right()} fouls=${fouls} foulTeam=${foulTeam} spShots=${specialShots} lastSp=${lastSpecial} time=${api.match_seconds_left()} tick=${api.game_tick_count()} players=${count} ball=(${bx},${by},z=${bz}) curve=${curve} special=${special} act=${action} charge=${charge} keeper=${keeper}/${hold} touch=${lastTouch} restart=${restart}`;
+  const injuries = `${api.injury_count_left ? api.injury_count_left() : 0}-${api.injury_count_right ? api.injury_count_right() : 0}`;
+  const lastHurt = `${api.last_hurt_team ? api.last_hurt_team() : 0}/${api.last_hurt_player ? api.last_hurt_player() : 0}`;
+  stats.textContent = `phase=${phase} period=${period} swap=${swapped} cpu=${cpuTeam} wins=${wins} weather=${weather} hazards=${hazards} wind=${wind} score=${api.score_left()}-${api.score_right()} fouls=${fouls} foulTeam=${foulTeam} injuries=${injuries} lastHurt=${lastHurt} spShots=${specialShots} lastSp=${lastSpecial} time=${api.match_seconds_left()} tick=${api.game_tick_count()} players=${count} ball=(${bx},${by},z=${bz}) curve=${curve} special=${special} act=${action} charge=${charge} keeper=${keeper}/${hold} touch=${lastTouch} restart=${restart}`;
 }
 async function main() {
   const [api, chr, chrAlt, field, metasprites] = await Promise.all([
