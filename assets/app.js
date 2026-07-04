@@ -76,6 +76,9 @@ async function loadJson(src) {
   if (!response.ok) throw new Error(`failed to load ${src}: ${response.status}`);
   return response.json();
 }
+function assetUrl(path) {
+  return new URL(path, import.meta.url).toString();
+}
 
 window.addEventListener("keydown", (event) => {
   ensureAudio();
@@ -207,7 +210,7 @@ function inputBits() {
 }
 
 async function loadWasm() {
-  const response = await fetch("../game_core.219265.wasm");
+  const response = await fetch(assetUrl("../game_core.219265.wasm"));
   const bytes = await response.arrayBuffer();
   const result = await WebAssembly.instantiate(bytes, {});
   return result.instance.exports;
@@ -700,10 +703,10 @@ function render(api) {
 async function main() {
   const [api, chr, chrAlt, field, metasprites] = await Promise.all([
     loadWasm(),
-    loadImage("../original/chr_sprite_pal_01.png"),
-    loadImage("../original/chr_sprite_pal_08.png"),
-    loadImage("../original/field_grass.png"),
-    loadJson("../original/metasprites.json"),
+    loadImage(assetUrl("../original/chr_sprite_pal_01.png")),
+    loadImage(assetUrl("../original/chr_sprite_pal_08.png")),
+    loadImage(assetUrl("../original/field_grass.png")),
+    loadJson(assetUrl("../original/metasprites.json")),
   ]);
   originalAssets.chr = chr;
   originalAssets.chrAlt = chrAlt;
