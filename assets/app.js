@@ -44,6 +44,7 @@ const btnKick = document.querySelector("#btnKick");
 const btnSprint = document.querySelector("#btnSprint");
 const touch = { stickPointer: null, axisX: 0, axisY: 0, kick: false, sprint: false };
 const originalAssets = { chr: null, chrAlt: null, field: null, tileSize: 16, columns: 128, metasprites: [] };
+const sfx = { ctx: null, lastScore: "0-0", lastPhase: PHASE.TITLE, lastSpecial: 0, lastAction: ACTION.STAND, lastKeeper: 0 };
 function loadImage(src) {
   return new Promise((resolve, reject) => {
     const img = new Image();
@@ -58,12 +59,13 @@ async function loadJson(src) {
   return response.json();
 }
 window.addEventListener("keydown", (event) => {
+  ensureAudio();
   keys.add(event.code);
   if (["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", "Space"].includes(event.code)) event.preventDefault();
 });
 window.addEventListener("keyup", (event) => keys.delete(event.code));
 function setTouchButton(button, prop) {
-  const down = (event) => { event.preventDefault(); button.setPointerCapture?.(event.pointerId); touch[prop] = true; button.classList.add("active"); };
+  const down = (event) => { event.preventDefault(); ensureAudio(); button.setPointerCapture?.(event.pointerId); touch[prop] = true; button.classList.add("active"); };
   const up = (event) => { event.preventDefault(); touch[prop] = false; button.classList.remove("active"); };
   button.addEventListener("pointerdown", down);
   button.addEventListener("pointerup", up);
@@ -72,6 +74,73 @@ function setTouchButton(button, prop) {
 }
 setTouchButton(btnKick, "kick");
 setTouchButton(btnSprint, "sprint");
+function ensureAudio() {
+  if (sfx.ctx) {
+    if (sfx.ctx.state === "suspended") sfx.ctx.resume?.();
+    return sfx.ctx;
+  }
+  const AudioCtor = window.AudioContext || window.webkitAudioContext;
+  if (!AudioCtor) return null;
+  sfx.ctx = new AudioCtor();
+  return sfx.ctx;
+}
+function tone(freq, duration = 0.08, type = "square", gain = 0.045, delay = 0) {
+  const ctx = sfx.ctx;
+  if (!ctx || ctx.state === "suspended") return;
+  const now = ctx.currentTime + delay;
+  const osc = ctx.createOscillator();
+  const amp = ctx.createGain();
+  osc.type = type;
+  osc.frequency.setValueAtTime(freq, now);
+  amp.gain.setValueAtTime(0.0001, now);
+  amp.gain.exponentialRampToValueAtTime(gain, now + 0.006);
+  amp.gain.exponentialRampToValueAtTime(0.0001, now + duration);
+  osc.connect(amp).connect(ctx.destination);
+  osc.start(now);
+  osc.stop(now + duration + 0.02);
+}
+function noise(duration = 0.06, gain = 0.035, delay = 0) {
+  const ctx = sfx.ctx;
+  if (!ctx || ctx.state === "suspended") return;
+  const samples = Math.max(1, Math.floor(ctx.sampleRate * duration));
+  const buffer = ctx.createBuffer(1, samples, ctx.sampleRate);
+  const data = buffer.getChannelData(0);
+  for (let i = 0; i < samples; i++) data[i] = (Math.random() * 2 - 1) * (1 - i / samples);
+  const src = ctx.createBufferSource();
+  const amp = ctx.createGain();
+  src.buffer = buffer;
+  amp.gain.value = gain;
+  src.connect(amp).connect(ctx.destination);
+  src.start(ctx.currentTime + delay);
+}
+function playSfx(name) {
+  if (!sfx.ctx || sfx.ctx.state === "suspended") return;
+  if (name === "kick") { tone(190, 0.045, "square", 0.035); noise(0.035, 0.018); }
+  if (name === "tackle") { noise(0.11, 0.045); tone(95, 0.08, "sawtooth", 0.025); }
+  if (name === "special") { tone(330, 0.07, "square", 0.04); tone(660, 0.09, "square", 0.035, 0.055); tone(990, 0.08, "triangle", 0.03, 0.12); }
+  if (name === "keeper") { tone(150, 0.06, "triangle", 0.04); noise(0.05, 0.025, 0.02); }
+  if (name === "whistle") { tone(1350, 0.12, "square", 0.028); tone(1750, 0.08, "square", 0.022, 0.10); }
+  if (name === "goal") { tone(523, 0.10, "square", 0.045); tone(659, 0.10, "square", 0.045, 0.10); tone(784, 0.18, "square", 0.05, 0.20); noise(0.22, 0.025, 0.06); }
+}
+function updateSfx(api) {
+  if (!sfx.ctx || sfx.ctx.state === "suspended") return;
+  const score = `${api.score_left()}-${api.score_right()}`;
+  const phase = api.game_phase ? api.game_phase() : PHASE.PLAYING;
+  const action = api.player_action ? api.player_action(api.controlled_player ? api.controlled_player() : 0) : ACTION.STAND;
+  const special = api.ball_special_timer ? api.ball_special_timer() : 0;
+  const keeper = api.keeper_outcome ? api.keeper_outcome() : 0;
+  if (score !== sfx.lastScore) playSfx("goal");
+  else if (phase !== sfx.lastPhase && [PHASE.KICKOFF, PHASE.FREE_KICK, PHASE.PENALTY_KICK, PHASE.THROW_IN, PHASE.GOAL_KICK, PHASE.CORNER_KICK].includes(phase)) playSfx("whistle");
+  if (special > 0 && sfx.lastSpecial === 0) playSfx("special");
+  if (action === ACTION.KICK && sfx.lastAction !== ACTION.KICK) playSfx("kick");
+  if (action === ACTION.TACKLE && sfx.lastAction !== ACTION.TACKLE) playSfx("tackle");
+  if (keeper > 0 && sfx.lastKeeper === 0) playSfx("keeper");
+  sfx.lastScore = score;
+  sfx.lastPhase = phase;
+  sfx.lastSpecial = special;
+  sfx.lastAction = action;
+  sfx.lastKeeper = keeper;
+}
 function resetStick() {
   touch.stickPointer = null;
   touch.axisX = 0;
@@ -485,6 +554,8 @@ async function main() {
   originalAssets.field = field;
   originalAssets.metasprites = metasprites.frames || [];
   api.game_init();
+  sfx.lastScore = `${api.score_left()}-${api.score_right()}`;
+  sfx.lastPhase = api.game_phase ? api.game_phase() : PHASE.TITLE;
   let last = performance.now();
   let acc = 0;
   const stepMs = 1000 / 60;
@@ -493,6 +564,7 @@ async function main() {
     acc += now - last; last = now; acc = Math.min(acc, stepMs * 8);
     while (acc >= stepMs) { api.game_tick(inputBits()); acc -= stepMs; }
     render(api);
+    updateSfx(api);
     requestAnimationFrame(frame);
   }
   requestAnimationFrame(frame);
