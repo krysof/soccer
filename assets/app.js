@@ -17,6 +17,7 @@ const PHASE = {
   THROW_IN: 6,
   GOAL_KICK: 7,
   CORNER_KICK: 8,
+  HALFTIME: 9,
 };
 const ACTION = {
   STAND: 0,
@@ -250,6 +251,7 @@ function drawScore(api, w) {
   const leftScore = api.score_left();
   const rightScore = api.score_right();
   const seconds = api.match_seconds_left ? api.match_seconds_left() : 0;
+  const period = api.current_period ? api.current_period() : 1;
   const mm = String(Math.floor(seconds / 60)).padStart(1, "0");
   const ss = String(seconds % 60).padStart(2, "0");
   ctx.fillStyle = "rgba(0,0,0,.62)";
@@ -259,7 +261,7 @@ function drawScore(api, w) {
   ctx.textAlign = "center";
   ctx.fillText(`${leftScore} - ${rightScore}`, w / 2, 33);
   ctx.font = "12px ui-monospace, Consolas, monospace";
-  ctx.fillText(`${mm}:${ss}`, w / 2, 48);
+  ctx.fillText(`${period}H  ${mm}:${ss}`, w / 2, 48);
   ctx.textAlign = "left";
 }
 function drawOverlay(title, lines = []) {
@@ -322,6 +324,7 @@ function render(api) {
   if (phase === PHASE.MENU) drawOverlay("MATCH", ["1P vs CPU", "按 J / Z / Enter 开赛"]);
   if (phase === PHASE.KICKOFF) drawOverlay("KICK OFF", ["按 J / Z 开球"]);
   if (phase === PHASE.GOAL) drawOverlay("GOAL!", [`比分 ${api.score_left()} - ${api.score_right()}`]);
+  if (phase === PHASE.HALFTIME) drawOverlay("HALF TIME", ["换边，下半场准备", "按 J / Z 继续"]);
   if (phase === PHASE.FULL_TIME) drawOverlay("FULL TIME", [`最终比分 ${api.score_left()} - ${api.score_right()}`, "按 J / Z 返回菜单"]);
   if (phase === PHASE.THROW_IN) drawOverlay("THROW IN", ["按 J / Z 继续"]);
   if (phase === PHASE.GOAL_KICK) drawOverlay("GOAL KICK", ["按 J / Z 继续"]);
@@ -333,7 +336,9 @@ function render(api) {
   const curve = api.ball_curve ? api.ball_curve() : 0;
   const keeper = api.keeper_outcome ? api.keeper_outcome() : 0;
   const hold = api.keeper_hold_timer ? api.keeper_hold_timer() : 0;
-  stats.textContent = `phase=${phase} score=${api.score_left()}-${api.score_right()} time=${api.match_seconds_left()} tick=${api.game_tick_count()} players=${count} ball=(${bx},${by},z=${bz}) curve=${curve} act=${action} charge=${charge} keeper=${keeper}/${hold} touch=${lastTouch} restart=${restart}`;
+  const period = api.current_period ? api.current_period() : 1;
+  const swapped = api.side_swapped ? api.side_swapped() : 0;
+  stats.textContent = `phase=${phase} period=${period} swap=${swapped} score=${api.score_left()}-${api.score_right()} time=${api.match_seconds_left()} tick=${api.game_tick_count()} players=${count} ball=(${bx},${by},z=${bz}) curve=${curve} act=${action} charge=${charge} keeper=${keeper}/${hold} touch=${lastTouch} restart=${restart}`;
 }
 async function main() {
   const [api, chr, chrAlt, field, metasprites] = await Promise.all([
