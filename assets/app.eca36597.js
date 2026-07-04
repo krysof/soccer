@@ -57,6 +57,9 @@ const stick = document.querySelector("#stick");
 const knob = document.querySelector("#knob");
 const btnKick = document.querySelector("#btnKick");
 const btnSprint = document.querySelector("#btnSprint");
+const DEBUG = new URLSearchParams(window.location.search).get("debug") === "1";
+document.body.classList.toggle("debug", DEBUG);
+stats.hidden = !DEBUG;
 
 const touch = { stickPointer: null, axisX: 0, axisY: 0, kick: false, sprint: false };
 const originalAssets = { chr: null, chrAlt: null, field: null, tileSize: 16, columns: 128, metasprites: [] };
@@ -76,8 +79,35 @@ async function loadJson(src) {
   if (!response.ok) throw new Error(`failed to load ${src}: ${response.status}`);
   return response.json();
 }
-function assetUrl(path) {
+
+async function withFallback(label, primary, fallback, loader) {
+  try {
+    return await loader(primary);
+  } catch (primaryError) {
+    if (!fallback || fallback === primary) throw primaryError;
+    console.warn(`primary asset failed for ${label}: ${primaryError.message}; retrying ${fallback}`);
+    try {
+      return await loader(fallback);
+    } catch (fallbackError) {
+      throw new Error(`${label}: ${primaryError.message}; fallback failed: ${fallbackError.message}`);
+    }
+  }
+}
+
+function assetUrl(path) {
   return new URL(path, import.meta.url).toString();
+}
+
+function rootAssetUrl(path) {
+  return new URL(path, document.baseURI).toString();
+}
+
+function originalAssetUrl(name) {
+  return assetUrl(`../original/${name}`);
+}
+
+function originalFallbackUrl(name) {
+  return rootAssetUrl(`original/${name}`);
 }
 
 window.addEventListener("keydown", (event) => {
@@ -210,7 +240,12 @@ function inputBits() {
 }
 
 async function loadWasm() {
-  const response = await fetch(assetUrl("../game_core.221473.wasm"));
+  const primary = assetUrl("../game_core.221473.wasm");
+  const fallback = rootAssetUrl("game_core.wasm");
+  const response = await withFallback("game_core.wasm", primary, fallback, (url) => fetch(url).then((r) => {
+    if (!r.ok) throw new Error(`failed to load ${url}: ${r.status}`);
+    return r;
+  }));
   const bytes = await response.arrayBuffer();
   const result = await WebAssembly.instantiate(bytes, {});
   return result.instance.exports;
@@ -312,7 +347,7 @@ function drawMetaSprite(frame, x, y, team, controlled = false, flip = false, tea
 
 function drawOriginalPlayer(x, y, team, controlled = false, frameHint = 0, moving = false, facingX = 1, action = ACTION.STAND, originalAnimation = null) {
   const frames = originalAssets.metasprites;
-  if (frames.length) {
+  if (frames.length) {
     if (Number.isFinite(originalAnimation)) {
       const originalIdx = originalAnimation & 0x7F;
       if (originalIdx < frames.length) {
@@ -326,7 +361,7 @@ function drawOriginalPlayer(x, y, team, controlled = false, frameHint = 0, movin
           return;
         }
       }
-    }
+    }
     const runFrames = [0, 1, 2, 1];
     let idx = moving ? runFrames[Math.abs(frameHint) % runFrames.length] : 0;
     if (action === ACTION.KICK) idx = 3;
@@ -356,8 +391,7 @@ function drawOriginalPlayer(x, y, team, controlled = false, frameHint = 0, movin
   for (let i = 0; i < tiles.length; i++) drawOriginalTile(tiles[i], ox + (i % 2) * size, oy + Math.floor(i / 2) * size, size, team === 1);
 }
 
-function drawOriginalBall(x, y, z = 0, spin = 0, special = 0, originalAnimation = null) {
-
+function drawOriginalBall(x, y, z = 0, spin = 0, special = 0, originalAnimation = null) {
   const visualY = y - z;
   const shadowScale = Math.max(0.35, 1 - z / 90);
   ctx.save();
@@ -721,16 +755,19 @@ function render(api) {
   const ballSpeedRam = api.original_ball_spd_x_lo
     ? `${api.original_ball_spd_x_hi().toString(16).padStart(2, "0")}${api.original_ball_spd_x_lo().toString(16).padStart(2, "0")}/${api.original_ball_spd_y_hi().toString(16).padStart(2, "0")}${api.original_ball_spd_y_lo().toString(16).padStart(2, "0")}/${api.original_ball_spd_z_hi().toString(16).padStart(2, "0")}${api.original_ball_spd_z_lo().toString(16).padStart(2, "0")}/g${api.original_ball_gravity_hi().toString(16).padStart(2, "0")}${api.original_ball_gravity_lo().toString(16).padStart(2, "0")}`
     : "????/????/????/g????";
-  stats.textContent = `phase=${phase} script=$${script} pauseRet=${pauseReturn} period=${period} swap=${swapped} cpu=${cpuTeam} menu=${menuTeam} wins=${wins} weather=${weather} hazards=${hazards} wind=${wind} score=${api.score_left()}-${api.score_right()} goal=${goalInfo} fouls=${fouls} foulTeam=${foulTeam} injuries=${injuries} lastHurt=${lastHurt} spShots=${specialShots} lastSp=${lastSpecial} time=${api.match_seconds_left()} tick=${api.game_tick_count()} players=${count} role=${roleInfo} pOrig=${playerOrig}@${playerDispatch}/${playerMainDispatch}/${playerAnimDispatch} pRam=${playerRam} ballObj=$${ballObj}@${ballDispatch} ballRam=${ballRam} ballState=${ballState} ballAnim=${ballAnim} ballSpeed=${ballSpeedRam} owner=${originalOwner} ball=(${bx},${by},z=${bz}) curve=${curve} special=${special} act=${action} charge=${charge} keeper=${keeper}/${hold} touch=${lastTouch}/${lastTouchPlayer} restart=${restart}`;
+  if (DEBUG) {
+    stats.hidden = false;
+    stats.textContent = `phase=${phase} script=$${script} pauseRet=${pauseReturn} period=${period} swap=${swapped} cpu=${cpuTeam} menu=${menuTeam} wins=${wins} weather=${weather} hazards=${hazards} wind=${wind} score=${api.score_left()}-${api.score_right()} goal=${goalInfo} fouls=${fouls} foulTeam=${foulTeam} injuries=${injuries} lastHurt=${lastHurt} spShots=${specialShots} lastSp=${lastSpecial} time=${api.match_seconds_left()} tick=${api.game_tick_count()} players=${count} role=${roleInfo} pOrig=${playerOrig}@${playerDispatch}/${playerMainDispatch}/${playerAnimDispatch} pRam=${playerRam} ballObj=$${ballObj}@${ballDispatch} ballRam=${ballRam} ballState=${ballState} ballAnim=${ballAnim} ballSpeed=${ballSpeedRam} owner=${originalOwner} ball=(${bx},${by},z=${bz}) curve=${curve} special=${special} act=${action} charge=${charge} keeper=${keeper}/${hold} touch=${lastTouch}/${lastTouchPlayer} restart=${restart}`;
+  }
 }
 
 async function main() {
   const [api, chr, chrAlt, field, metasprites] = await Promise.all([
     loadWasm(),
-    loadImage(assetUrl("../original/chr_sprite_pal_01.png")),
-    loadImage(assetUrl("../original/chr_sprite_pal_08.png")),
-    loadImage(assetUrl("../original/field_grass.png")),
-    loadJson(assetUrl("../original/metasprites.json")),
+    withFallback("chr_sprite_pal_01.png", originalAssetUrl("chr_sprite_pal_01.png"), originalFallbackUrl("chr_sprite_pal_01.png"), loadImage),
+    withFallback("chr_sprite_pal_08.png", originalAssetUrl("chr_sprite_pal_08.png"), originalFallbackUrl("chr_sprite_pal_08.png"), loadImage),
+    withFallback("field_grass.png", originalAssetUrl("field_grass.png"), originalFallbackUrl("field_grass.png"), loadImage),
+    withFallback("metasprites.json", originalAssetUrl("metasprites.json"), originalFallbackUrl("metasprites.json"), loadJson),
   ]);
   originalAssets.chr = chr;
   originalAssets.chrAlt = chrAlt;
@@ -754,4 +791,4 @@ async function main() {
   requestAnimationFrame(frame);
 }
 
-main().catch((err) => { console.error(err); stats.textContent = `启动失败：${err.message}`; });
+main().catch((err) => { console.error(err); stats.hidden = false; stats.textContent = `启动失败：${err.message}`; });
