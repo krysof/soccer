@@ -210,7 +210,7 @@ function inputBits() {
 }
 
 async function loadWasm() {
-  const response = await fetch(assetUrl("../game_core.220453.wasm"));
+  const response = await fetch(assetUrl("../game_core.221090.wasm"));
   const bytes = await response.arrayBuffer();
   const result = await WebAssembly.instantiate(bytes, {});
   return result.instance.exports;
@@ -356,7 +356,8 @@ function drawOriginalPlayer(x, y, team, controlled = false, frameHint = 0, movin
   for (let i = 0; i < tiles.length; i++) drawOriginalTile(tiles[i], ox + (i % 2) * size, oy + Math.floor(i / 2) * size, size, team === 1);
 }
 
-function drawOriginalBall(x, y, z = 0, spin = 0, special = 0) {
+function drawOriginalBall(x, y, z = 0, spin = 0, special = 0, originalAnimation = null) {
+
   const visualY = y - z;
   const shadowScale = Math.max(0.35, 1 - z / 90);
   ctx.save();
@@ -365,15 +366,16 @@ function drawOriginalBall(x, y, z = 0, spin = 0, special = 0) {
   ctx.ellipse(Math.round(x), Math.round(y + 5), 9 * shadowScale, 4 * shadowScale, 0, 0, Math.PI * 2);
   ctx.fill();
   ctx.restore();
+  const originalPhase = Number.isFinite(originalAnimation) ? (originalAnimation & 0x07) : (spin & 0x07);
   const tile = 0x1AEC;
   const size = (z > 0 ? 18 : 16) + (special > 0 ? 4 : 0);
-  const bob = z > 0 ? Math.sin(spin * 0.9) * 1.5 : 0;
+  const bob = z > 0 ? Math.sin(originalPhase * 0.9) * 1.5 : 0;
   if (special > 0) {
     ctx.save();
     ctx.strokeStyle = "rgba(255,245,120,.85)";
     ctx.lineWidth = 2;
     ctx.beginPath();
-    ctx.arc(Math.round(x), Math.round(visualY + bob), size * 0.8 + Math.sin(spin) * 2, 0, Math.PI * 2);
+    ctx.arc(Math.round(x), Math.round(visualY + bob), size * 0.8 + Math.sin(originalPhase) * 2, 0, Math.PI * 2);
     ctx.stroke();
     ctx.restore();
   }
@@ -591,7 +593,8 @@ function render(api) {
   for (const entity of entities) {
     if (entity.type === "ball") {
       const b = worldToScreen(view, bx, by);
-      drawOriginalBall(b.x, b.y, bz, bspin, bspecial);
+      const banim = api.original_ball_animation ? api.original_ball_animation() : null;
+      drawOriginalBall(b.x, b.y, bz, bspin, bspecial, banim);
       continue;
     }
     const i = entity.index;
@@ -709,10 +712,13 @@ function render(api) {
   const ballState = api.original_ball_motion
     ? `${api.original_ball_motion().toString(16).padStart(2, "0")}/${api.original_ball_shot_type().toString(16).padStart(2, "0")}/${api.original_ball_state().toString(16).padStart(2, "0")}/${api.original_ball_action_timer().toString(16).padStart(2, "0")}/${api.original_ball_hp().toString(16).padStart(2, "0")}`
     : "??/??/??/??/??";
+  const ballAnim = api.original_ball_animation
+    ? `${api.original_ball_animation().toString(16).padStart(2, "0")}/${api.original_ball_anim_frame().toString(16).padStart(2, "0")}/${api.original_ball_anim_timer().toString(16).padStart(2, "0")}`
+    : "??/??/??";
   const ballSpeedRam = api.original_ball_spd_x_lo
     ? `${api.original_ball_spd_x_hi().toString(16).padStart(2, "0")}${api.original_ball_spd_x_lo().toString(16).padStart(2, "0")}/${api.original_ball_spd_y_hi().toString(16).padStart(2, "0")}${api.original_ball_spd_y_lo().toString(16).padStart(2, "0")}/${api.original_ball_spd_z_hi().toString(16).padStart(2, "0")}${api.original_ball_spd_z_lo().toString(16).padStart(2, "0")}/g${api.original_ball_gravity_hi().toString(16).padStart(2, "0")}${api.original_ball_gravity_lo().toString(16).padStart(2, "0")}`
     : "????/????/????/g????";
-  stats.textContent = `phase=${phase} script=$${script} pauseRet=${pauseReturn} period=${period} swap=${swapped} cpu=${cpuTeam} menu=${menuTeam} wins=${wins} weather=${weather} hazards=${hazards} wind=${wind} score=${api.score_left()}-${api.score_right()} goal=${goalInfo} fouls=${fouls} foulTeam=${foulTeam} injuries=${injuries} lastHurt=${lastHurt} spShots=${specialShots} lastSp=${lastSpecial} time=${api.match_seconds_left()} tick=${api.game_tick_count()} players=${count} role=${roleInfo} pOrig=${playerOrig}@${playerDispatch}/${playerMainDispatch}/${playerAnimDispatch} pRam=${playerRam} ballObj=$${ballObj} ballRam=${ballRam} ballState=${ballState} ballSpeed=${ballSpeedRam} owner=${originalOwner} ball=(${bx},${by},z=${bz}) curve=${curve} special=${special} act=${action} charge=${charge} keeper=${keeper}/${hold} touch=${lastTouch}/${lastTouchPlayer} restart=${restart}`;
+  stats.textContent = `phase=${phase} script=$${script} pauseRet=${pauseReturn} period=${period} swap=${swapped} cpu=${cpuTeam} menu=${menuTeam} wins=${wins} weather=${weather} hazards=${hazards} wind=${wind} score=${api.score_left()}-${api.score_right()} goal=${goalInfo} fouls=${fouls} foulTeam=${foulTeam} injuries=${injuries} lastHurt=${lastHurt} spShots=${specialShots} lastSp=${lastSpecial} time=${api.match_seconds_left()} tick=${api.game_tick_count()} players=${count} role=${roleInfo} pOrig=${playerOrig}@${playerDispatch}/${playerMainDispatch}/${playerAnimDispatch} pRam=${playerRam} ballObj=$${ballObj} ballRam=${ballRam} ballState=${ballState} ballAnim=${ballAnim} ballSpeed=${ballSpeedRam} owner=${originalOwner} ball=(${bx},${by},z=${bz}) curve=${curve} special=${special} act=${action} charge=${charge} keeper=${keeper}/${hold} touch=${lastTouch}/${lastTouchPlayer} restart=${restart}`;
 }
 
 async function main() {
