@@ -31,6 +31,7 @@ const ACTION = {
   HEADER: 6,
 };
 const TEAM_NAMES = ["熱血", "花園", "連合", "工業", "選抜", "世界"];
+const WEATHER_NAMES = ["CLEAR", "RAIN", "MUD", "SNOW", "WIND"];
 const keys = new Set();
 const canvas = document.querySelector("#game");
 const ctx = canvas.getContext("2d");
@@ -259,6 +260,50 @@ function drawOriginalBall(x, y, z = 0, spin = 0, special = 0) {
     ctx.restore();
   }
 }
+function drawWeather(api, view, screenW, screenH) {
+  const weather = api.field_weather ? api.field_weather() : 0;
+  const hazards = api.field_hazard_count ? api.field_hazard_count() : 0;
+  for (let i = 0; i < hazards; i++) {
+    const h = worldToScreen(view, api.field_hazard_x(i), api.field_hazard_y(i));
+    if (weather === 1) {
+      ctx.fillStyle = "rgba(70,130,190,.38)";
+      ctx.beginPath(); ctx.ellipse(h.x, h.y, 28, 12, -0.15, 0, Math.PI * 2); ctx.fill();
+      ctx.strokeStyle = "rgba(180,220,255,.35)"; ctx.stroke();
+    } else if (weather === 2) {
+      ctx.fillStyle = "rgba(92,58,30,.42)";
+      ctx.beginPath(); ctx.ellipse(h.x, h.y, 30, 14, 0.12, 0, Math.PI * 2); ctx.fill();
+    } else if (weather === 3) {
+      ctx.fillStyle = "rgba(230,245,255,.34)";
+      ctx.beginPath(); ctx.ellipse(h.x, h.y, 32, 16, 0, 0, Math.PI * 2); ctx.fill();
+    }
+  }
+  if (weather === 1 || weather === 3) {
+    ctx.save();
+    ctx.strokeStyle = weather === 1 ? "rgba(160,205,255,.28)" : "rgba(255,255,255,.55)";
+    ctx.lineWidth = weather === 1 ? 1 : 2;
+    const tick = api.game_tick_count ? api.game_tick_count() : 0;
+    for (let i = 0; i < 36; i++) {
+      const x = (i * 83 + tick * (weather === 1 ? 5 : 1)) % screenW;
+      const y = (i * 47 + tick * (weather === 1 ? 9 : 2)) % screenH;
+      ctx.beginPath();
+      if (weather === 1) { ctx.moveTo(x, y); ctx.lineTo(x - 8, y + 18); }
+      else { ctx.moveTo(x, y); ctx.lineTo(x + 1, y + 1); }
+      ctx.stroke();
+    }
+    ctx.restore();
+  }
+  if (weather === 4) {
+    ctx.save();
+    ctx.strokeStyle = "rgba(230,245,255,.22)";
+    const tick = api.game_tick_count ? api.game_tick_count() : 0;
+    for (let i = 0; i < 12; i++) {
+      const y = 40 + i * 38;
+      const x = (screenW - ((tick * 7 + i * 91) % (screenW + 120))) - 60;
+      ctx.beginPath(); ctx.moveTo(x, y); ctx.quadraticCurveTo(x + 28, y - 9, x + 74, y); ctx.stroke();
+    }
+    ctx.restore();
+  }
+}
 function drawScore(api, w) {
   const leftScore = api.score_left();
   const rightScore = api.score_right();
@@ -305,6 +350,7 @@ function render(api) {
   const bspin = api.ball_spin ? api.ball_spin() : Math.floor(api.game_tick_count() / 6);
   const bspecial = api.ball_special_timer ? api.ball_special_timer() : 0;
   const view = drawField(screenW, screenH, worldW, worldH, bx);
+  drawWeather(api, view, screenW, screenH);
   const controlled = api.controlled_player ? api.controlled_player() : 0;
   const count = api.player_count ? api.player_count() : 1;
   for (let i = 0; i < count; i++) {
@@ -340,7 +386,7 @@ function render(api) {
   ctx.fillStyle = stamina > 30 ? "#62e572" : "#ffcc4d";
   ctx.fillRect(18, 18, Math.max(0, stamina) * 1.28, 12);
   if (phase === PHASE.TITLE) drawOverlay("熱血足球リーグ", ["WASM 高保真复刻工程", "按 J / Z / Enter 开始"]);
-  if (phase === PHASE.MENU) drawOverlay("MATCH", [`${TEAM_NAMES[0]} vs ${TEAM_NAMES[cpuTeam] || "CPU"}`, `连胜 ${wins}  CPU: SPD ${api.team_speed ? api.team_speed(1) : 1000} / POW ${api.team_power ? api.team_power(1) : 1000}`, "按 J / Z / Enter 开赛"]);
+  if (phase === PHASE.MENU) drawOverlay("MATCH", [`${TEAM_NAMES[0]} vs ${TEAM_NAMES[cpuTeam] || "CPU"}`, `连胜 ${wins}  CPU: SPD ${api.team_speed ? api.team_speed(1) : 1000} / POW ${api.team_power ? api.team_power(1) : 1000}`, `FIELD ${WEATHER_NAMES[api.field_weather ? api.field_weather() : 0] || "?"}`, "按 J / Z / Enter 开赛"]);
   if (phase === PHASE.KICKOFF) drawOverlay("KICK OFF", ["按 J / Z 开球"]);
   if (phase === PHASE.GOAL) drawOverlay("GOAL!", [`比分 ${api.score_left()} - ${api.score_right()}`]);
   if (phase === PHASE.HALFTIME) drawOverlay("HALF TIME", ["换边，下半场准备", "按 J / Z 继续"]);
@@ -362,7 +408,10 @@ function render(api) {
   const swapped = api.side_swapped ? api.side_swapped() : 0;
   const fouls = `${api.foul_count_left ? api.foul_count_left() : 0}-${api.foul_count_right ? api.foul_count_right() : 0}`;
   const foulTeam = api.foul_team ? api.foul_team() : 0;
-  stats.textContent = `phase=${phase} period=${period} swap=${swapped} cpu=${cpuTeam} wins=${wins} score=${api.score_left()}-${api.score_right()} fouls=${fouls} foulTeam=${foulTeam} time=${api.match_seconds_left()} tick=${api.game_tick_count()} players=${count} ball=(${bx},${by},z=${bz}) curve=${curve} special=${special} act=${action} charge=${charge} keeper=${keeper}/${hold} touch=${lastTouch} restart=${restart}`;
+  const weather = api.field_weather ? api.field_weather() : 0;
+  const hazards = api.field_hazard_count ? api.field_hazard_count() : 0;
+  const wind = `${api.field_wind_x ? api.field_wind_x() : 0}/${api.field_wind_y ? api.field_wind_y() : 0}`;
+  stats.textContent = `phase=${phase} period=${period} swap=${swapped} cpu=${cpuTeam} wins=${wins} weather=${weather} hazards=${hazards} wind=${wind} score=${api.score_left()}-${api.score_right()} fouls=${fouls} foulTeam=${foulTeam} time=${api.match_seconds_left()} tick=${api.game_tick_count()} players=${count} ball=(${bx},${by},z=${bz}) curve=${curve} special=${special} act=${action} charge=${charge} keeper=${keeper}/${hold} touch=${lastTouch} restart=${restart}`;
 }
 async function main() {
   const [api, chr, chrAlt, field, metasprites] = await Promise.all([
