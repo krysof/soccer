@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-07-04T22:50:03",
+  "generated_at": "2026-07-04T23:25:34",
   "note": "Best-current browser/WASM wavetable set for four requested timbres: guitar, piano, bass, drum machine. Data files only; playback code is not bundled here.",
   "source_project": "surikov/webaudiofontdata",
   "selection_policy": [
