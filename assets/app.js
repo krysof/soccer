@@ -20,6 +20,7 @@ const PHASE = {
   HALFTIME: 9,
   FREE_KICK: 10,
   PENALTY_KICK: 11,
+  PAUSE: 12,
 };
 const ACTION = {
   STAND: 0,
@@ -559,6 +560,7 @@ function render(api) {
   if (phase === PHASE.CORNER_KICK) drawOverlay("CORNER KICK", ["按 J / Z 继续"]);
   if (phase === PHASE.FREE_KICK) drawOverlay("FREE KICK", [`犯规队 ${api.foul_team ? TEAM_NAMES[api.foul_team()] || api.foul_team() : "?"}`, "按 J / Z 继续"]);
   if (phase === PHASE.PENALTY_KICK) drawOverlay("PENALTY KICK", [`禁区犯规：${api.foul_team ? TEAM_NAMES[api.foul_team()] || api.foul_team() : "?"}`, "按 J / Z 射门"]);
+  if (phase === PHASE.PAUSE) drawOverlay("PAUSE", ["Start / J / Z 继续", "Sprint + Start：比赛中切换控制球员"]);
   const restart = api.restart_team ? api.restart_team() : 0;
   const lastTouch = api.last_touch_team ? api.last_touch_team() : 0;
   const action = api.player_action ? api.player_action(controlled) : 0;
@@ -581,7 +583,8 @@ function render(api) {
   const lastTouchPlayer = api.last_touch_player ? api.last_touch_player() : 255;
   const goalInfo = `${api.last_goal_team ? api.last_goal_team() : 0}/${api.last_goal_player ? api.last_goal_player() : 255}/${api.last_assist_player ? api.last_assist_player() : 255}/${api.last_goal_is_own ? api.last_goal_is_own() : 0}`;
   const roleInfo = api.player_role_speed ? `${api.player_role_speed(controlled)}/${api.player_role_power(controlled)}/${api.player_role_stamina(controlled)}/${api.player_role_tackle(controlled)}/${api.player_role_keeper(controlled)}` : "0";
-  stats.textContent = `phase=${phase} period=${period} swap=${swapped} cpu=${cpuTeam} menu=${menuTeam} wins=${wins} weather=${weather} hazards=${hazards} wind=${wind} score=${api.score_left()}-${api.score_right()} goal=${goalInfo} fouls=${fouls} foulTeam=${foulTeam} injuries=${injuries} lastHurt=${lastHurt} spShots=${specialShots} lastSp=${lastSpecial} time=${api.match_seconds_left()} tick=${api.game_tick_count()} players=${count} role=${roleInfo} ball=(${bx},${by},z=${bz}) curve=${curve} special=${special} act=${action} charge=${charge} keeper=${keeper}/${hold} touch=${lastTouch}/${lastTouchPlayer} restart=${restart}`;
+  const pauseReturn = api.pause_return_phase ? api.pause_return_phase() : 3;
+  stats.textContent = `phase=${phase} pauseRet=${pauseReturn} period=${period} swap=${swapped} cpu=${cpuTeam} menu=${menuTeam} wins=${wins} weather=${weather} hazards=${hazards} wind=${wind} score=${api.score_left()}-${api.score_right()} goal=${goalInfo} fouls=${fouls} foulTeam=${foulTeam} injuries=${injuries} lastHurt=${lastHurt} spShots=${specialShots} lastSp=${lastSpecial} time=${api.match_seconds_left()} tick=${api.game_tick_count()} players=${count} role=${roleInfo} ball=(${bx},${by},z=${bz}) curve=${curve} special=${special} act=${action} charge=${charge} keeper=${keeper}/${hold} touch=${lastTouch}/${lastTouchPlayer} restart=${restart}`;
 }
 async function main() {
   const [api, chr, chrAlt, field, metasprites] = await Promise.all([
