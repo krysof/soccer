@@ -1,9 +1,9 @@
 {
-  "deployed_at": "2026-07-05T18:33:53.3667532Z",
-  "app": "assets/app.45284b6d.js",
+  "deployed_at": "2026-07-05T18:42:07.0789627Z",
+  "app": "assets/app.7055e22d.js",
   "css": "assets/app.2738c0af.css",
-  "wasm": "game_core.bc7b510c.wasm",
-  "fix": "source-backed post-match result flow via src/bank_05.asm B2B2-B3DD; mobile pointer fallback retained",
+  "wasm": "game_core.5782ca42.wasm",
+  "fix": "source-backed result menu state machine via src/bank_05.asm B2E3-B3B2; post-match B2B2 retained",
   "note": "compiled artifacts only; no source",
-  "tests": "ALL_JS_TESTS_OK count=193; ALL_ORIGINAL_TESTS_OK count=169; DIST_B2B2_OK; DIST_POINTER_FALLBACK_OK"
+  "tests": "ALL_JS_TESTS_OK count=194; ALL_ORIGINAL_TESTS_OK count=170; DIST_B2E3_OK; DIST_POINTER_FALLBACK_OK"
 }
