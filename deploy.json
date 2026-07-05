@@ -1,7 +1,7 @@
 {
-  "app": "assets/app.19c49bb6.js",
+  "app": "assets/app.f657e2a5.js",
   "css": "assets/app.bd4a7c61.css",
   "wasm": "game_core.351b42f4.wasm",
-  "note": "compiled-only GitHub Pages artifact; includes original bank05 8DBC prematch character flow export",
-  "deployedAt": "2026-07-05T20:08:59.6148333Z"
+  "note": "compiled-only GitHub Pages artifact; mobile prompts now state tap Kick to start/kickoff; four-direction original input movement verified",
+  "deployedAt": "2026-07-05T20:22:24.5519794Z"
 }

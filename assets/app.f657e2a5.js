@@ -737,7 +737,7 @@ function drawMenuOverlay(api) {
   }
   ctx.fillStyle = "#fff";
   ctx.font = "16px system-ui, sans-serif";
-  ctx.fillText("方向键/摇杆选择对手，J/Z/Enter 开赛", canvas.width / 2, startY + 5 * 48 + 18);
+  ctx.fillText("方向键/摇杆选择对手；PC：J/Z/Enter 开赛；手机：点「踢球」开赛", canvas.width / 2, startY + 5 * 48 + 18);
   ctx.textAlign = "left";
 }
 
@@ -761,7 +761,7 @@ function drawMatchIntroOverlay(api) {
   ctx.fillText(`READY ${Math.ceil(timer / 60)}`, canvas.width / 2, 290);
   ctx.font = "16px system-ui, sans-serif";
   ctx.fillStyle = "#fff";
-  ctx.fillText("按 J / Z / Enter 跳过出场演出", canvas.width / 2, 326);
+  ctx.fillText("PC：按 J / Z / Enter 跳过；手机：点「踢球」跳过", canvas.width / 2, 326);
   ctx.textAlign = "left";
 }
 
@@ -860,10 +860,10 @@ function render(api) {
     ctx.fillText(`ROLE SPD ${rs} POW ${rp} TKL ${rt} GK ${rk}`, 20, 49);
   }
 
-  if (phase === PHASE.TITLE) drawOverlay("熱血足球リーグ", ["WASM 高保真复刻工程", "按 J / Z / Enter 开始"]);
+  if (phase === PHASE.TITLE) drawOverlay("熱血足球リーグ", ["WASM 高保真复刻工程", "PC：按 J / Z / Enter 开始", "手机：点「踢球」开始"]);
   if (phase === PHASE.MENU) drawMenuOverlay(api);
   if (phase === PHASE.MATCH_INTRO) drawMatchIntroOverlay(api);
-  if (phase === PHASE.KICKOFF) drawOverlay("KICK OFF", ["按 J / Z 开球"]);
+  if (phase === PHASE.KICKOFF) drawOverlay("KICK OFF", ["PC：按 J / Z 开球", "手机：点「踢球」开球，然后摇杆移动"]);
   if (phase === PHASE.GOAL) {
     const scorer = api.last_goal_player ? api.last_goal_player() : 255;
     const assist = api.last_assist_player ? api.last_assist_player() : 255;
@@ -874,13 +874,13 @@ function render(api) {
       assist < 255 ? `ASSIST ${playerLabel(api, assist)}` : "NO ASSIST",
     ]);
   }
-  if (phase === PHASE.HALFTIME) drawOverlay("HALF TIME", ["换边，下半场准备", "按 J / Z 继续"]);
-  if (phase === PHASE.FULL_TIME) drawOverlay("FULL TIME", [`最终比分 ${api.score_left()} - ${api.score_right()}`, api.score_left() > api.score_right() ? "胜利：下场对手升级" : "败北/平局：重新挑战", "按 J / Z 返回菜单"]);
-  if (phase === PHASE.THROW_IN) drawOverlay("THROW IN", ["按 J / Z 继续"]);
-  if (phase === PHASE.GOAL_KICK) drawOverlay("GOAL KICK", ["按 J / Z 继续"]);
-  if (phase === PHASE.CORNER_KICK) drawOverlay("CORNER KICK", ["按 J / Z 继续"]);
-  if (phase === PHASE.FREE_KICK) drawOverlay("FREE KICK", [`犯规队 ${api.foul_team ? TEAM_NAMES[api.foul_team()] || api.foul_team() : "?"}`, "按 J / Z 继续"]);
-  if (phase === PHASE.PENALTY_KICK) drawOverlay("PENALTY KICK", [`禁区犯规：${api.foul_team ? TEAM_NAMES[api.foul_team()] || api.foul_team() : "?"}`, "按 J / Z 射门"]);
+  if (phase === PHASE.HALFTIME) drawOverlay("HALF TIME", ["换边，下半场准备", "PC：按 J / Z 继续", "手机：点「踢球」继续"]);
+  if (phase === PHASE.FULL_TIME) drawOverlay("FULL TIME", [`最终比分 ${api.score_left()} - ${api.score_right()}`, api.score_left() > api.score_right() ? "胜利：下场对手升级" : "败北/平局：重新挑战", "PC：按 J / Z 返回菜单", "手机：点「踢球」返回菜单"]);
+  if (phase === PHASE.THROW_IN) drawOverlay("THROW IN", ["PC：按 J / Z 继续", "手机：点「踢球」继续"]);
+  if (phase === PHASE.GOAL_KICK) drawOverlay("GOAL KICK", ["PC：按 J / Z 继续", "手机：点「踢球」继续"]);
+  if (phase === PHASE.CORNER_KICK) drawOverlay("CORNER KICK", ["PC：按 J / Z 继续", "手机：点「踢球」继续"]);
+  if (phase === PHASE.FREE_KICK) drawOverlay("FREE KICK", [`犯规队 ${api.foul_team ? TEAM_NAMES[api.foul_team()] || api.foul_team() : "?"}`, "PC：按 J / Z 继续", "手机：点「踢球」继续"]);
+  if (phase === PHASE.PENALTY_KICK) drawOverlay("PENALTY KICK", [`禁区犯规：${api.foul_team ? TEAM_NAMES[api.foul_team()] || api.foul_team() : "?"}`, "PC：按 J / Z 射门", "手机：点「踢球」射门"]);
   if (phase === PHASE.PAUSE) drawOverlay("PAUSE", ["Start / J / Z 继续", "Sprint + Start：比赛中切换控制球员"]);
 
   const restart = api.restart_team ? api.restart_team() : 0;
