@@ -1,7 +1,7 @@
 {
-  "app": "assets/app.f657e2a5.js",
+  "app": "assets/app.562f5039.js",
   "css": "assets/app.bd4a7c61.css",
-  "wasm": "game_core.351b42f4.wasm",
-  "note": "compiled-only GitHub Pages artifact; mobile prompts now state tap Kick to start/kickoff; four-direction original input movement verified",
-  "deployedAt": "2026-07-05T20:22:24.5519794Z"
+  "wasm": "game_core.d1513aea.wasm",
+  "note": "compiled-only GitHub Pages artifact; default match mode now follows original bank05 83DE->860C->8673 ($57=$81)",
+  "deployedAt": "2026-07-05T20:30:07.4769912Z"
 }
