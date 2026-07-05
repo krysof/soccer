@@ -1,9 +1,9 @@
 {
   "wasm": "game_core.9950d8fa.wasm",
-  "note": "compiled-only GitHub Pages artifact; C91A game-script exit transition and goal C89C statusbar/subtype bridge; movement verified in tests",
+  "note": "compiled-only GitHub Pages artifact; C91A game-script exit transition and goal C89C statusbar/subtype bridge; movement verified online",
   "app": "assets/app.3a0b5244.js",
   "css": "assets/app.bd4a7c61.css",
-  "tests": "ALL_ORIGINAL_TESTS_OK count=187; STATIC_ASSET_URLS OK",
+  "tests": "ALL_ORIGINAL_TESTS_OK count=187; STATIC_ASSET_URLS OK; ONLINE_C91A_OK; ONLINE mobile movement OK",
   "compatApp": [
     "assets/app.43ced66a.js",
     "assets/app.36ec729f.js",
