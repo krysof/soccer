@@ -53,6 +53,7 @@ const keys = new Set();
 const canvas = document.querySelector("#game");
 const ctx = canvas.getContext("2d");
 const stats = document.querySelector("#stats");
+const touchControls = document.querySelector("#touchControls");
 const stick = document.querySelector("#stick");
 const knob = document.querySelector("#knob");
 const btnKick = document.querySelector("#btnKick");
@@ -64,12 +65,15 @@ stats.hidden = !DEBUG;
 const TOUCH_TAP_LATCH_TICKS = 4;
 const touch = {
   stickPointer: null,
+  kickPointer: null,
+  sprintPointer: null,
   axisX: 0,
   axisY: 0,
   kick: false,
   sprint: false,
   kickLatchTicks: 0,
   sprintLatchTicks: 0,
+  lastBits: 0,
 };
 const originalAssets = { chr: null, chrAlt: null, field: null, tileSize: 16, columns: 128, metasprites: [] };
 const sfx = { ctx: null, lastScore: "0-0", lastPhase: PHASE.TITLE, lastSpecial: 0, lastAction: ACTION.STAND, lastKeeper: 0 };
@@ -125,22 +129,53 @@ window.addEventListener("keydown", (event) => {
   if (["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", "Space"].includes(event.code)) event.preventDefault();
 });
 window.addEventListener("keyup", (event) => keys.delete(event.code));
-
+function safeSetPointerCapture(element, pointerId) {
+  try {
+    element.setPointerCapture?.(pointerId);
+  } catch (_err) {
+  }
+}
 function setTouchButton(button, prop) {
   const latchProp = `${prop}LatchTicks`;
-  const down = (event) => {
-    event.preventDefault();
+  const pointerProp = `${prop}Pointer`;
+  const activate = () => {
     ensureAudio();
-    button.setPointerCapture?.(event.pointerId);
     touch[prop] = true;
     touch[latchProp] = TOUCH_TAP_LATCH_TICKS;
     button.classList.add("active");
   };
-  const up = (event) => { event.preventDefault(); touch[prop] = false; button.classList.remove("active"); };
+  const deactivate = () => {
+    touch[prop] = false;
+    button.classList.remove("active");
+  };
+  const down = (event) => {
+
+    event.preventDefault();
+    touch[pointerProp] = event.pointerId;
+    safeSetPointerCapture(button, event.pointerId);
+    activate();
+  };
+  const up = (event) => {
+    event.preventDefault();
+    touch[pointerProp] = null;
+    deactivate();
+  };
   button.addEventListener("pointerdown", down);
   button.addEventListener("pointerup", up);
   button.addEventListener("pointercancel", up);
-  button.addEventListener("lostpointercapture", up);
+  button.addEventListener("lostpointercapture", (event) => {
+    if (event.pointerType === "touch") return;
+    up(event);
+  });
+  for (const name of ["pointerup", "pointercancel"]) {
+    window.addEventListener(name, (event) => {
+      if (touch[pointerProp] === event.pointerId) up(event);
+    });
+  }
+
+  button.addEventListener("touchstart", (event) => { event.preventDefault(); activate(); }, { passive: false });
+  button.addEventListener("touchend", (event) => { event.preventDefault(); deactivate(); }, { passive: false });
+  button.addEventListener("touchcancel", (event) => { event.preventDefault(); deactivate(); }, { passive: false });
 }
 setTouchButton(btnKick, "kick");
 setTouchButton(btnSprint, "sprint");
@@ -237,12 +272,112 @@ function updateStick(event) {
   touch.axisY = Math.abs(dy) < max * 0.22 ? 0 : Math.sign(dy);
   knob.style.transform = `translate(calc(-50% + ${dx}px), calc(-50% + ${dy}px))`;
 }
-
-stick.addEventListener("pointerdown", (event) => { event.preventDefault(); touch.stickPointer = event.pointerId; stick.setPointerCapture?.(event.pointerId); updateStick(event); });
-stick.addEventListener("pointermove", (event) => { if (touch.stickPointer === event.pointerId) { event.preventDefault(); updateStick(event); } });
-for (const name of ["pointerup", "pointercancel", "lostpointercapture"]) {
-  stick.addEventListener(name, (event) => { if (touch.stickPointer === event.pointerId || name === "lostpointercapture") { event.preventDefault(); resetStick(); } });
+function pointInGame(clientX, clientY) {
+  const rect = canvas.getBoundingClientRect();
+  return clientX >= rect.left && clientX <= rect.right && clientY >= rect.top && clientY <= rect.bottom;
 }
+function shouldStartFallbackStick(target, clientX, clientY) {
+  if (!pointInGame(clientX, clientY)) return false;
+  if (target?.closest?.(".touch-btn")) return false;
+  if (target?.closest?.("#stick")) return false;
+  const rect = canvas.getBoundingClientRect();
+  return clientX <= rect.left + rect.width * 0.46 && clientY >= rect.top + rect.height * 0.34;
+}
+function beginStickPointer(event, captureElement = stick) {
+  event.preventDefault();
+  ensureAudio();
+  touch.stickPointer = event.pointerId;
+  safeSetPointerCapture(captureElement, event.pointerId);
+  updateStick(event);
+}
+stick.addEventListener("pointerdown", (event) => {
+  beginStickPointer(event, stick);
+});
+stick.addEventListener("pointermove", (event) => {
+  if (touch.stickPointer === event.pointerId) { event.preventDefault(); updateStick(event); }
+});
+touchControls.addEventListener("pointerdown", (event) => {
+  if (!shouldStartFallbackStick(event.target, event.clientX, event.clientY)) return;
+  beginStickPointer(event, touchControls);
+});
+touchControls.addEventListener("pointermove", (event) => {
+  if (touch.stickPointer === event.pointerId) { event.preventDefault(); updateStick(event); }
+});
+window.addEventListener("pointermove", (event) => {
+  if (touch.stickPointer === event.pointerId) { event.preventDefault(); updateStick(event); }
+});
+for (const name of ["pointerup", "pointercancel"]) {
+  window.addEventListener(name, (event) => {
+    if (touch.stickPointer === event.pointerId) {
+      event.preventDefault();
+      resetStick();
+    }
+  });
+}
+for (const name of ["pointerup", "pointercancel", "lostpointercapture"]) {
+  stick.addEventListener(name, (event) => {
+
+    if (name === "lostpointercapture" && event.pointerType === "touch") return;
+    if (touch.stickPointer === event.pointerId || (name === "lostpointercapture" && typeof touch.stickPointer !== "string")) {
+      event.preventDefault();
+      resetStick();
+    }
+  });
+}
+
+function touchPointEvent(point) {
+  return { clientX: point.clientX, clientY: point.clientY };
+}
+
+stick.addEventListener("touchstart", (event) => {
+  event.preventDefault();
+  const point = event.changedTouches[0];
+  if (!point) return;
+  touch.stickPointer = `touch:${point.identifier}`;
+  updateStick(touchPointEvent(point));
+}, { passive: false });
+touchControls.addEventListener("touchstart", (event) => {
+  for (const point of event.changedTouches) {
+    if (!shouldStartFallbackStick(event.target, point.clientX, point.clientY)) continue;
+    event.preventDefault();
+    ensureAudio();
+    touch.stickPointer = `touch:${point.identifier}`;
+    updateStick(touchPointEvent(point));
+    return;
+  }
+}, { passive: false });
+
+function moveStickTouch(event) {
+  if (typeof touch.stickPointer !== "string" || !touch.stickPointer.startsWith("touch:")) return;
+  const id = Number(touch.stickPointer.slice(6));
+  for (const point of event.changedTouches) {
+    if (point.identifier === id) {
+      event.preventDefault();
+      updateStick(touchPointEvent(point));
+      return;
+    }
+  }
+}
+
+stick.addEventListener("touchmove", moveStickTouch, { passive: false });
+window.addEventListener("touchmove", moveStickTouch, { passive: false });
+
+function endStickTouch(event) {
+  if (typeof touch.stickPointer !== "string" || !touch.stickPointer.startsWith("touch:")) return;
+  const id = Number(touch.stickPointer.slice(6));
+  for (const point of event.changedTouches) {
+    if (point.identifier === id) {
+      event.preventDefault();
+      resetStick();
+      return;
+    }
+  }
+}
+
+stick.addEventListener("touchend", endStickTouch, { passive: false });
+stick.addEventListener("touchcancel", endStickTouch, { passive: false });
+window.addEventListener("touchend", endStickTouch, { passive: false });
+window.addEventListener("touchcancel", endStickTouch, { passive: false });
 
 function inputBits() {
   let bits = 0;
@@ -255,11 +390,12 @@ function inputBits() {
   if (keys.has("Enter") || keys.has("Space")) bits |= INPUT.START;
   if (touch.kickLatchTicks > 0) touch.kickLatchTicks -= 1;
   if (touch.sprintLatchTicks > 0) touch.sprintLatchTicks -= 1;
+  touch.lastBits = bits;
   return bits;
 }
 
 async function loadWasm() {
-  const primary = assetUrl("../game_core.0d06a972.wasm");
+  const primary = assetUrl("../game_core.c600f031.wasm");
   const fallback = rootAssetUrl("game_core.wasm");
   const response = await withFallback("game_core.wasm", primary, fallback, (url) => fetch(url).then((r) => {
     if (!r.ok) throw new Error(`failed to load ${url}: ${r.status}`);
@@ -774,9 +910,11 @@ function render(api) {
   const ballSpeedRam = api.original_ball_spd_x_lo
     ? `${api.original_ball_spd_x_hi().toString(16).padStart(2, "0")}${api.original_ball_spd_x_lo().toString(16).padStart(2, "0")}/${api.original_ball_spd_y_hi().toString(16).padStart(2, "0")}${api.original_ball_spd_y_lo().toString(16).padStart(2, "0")}/${api.original_ball_spd_z_hi().toString(16).padStart(2, "0")}${api.original_ball_spd_z_lo().toString(16).padStart(2, "0")}/g${api.original_ball_gravity_hi().toString(16).padStart(2, "0")}${api.original_ball_gravity_lo().toString(16).padStart(2, "0")}`
     : "????/????/????/g????";
+  const btnHold = api.debug_original_button_ram ? api.debug_original_button_ram(0, 0x04).toString(16).padStart(2, "0") : "??";
+  const btnPress = api.debug_original_button_ram ? api.debug_original_button_ram(0, 0x08).toString(16).padStart(2, "0") : "??";
   if (DEBUG) {
     stats.hidden = false;
-    stats.textContent = `phase=${phase} script=$${script} pauseRet=${pauseReturn} period=${period} swap=${swapped} cpu=${cpuTeam} menu=${menuTeam} wins=${wins} weather=${weather} hazards=${hazards} wind=${wind} score=${api.score_left()}-${api.score_right()} goal=${goalInfo} fouls=${fouls} foulTeam=${foulTeam} injuries=${injuries} lastHurt=${lastHurt} spShots=${specialShots} lastSp=${lastSpecial} time=${api.match_seconds_left()} tick=${api.game_tick_count()} players=${count} role=${roleInfo} pOrig=${playerOrig}@${playerDispatch}/${playerMainDispatch}/${playerAnimDispatch} pRam=${playerRam} ballObj=$${ballObj}@${ballDispatch} ballRam=${ballRam} ballState=${ballState} ballAnim=${ballAnim} ballSpeed=${ballSpeedRam} owner=${originalOwner} ball=(${bx},${by},z=${bz}) curve=${curve} special=${special} act=${action} charge=${charge} keeper=${keeper}/${hold} touch=${lastTouch}/${lastTouchPlayer} restart=${restart}`;
+    stats.textContent = `phase=${phase} input=$${touch.lastBits.toString(16).padStart(2, "0")} stick=${touch.axisX}/${touch.axisY} btn=${btnHold}/${btnPress} script=$${script} pauseRet=${pauseReturn} period=${period} swap=${swapped} cpu=${cpuTeam} menu=${menuTeam} wins=${wins} weather=${weather} hazards=${hazards} wind=${wind} score=${api.score_left()}-${api.score_right()} goal=${goalInfo} fouls=${fouls} foulTeam=${foulTeam} injuries=${injuries} lastHurt=${lastHurt} spShots=${specialShots} lastSp=${lastSpecial} time=${api.match_seconds_left()} tick=${api.game_tick_count()} players=${count} role=${roleInfo} pOrig=${playerOrig}@${playerDispatch}/${playerMainDispatch}/${playerAnimDispatch} pRam=${playerRam} ballObj=$${ballObj}@${ballDispatch} ballRam=${ballRam} ballState=${ballState} ballAnim=${ballAnim} ballSpeed=${ballSpeedRam} owner=${originalOwner} ball=(${bx},${by},z=${bz}) curve=${curve} special=${special} act=${action} charge=${charge} keeper=${keeper}/${hold} touch=${lastTouch}/${lastTouchPlayer} restart=${restart}`;
   }
 }
 

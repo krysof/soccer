@@ -1,9 +1,14 @@
 {
-  "deployed_at": "2026-07-05T18:48:52.3596478Z",
-  "app": "assets/app.5f0e577f.js",
-  "css": "assets/app.2738c0af.css",
+  "updated": "2026-07-06T03:59:42",
+  "url": "https://krysof.github.io/soccer/",
+  "app": "assets/app.991a7214.js",
+  "css": "assets/app.12665bcb.css",
   "wasm": "game_core.c600f031.wasm",
-  "fix": "source-backed post-match bracket screen via src/bank_05.asm B47C-B5E5; result menu retained",
-  "note": "compiled artifacts only; no source",
-  "tests": "ALL_JS_TESTS_OK count=195; ALL_ORIGINAL_TESTS_OK count=171; DIST_B47C_OK; DIST_POINTER_FALLBACK_OK"
+  "tests": [
+    "LOCAL_TOUCH_FALLBACK_OK phase=3 input right/up and pRam moved",
+    "test_original_runtime_input_movement ok",
+    "ALL_ORIGINAL_TESTS_OK count=171",
+    "web render/static asset tests ok"
+  ],
+  "fix": "IO-only mobile controls: capture errors ignored; full lower-left playfield fallback feeds original D-pad bits; no WASM/game-logic change"
 }
