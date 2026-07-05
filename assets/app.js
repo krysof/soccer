@@ -57,11 +57,29 @@ const stick = document.querySelector("#stick");
 const knob = document.querySelector("#knob");
 const btnKick = document.querySelector("#btnKick");
 const btnSprint = document.querySelector("#btnSprint");
+const startPanel = document.querySelector("#startPanel");
+const startGame = document.querySelector("#startGame");
+const guideModeInput = document.querySelector("#guideMode");
+const settingSummary = document.querySelector("#settingSummary");
+const modeStatus = document.querySelector("#modeStatus");
 const DEBUG = new URLSearchParams(window.location.search).get("debug") === "1";
 document.body.classList.toggle("debug", DEBUG);
 stats.hidden = !DEBUG;
 
 const TOUCH_TAP_LATCH_TICKS = 4;
+const GUIDE_MELODY_LEAD_MS = 24_000;
+const MUSIC_STEP_SECONDS = 0.25;
+const MODE_LABELS = { auto: "全自动", semi: "半自动", manual: "手动" };
+const DRUM_LABELS = { auto: "自动开启", on: "开", off: "关" };
+const settings = {
+  playMode: "auto",
+  drumMode: "auto",
+  guideMode: true,
+};
+const startup = {
+  started: false,
+  startedAt: 0,
+};
 const touch = {
   stickPointer: null,
   axisX: 0,
@@ -72,7 +90,16 @@ const touch = {
   sprintLatchTicks: 0,
 };
 const originalAssets = { chr: null, chrAlt: null, field: null, tileSize: 16, columns: 128, metasprites: [] };
-const sfx = { ctx: null, lastScore: "0-0", lastPhase: PHASE.TITLE, lastSpecial: 0, lastAction: ACTION.STAND, lastKeeper: 0 };
+const sfx = {
+  ctx: null,
+  lastScore: "0-0",
+  lastPhase: PHASE.TITLE,
+  lastSpecial: 0,
+  lastAction: ACTION.STAND,
+  lastKeeper: 0,
+  nextMusicTime: 0,
+  musicStep: 0,
+};
 
 function loadImage(src) {
   return new Promise((resolve, reject) => {
@@ -118,9 +145,53 @@ function originalAssetUrl(name) {
 function originalFallbackUrl(name) {
   return rootAssetUrl(`original/${name}`);
 }
-
+function settingsText() {
+  return `模式：${MODE_LABELS[settings.playMode]} / 鼓机：${DRUM_LABELS[settings.drumMode]} / 引导：${settings.guideMode ? "开" : "关"}`;
+}
+function refreshSettingsUi() {
+  document.querySelectorAll(".setting-group").forEach((group) => {
+    const key = group.dataset.setting;
+    group.querySelectorAll(".seg").forEach((button) => {
+      const active = button.dataset.value === settings[key];
+      button.classList.toggle("active", active);
+      button.setAttribute("aria-pressed", active ? "true" : "false");
+    });
+  });
+  if (guideModeInput) guideModeInput.checked = settings.guideMode;
+  if (settingSummary) settingSummary.textContent = settingsText();
+  if (modeStatus) modeStatus.textContent = settingsText();
+}
+document.querySelectorAll(".setting-group .seg").forEach((button) => {
+  button.addEventListener("click", () => {
+    const key = button.closest(".setting-group")?.dataset.setting;
+    if (!key) return;
+    settings[key] = button.dataset.value;
+    refreshSettingsUi();
+  });
+});
+guideModeInput?.addEventListener("change", () => {
+  settings.guideMode = !!guideModeInput.checked;
+  refreshSettingsUi();
+});
+startGame?.addEventListener("click", () => {
+  ensureAudio();
+  startup.started = true;
+  startup.startedAt = performance.now();
+  if (sfx.ctx) {
+    sfx.nextMusicTime = sfx.ctx.currentTime + 0.05;
+    sfx.musicStep = 0;
+  }
+  startPanel?.classList.add("hidden");
+  refreshSettingsUi();
+});
+refreshSettingsUi();
 window.addEventListener("keydown", (event) => {
   ensureAudio();
+  if (!startup.started && (event.code === "Enter" || event.code === "Space")) {
+    startGame?.click();
+    event.preventDefault();
+    return;
+  }
   keys.add(event.code);
   if (["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", "Space"].includes(event.code)) event.preventDefault();
 });
@@ -196,9 +267,76 @@ function playSfx(name) {
   if (name === "whistle") { tone(1350, 0.12, "square", 0.028); tone(1750, 0.08, "square", 0.022, 0.10); }
   if (name === "goal") { tone(523, 0.10, "square", 0.045); tone(659, 0.10, "square", 0.045, 0.10); tone(784, 0.18, "square", 0.05, 0.20); noise(0.22, 0.025, 0.06); }
 }
-
+function scheduleTone(freq, at, duration = 0.08, type = "square", gain = 0.018) {
+  const ctx = sfx.ctx;
+  if (!ctx || ctx.state === "suspended") return;
+  const osc = ctx.createOscillator();
+  const amp = ctx.createGain();
+  osc.type = type;
+  osc.frequency.setValueAtTime(freq, at);
+  amp.gain.setValueAtTime(0.0001, at);
+  amp.gain.exponentialRampToValueAtTime(gain, at + 0.01);
+  amp.gain.exponentialRampToValueAtTime(0.0001, at + duration);
+  osc.connect(amp).connect(ctx.destination);
+  osc.start(at);
+  osc.stop(at + duration + 0.04);
+}
+function scheduleNoise(at, duration = 0.05, gain = 0.018, filterFreq = 1800) {
+  const ctx = sfx.ctx;
+  if (!ctx || ctx.state === "suspended") return;
+  const samples = Math.max(1, Math.floor(ctx.sampleRate * duration));
+  const buffer = ctx.createBuffer(1, samples, ctx.sampleRate);
+  const data = buffer.getChannelData(0);
+  for (let i = 0; i < samples; i++) data[i] = (Math.random() * 2 - 1) * (1 - i / samples);
+  const src = ctx.createBufferSource();
+  const filter = ctx.createBiquadFilter();
+  const amp = ctx.createGain();
+  src.buffer = buffer;
+  filter.type = "highpass";
+  filter.frequency.setValueAtTime(filterFreq, at);
+  amp.gain.setValueAtTime(gain, at);
+  amp.gain.exponentialRampToValueAtTime(0.0001, at + duration);
+  src.connect(filter).connect(amp).connect(ctx.destination);
+  src.start(at);
+}
+function lyricsStarted() {
+  return startup.started && performance.now() - startup.startedAt >= GUIDE_MELODY_LEAD_MS;
+}
+function drumEnabled(phase) {
+  if (settings.drumMode === "off") return false;
+  if (settings.drumMode === "on") return true;
+  return [PHASE.MATCH_INTRO, PHASE.KICKOFF, PHASE.PLAYING, PHASE.GOAL, PHASE.FREE_KICK, PHASE.PENALTY_KICK].includes(phase);
+}
+function updateMusic(api) {
+  const ctx = sfx.ctx;
+  if (!startup.started || !ctx || ctx.state === "suspended") return;
+  const phase = api.game_phase ? api.game_phase() : PHASE.TITLE;
+  const melodyOn = !settings.guideMode || !lyricsStarted();
+  const drumOn = drumEnabled(phase);
+  const bass = [98, 98, 130.81, 130.81, 110, 110, 146.83, 146.83];
+  const chord = [196, 246.94, 261.63, 329.63, 220, 261.63, 293.66, 349.23];
+  const melody = [392, 440, 523.25, 440, 392, 329.63, 349.23, 392];
+  if (sfx.nextMusicTime <= ctx.currentTime) sfx.nextMusicTime = ctx.currentTime + 0.02;
+  while (sfx.nextMusicTime < ctx.currentTime + 0.09) {
+    const step = sfx.musicStep & 7;
+    const at = sfx.nextMusicTime;
+    scheduleTone(bass[step], at, 0.11, "triangle", 0.012);
+    if ((step & 1) === 0) scheduleTone(chord[step], at + 0.03, 0.08, "sine", 0.010);
+    if (melodyOn && (step === 0 || step === 2 || step === 4 || step === 6)) {
+      scheduleTone(melody[step], at + 0.015, 0.14, "square", 0.014);
+    }
+    if (drumOn) {
+      if (step === 0 || step === 4) scheduleTone(72, at, 0.07, "sine", 0.032);
+      if (step === 2 || step === 6) scheduleNoise(at + 0.005, 0.06, 0.018, 900);
+      scheduleNoise(at + 0.01, 0.025, 0.006, 3200);
+    }
+    sfx.nextMusicTime += MUSIC_STEP_SECONDS;
+    sfx.musicStep = (sfx.musicStep + 1) & 7;
+  }
+}
 function updateSfx(api) {
   if (!sfx.ctx || sfx.ctx.state === "suspended") return;
+  updateMusic(api);
   const score = `${api.score_left()}-${api.score_right()}`;
   const phase = api.game_phase ? api.game_phase() : PHASE.PLAYING;
   const action = api.player_action ? api.player_action(api.controlled_player ? api.controlled_player() : 0) : ACTION.STAND;
@@ -245,6 +383,7 @@ for (const name of ["pointerup", "pointercancel", "lostpointercapture"]) {
 }
 
 function inputBits() {
+  if (!startup.started) return 0;
   let bits = 0;
   if (keys.has("ArrowUp") || keys.has("KeyW") || touch.axisY < 0) bits |= INPUT.UP;
   if (keys.has("ArrowDown") || keys.has("KeyS") || touch.axisY > 0) bits |= INPUT.DOWN;
@@ -802,9 +941,9 @@ async function main() {
   function frame(now) {
     if (keys.has("KeyR")) api.game_init();
     acc += now - last; last = now; acc = Math.min(acc, stepMs * 8);
-    while (acc >= stepMs) { api.game_tick(inputBits()); acc -= stepMs; }
+    while (startup.started && acc >= stepMs) { api.game_tick(inputBits()); acc -= stepMs; }
     render(api);
-    updateSfx(api);
+    if (startup.started) updateSfx(api);
     requestAnimationFrame(frame);
   }
   requestAnimationFrame(frame);
