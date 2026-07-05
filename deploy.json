@@ -6,8 +6,8 @@
     "assets/app.43ced66a.js"
   ],
   "css": "assets/app.bd4a7c61.css",
-  "note": "compiled-only GitHub Pages artifact; CF93-D01E match-field init RAM added; CB5F/CB07/CA1F/CA58/CAEE retained; pending online CF93/mobile verification",
-  "tests": "ALL_ORIGINAL_TESTS_OK count=194; STATIC_ASSET_URLS OK; pending ONLINE_CF93/mobile verification",
+  "note": "compiled-only GitHub Pages artifact; CF93-D01E match-field init RAM, CB5F hidden skill sequence, CB07 score HUD, CA1F/CA58/CAEE camera/status RAM, and online mobile movement verified",
+  "tests": "ALL_ORIGINAL_TESTS_OK count=194; STATIC_ASSET_URLS OK; ONLINE_CF93_MATCH_FIELD_RUNTIME_INIT_OK; ONLINE mobile movement OK",
   "app": "assets/app.2df5175c.js",
   "wasm": "game_core.9508c930.wasm"
 }
