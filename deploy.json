@@ -1,7 +1,7 @@
 {
-  "wasm": "game_core.13e85beb.wasm",
+  "note": "compiled-only GitHub Pages artifact; player profile RAM now follows original bank01 BC1F/tbl_BD18",
+  "wasm": "game_core.83b08915.wasm",
+  "deployedAt": "2026-07-05T20:49:22.0371735Z",
   "css": "assets/app.bd4a7c61.css",
-  "note": "compiled-only GitHub Pages artifact; shell opponent selection now commits through original bank05 884F/tbl_89F9",
-  "deployedAt": "2026-07-05T20:41:35.2057720Z",
-  "app": "assets/app.0504462d.js"
+  "app": "assets/app.d9ec998d.js"
 }
