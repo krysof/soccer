@@ -1,9 +1,9 @@
 {
-  "deployed_at": "2026-07-05T18:16:22.7268761Z",
-  "app": "assets/app.d6c8ad0a.js",
+  "deployed_at": "2026-07-05T18:26:24.7200993Z",
+  "app": "assets/app.3270e4c4.js",
   "css": "assets/app.2738c0af.css",
   "wasm": "game_core.839c2490.wasm",
-  "fix": "source-backed full-time tournament progression via src/bank_05.asm B2B6-B2C3 -> B3DE",
+  "fix": "mobile touch pointer window fallback for iOS/WebKit lost capture; source gameplay unchanged",
   "note": "compiled artifacts only; no source",
-  "tests": "ALL_ORIGINAL_TESTS_OK count=168"
+  "tests": "ALL_ORIGINAL_TESTS_OK count=168; DIST_POINTER_FALLBACK_OK"
 }

@@ -64,6 +64,8 @@ stats.hidden = !DEBUG;
 const TOUCH_TAP_LATCH_TICKS = 4;
 const touch = {
   stickPointer: null,
+  kickPointer: null,
+  sprintPointer: null,
   axisX: 0,
   axisY: 0,
   kick: false,
@@ -129,6 +131,7 @@ window.addEventListener("keyup", (event) => keys.delete(event.code));
 
 function setTouchButton(button, prop) {
   const latchProp = `${prop}LatchTicks`;
+  const pointerProp = `${prop}Pointer`;
   const activate = () => {
     ensureAudio();
     touch[prop] = true;
@@ -139,13 +142,16 @@ function setTouchButton(button, prop) {
     touch[prop] = false;
     button.classList.remove("active");
   };
-  const down = (event) => {
+  const down = (event) => {
+
     event.preventDefault();
+    touch[pointerProp] = event.pointerId;
     button.setPointerCapture?.(event.pointerId);
     activate();
   };
   const up = (event) => {
     event.preventDefault();
+    touch[pointerProp] = null;
     deactivate();
   };
   button.addEventListener("pointerdown", down);
@@ -154,7 +160,13 @@ function setTouchButton(button, prop) {
   button.addEventListener("lostpointercapture", (event) => {
     if (event.pointerType === "touch") return;
     up(event);
-  });
+  });
+  for (const name of ["pointerup", "pointercancel"]) {
+    window.addEventListener(name, (event) => {
+      if (touch[pointerProp] === event.pointerId) up(event);
+    });
+  }
+
   button.addEventListener("touchstart", (event) => { event.preventDefault(); activate(); }, { passive: false });
   button.addEventListener("touchend", (event) => { event.preventDefault(); deactivate(); }, { passive: false });
   button.addEventListener("touchcancel", (event) => { event.preventDefault(); deactivate(); }, { passive: false });
@@ -264,8 +276,20 @@ stick.addEventListener("pointerdown", (event) => {
 stick.addEventListener("pointermove", (event) => {
   if (touch.stickPointer === event.pointerId) { event.preventDefault(); updateStick(event); }
 });
+window.addEventListener("pointermove", (event) => {
+  if (touch.stickPointer === event.pointerId) { event.preventDefault(); updateStick(event); }
+});
+for (const name of ["pointerup", "pointercancel"]) {
+  window.addEventListener(name, (event) => {
+    if (touch.stickPointer === event.pointerId) {
+      event.preventDefault();
+      resetStick();
+    }
+  });
+}
 for (const name of ["pointerup", "pointercancel", "lostpointercapture"]) {
-  stick.addEventListener(name, (event) => {
+  stick.addEventListener(name, (event) => {
+
     if (name === "lostpointercapture" && event.pointerType === "touch") return;
     if (touch.stickPointer === event.pointerId || (name === "lostpointercapture" && typeof touch.stickPointer !== "string")) {
       event.preventDefault();
