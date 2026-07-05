@@ -1,13 +1,14 @@
 {
   "compatApp": [
-    "assets/app.98a832c7.js",
-    "assets/app.c1fa6a94.js",
-    "assets/app.32c70d11.js",
-    "assets/app.43ced66a.js"
+    "assets/app.43ced66a.js",
+    "assets/app.36ec729f.js",
+    "assets/app.2ef7ebc9.js",
+    "assets/app.4d608fd4.js",
+    "assets/app.2df5175c.js"
   ],
   "css": "assets/app.bd4a7c61.css",
-  "note": "compiled-only GitHub Pages artifact; CF93-D01E match-field init RAM, CB5F hidden skill sequence, CB07 score HUD, CA1F/CA58/CAEE camera/status RAM, and online mobile movement verified",
-  "tests": "ALL_ORIGINAL_TESTS_OK count=194; STATIC_ASSET_URLS OK; ONLINE_CF93_MATCH_FIELD_RUNTIME_INIT_OK; ONLINE mobile movement OK",
-  "app": "assets/app.2df5175c.js",
-  "wasm": "game_core.9508c930.wasm"
+  "note": "compiled-only GitHub Pages artifact; mobile touch IO fallback hardened; DE0B field background bank scroll RAM; CF93/CB5F/CB07/CA1F/CA58/CAEE retained; pending online verification",
+  "tests": "ALL_ORIGINAL_TESTS_OK count=195; STATIC_ASSET_URLS OK; LOCAL_DIST_TOUCH_MOVE_OK; pending ONLINE_DE0B/mobile verification",
+  "app": "assets/app.1a5e9715.js",
+  "wasm": "game_core.c6465dbe.wasm"
 }

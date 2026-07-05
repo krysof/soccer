@@ -288,9 +288,15 @@ function pointInGame(clientX, clientY) {
 function shouldStartFallbackStick(target, clientX, clientY) {
   if (!pointInGame(clientX, clientY)) return false;
   if (target?.closest?.(".touch-btn")) return false;
-  if (target?.closest?.("#stick")) return false;
+  if (target?.closest?.("#stick")) return true;
   const rect = canvas.getBoundingClientRect();
-  return clientX <= rect.left + rect.width * 0.46 && clientY >= rect.top + rect.height * 0.34;
+  const stickRect = stick.getBoundingClientRect();
+  const pad = Math.max(24, stickRect.width * 0.20);
+  const inExpandedStick =
+    clientX >= stickRect.left - pad && clientX <= stickRect.right + pad &&
+    clientY >= stickRect.top - pad && clientY <= stickRect.bottom + pad;
+  const inLeftPlayArea = clientX <= rect.left + rect.width * 0.55 && clientY >= rect.top + rect.height * 0.25;
+  return inExpandedStick || inLeftPlayArea;
 }
 function beginStickPointer(event, captureElement = stick) {
   event.preventDefault();
@@ -325,6 +331,13 @@ for (const element of [gameWrap, canvas]) {
 window.addEventListener("pointermove", (event) => {
   if (touch.stickPointer === event.pointerId) { event.preventDefault(); updateStick(event); }
 });
+for (const element of [document, window]) {
+  element.addEventListener("pointerdown", (event) => {
+    if (touch.stickPointer === event.pointerId) return;
+    if (!shouldStartFallbackStick(event.target, event.clientX, event.clientY)) return;
+    beginStickPointer(event, canvas);
+  }, { capture: true });
+}
 for (const name of ["pointerup", "pointercancel"]) {
   window.addEventListener(name, (event) => {
     if (touch.stickPointer === event.pointerId) {
@@ -347,21 +360,22 @@ for (const name of ["pointerup", "pointercancel", "lostpointercapture"]) {
 function touchPointEvent(point) {
   return { clientX: point.clientX, clientY: point.clientY, pageX: point.pageX, pageY: point.pageY };
 }
-
-stick.addEventListener("touchstart", (event) => {
+function beginStickTouch(event, point) {
   event.preventDefault();
-  const point = event.changedTouches[0];
-  if (!point) return;
+  ensureAudio();
+  if (touch.stickPointer !== null && touch.stickPointer !== `touch:${point.identifier}`) resetStick();
   touch.stickPointer = `touch:${point.identifier}`;
   updateStick(touchPointEvent(point));
+}
+stick.addEventListener("touchstart", (event) => {
+  const point = event.changedTouches[0];
+  if (!point) return;
+  beginStickTouch(event, point);
 }, { passive: false });
 touchControls.addEventListener("touchstart", (event) => {
   for (const point of event.changedTouches) {
     if (!shouldStartFallbackStick(event.target, point.clientX, point.clientY)) continue;
-    event.preventDefault();
-    ensureAudio();
-    touch.stickPointer = `touch:${point.identifier}`;
-    updateStick(touchPointEvent(point));
+    beginStickTouch(event, point);
     return;
   }
 }, { passive: false });
@@ -369,13 +383,20 @@ for (const element of [gameWrap, canvas]) {
   element.addEventListener("touchstart", (event) => {
     for (const point of event.changedTouches) {
       if (!shouldStartFallbackStick(event.target, point.clientX, point.clientY)) continue;
-      event.preventDefault();
-      ensureAudio();
-      touch.stickPointer = `touch:${point.identifier}`;
-      updateStick(touchPointEvent(point));
+      beginStickTouch(event, point);
       return;
     }
   }, { passive: false });
+}
+for (const element of [document, window]) {
+  element.addEventListener("touchstart", (event) => {
+    if (typeof touch.stickPointer === "string" && touch.stickPointer.startsWith("touch:")) return;
+    for (const point of event.changedTouches) {
+      if (!shouldStartFallbackStick(event.target, point.clientX, point.clientY)) continue;
+      beginStickTouch(event, point);
+      return;
+    }
+  }, { passive: false, capture: true });
 }
 
 function moveStickTouch(event) {
@@ -427,7 +448,7 @@ function inputBits() {
 }
 
 async function loadWasm() {
-  const primary = assetUrl("../game_core.9508c930.wasm");
+  const primary = assetUrl("../game_core.c6465dbe.wasm");
   const fallback = rootAssetUrl("game_core.wasm");
   const response = await withFallback("game_core.wasm", primary, fallback, (url) => fetch(url).then((r) => {
     if (!r.ok) throw new Error(`failed to load ${url}: ${r.status}`);
