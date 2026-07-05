@@ -1,7 +1,7 @@
 {
   "css": "assets/app.bd4a7c61.css",
   "wasm": "game_core.41118e6e.wasm",
-  "note": "compiled-only GitHub Pages artifact; C89C game-script screen transition and BE98 restart owner bridge; movement verified locally",
+  "note": "compiled-only GitHub Pages artifact; C89C game-script screen transition and BE98 restart owner bridge; movement verified locally and online",
   "compatApp": [
     "assets/app.43ced66a.js",
     "assets/app.36ec729f.js",
@@ -9,5 +9,5 @@
     "assets/app.674fa6af.js"
   ],
   "app": "assets/app.6f49535d.js",
-  "tests": "ALL_ORIGINAL_TESTS_OK count=186; LOCAL mobile movement OK"
+  "tests": "ALL_ORIGINAL_TESTS_OK count=186; LOCAL/ONLINE mobile movement OK; ONLINE_C89C_OK"
 }
