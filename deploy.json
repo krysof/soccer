@@ -7,8 +7,8 @@
     "assets/app.4d608fd4.js"
   ],
   "css": "assets/app.bd4a7c61.css",
-  "note": "compiled-only GitHub Pages artifact; DE47 statusbar time/wind HUD RAM added; mobile touch IO fallback hardened and verified; DE0B/CF93/CB5F/CB07/CA1F/CA58/CAEE retained; pending online DE47 verification",
-  "tests": "ALL_ORIGINAL_TESTS_OK count=196; STATIC_ASSET_URLS OK; pending ONLINE_DE47/DE0B/mobile verification",
+  "note": "compiled-only GitHub Pages artifact; DE47 statusbar time/wind HUD RAM verified; DE0B field background bank scroll RAM, CF93 match-field init RAM, CB5F hidden skill sequence, CB07 score HUD, CA1F/CA58/CAEE camera/status RAM, and mobile touch movement retained",
+  "tests": "ALL_ORIGINAL_TESTS_OK count=196; STATIC_ASSET_URLS OK; ONLINE_DE47_STATUSBAR_TIME_WIND_OK; ONLINE_DE0B_FIELD_BG_BANK_OK; ONLINE mobile movement OK",
   "app": "assets/app.5108aeda.js",
   "wasm": "game_core.46adeaeb.wasm"
 }
