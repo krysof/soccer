@@ -6,8 +6,8 @@
     "assets/app.3a0b5244.js"
   ],
   "css": "assets/app.bd4a7c61.css",
-  "note": "compiled-only GitHub Pages artifact; C7D0-C808 subtype06, C80B camera/ball-speed helper, and C87B script-bit20 gate now mirror original RAM flow",
-  "tests": "ALL_ORIGINAL_TESTS_OK count=190; STATIC_ASSET_URLS OK; pending online C7D0_C80B_C87B/mobile verification",
+  "note": "compiled-only GitHub Pages artifact; C7D0-C808 subtype06, C80B camera/ball-speed helper, and C87B script-bit20 gate mirror original RAM flow; online verified",
+  "tests": "ALL_ORIGINAL_TESTS_OK count=190; STATIC_ASSET_URLS OK; ONLINE_C7D0_C80B_C87B_OK; ONLINE mobile movement OK",
   "app": "assets/app.bd9011db.js",
   "wasm": "game_core.528def3b.wasm"
 }
