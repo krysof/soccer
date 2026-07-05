@@ -1,7 +1,12 @@
 {
-  "note": "compiled-only GitHub Pages artifact; removed invented TeamProfile/RoleProfile, compat stats now read original BC1F RAM",
+  "note": "compiled-only GitHub Pages artifact; touch IO hardened for iOS movement, cached app hashes point to current build; gameplay logic unchanged",
   "wasm": "game_core.1fdd97b6.wasm",
-  "app": "assets/app.36ec729f.js",
+  "app": "assets/app.43ced66a.js",
+  "compatApp": [
+    "assets/app.36ec729f.js",
+    "assets/app.2ef7ebc9.js",
+    "assets/app.js"
+  ],
   "css": "assets/app.bd4a7c61.css",
-  "deployedAt": "2026-07-05T20:55:00.5641014Z"
+  "deployedAt": "2026-07-05T21:03:29.9317350Z"
 }
