@@ -1,7 +1,7 @@
 {
-  "deployedAt": "2026-07-05T19:59:25.4366205Z",
-  "app": "assets/app.ae7464cc.js",
+  "app": "assets/app.19c49bb6.js",
   "css": "assets/app.bd4a7c61.css",
-  "wasm": "game_core.910f575c.wasm",
-  "note": "compiled-only GitHub Pages artifact; includes original 8EE5/8EFF/8F73 prematch character motion exports"
+  "wasm": "game_core.351b42f4.wasm",
+  "note": "compiled-only GitHub Pages artifact; includes original bank05 8DBC prematch character flow export",
+  "deployedAt": "2026-07-05T20:08:59.6148333Z"
 }
