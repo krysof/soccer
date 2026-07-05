@@ -1,13 +1,13 @@
 {
-  "note": "compiled-only GitHub Pages artifact; BE98 dead-ball passer setup and B8C5 $48/$44 script shell bridge; movement verified locally and online",
-  "wasm": "game_core.d62c8fd5.wasm",
-  "app": "assets/app.674fa6af.js",
   "css": "assets/app.bd4a7c61.css",
+  "wasm": "game_core.41118e6e.wasm",
+  "note": "compiled-only GitHub Pages artifact; C89C game-script screen transition and BE98 restart owner bridge; movement verified locally",
   "compatApp": [
-    "assets/app.12353cb4.js",
     "assets/app.43ced66a.js",
     "assets/app.36ec729f.js",
-    "assets/app.2ef7ebc9.js"
+    "assets/app.2ef7ebc9.js",
+    "assets/app.674fa6af.js"
   ],
-  "tests": "ALL_ORIGINAL_TESTS_OK count=185; LOCAL/ONLINE mobile movement OK"
+  "app": "assets/app.6f49535d.js",
+  "tests": "ALL_ORIGINAL_TESTS_OK count=186; LOCAL mobile movement OK"
 }
