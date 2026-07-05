@@ -30,6 +30,6 @@
     "assets/app.ec8d0e59.js",
     "assets/app.f657e2a5.js"
   ],
-  "note": "compiled-only GitHub Pages artifact; all existing app.*.js compatibility hashes overwritten with current JS/current WASM; C615 field subtype now mirrors Start pause toggle, hidden-skill reset path, CB5F branch, C89C and D073 RAM side effects from ASM",
-  "tests": "ALL_ORIGINAL_TESTS_OK count=199; STATIC_ASSET_URLS OK; LOCAL mobile touch movement OK"
+  "note": "compiled-only GitHub Pages artifact; all existing app.*.js compatibility hashes overwritten with current JS/current WASM; C615 field subtype mirrors Start pause toggle, hidden-skill reset/CB5F branch, C89C and D073 RAM side effects from ASM and is verified online",
+  "tests": "ALL_ORIGINAL_TESTS_OK count=199; STATIC_ASSET_URLS OK; LOCAL mobile touch movement OK; ONLINE mobile movement OK; ONLINE touch edge fallback OK; ONLINE_C615_FRAME_RAM_OK"
 }
