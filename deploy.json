@@ -1,13 +1,13 @@
 {
   "compatApp": [
+    "assets/app.98a832c7.js",
     "assets/app.c1fa6a94.js",
     "assets/app.32c70d11.js",
-    "assets/app.43ced66a.js",
-    "assets/app.36ec729f.js"
+    "assets/app.43ced66a.js"
   ],
   "css": "assets/app.bd4a7c61.css",
-  "note": "compiled-only GitHub Pages artifact; CB5F hidden skill sequence, CB07 score HUD tile RAM, CA1F/CA58/CAEE camera/status RAM, and online mobile movement verified",
-  "tests": "ALL_ORIGINAL_TESTS_OK count=193; STATIC_ASSET_URLS OK; ONLINE_CB5F_HIDDEN_SKILL_OK; ONLINE mobile movement OK",
-  "app": "assets/app.98a832c7.js",
-  "wasm": "game_core.d5592b29.wasm"
+  "note": "compiled-only GitHub Pages artifact; CF93-D01E match-field init RAM added; CB5F/CB07/CA1F/CA58/CAEE retained; pending online CF93/mobile verification",
+  "tests": "ALL_ORIGINAL_TESTS_OK count=194; STATIC_ASSET_URLS OK; pending ONLINE_CF93/mobile verification",
+  "app": "assets/app.2df5175c.js",
+  "wasm": "game_core.9508c930.wasm"
 }
