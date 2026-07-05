@@ -6,8 +6,8 @@
     "assets/app.3a0b5244.js"
   ],
   "css": "assets/app.bd4a7c61.css",
-  "note": "compiled-only GitHub Pages artifact; C7D0-C808 subtype06, C80B camera/ball-speed helper, and C87B script-bit20 gate mirror original RAM flow; online verified",
-  "tests": "ALL_ORIGINAL_TESTS_OK count=190; STATIC_ASSET_URLS OK; ONLINE_C7D0_C80B_C87B_OK; ONLINE mobile movement OK",
-  "app": "assets/app.bd9011db.js",
-  "wasm": "game_core.528def3b.wasm"
+  "note": "compiled-only GitHub Pages artifact; CA1F field/status camera setup, CA58 score-status rank, CAEE copy-camera commit, and split live/copy camera RAM now mirror original flow",
+  "tests": "ALL_ORIGINAL_TESTS_OK count=191; STATIC_ASSET_URLS OK; pending online CA1F_CA58_CAEE/mobile verification",
+  "app": "assets/app.32c70d11.js",
+  "wasm": "game_core.c30e7681.wasm"
 }
