@@ -1,7 +1,9 @@
 {
-  "deployed_at": "2026-07-05T18:02:19.5064700Z",
-  "app": "assets/app.2fc88b80.js",
+  "deployed_at": "2026-07-05T18:09:23.3027411Z",
+  "app": "assets/app.bf3fd03c.js",
   "css": "assets/app.2738c0af.css",
-  "wasm": "game_core.6166efef.wasm",
-  "note": "compiled artifacts only; no source"
+  "wasm": "game_core.f1658252.wasm",
+  "fix": "src/bank_06.asm A78D/A790/A793/A7A0/A7A3 animation scripts; motion04/05 exit",
+  "note": "compiled artifacts only; no source",
+  "tests": "ALL_ORIGINAL_TESTS_OK count=167"
 }
