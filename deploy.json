@@ -1,7 +1,7 @@
 {
-  "deployedAt": "2026-07-05T19:52:42.2180329Z",
-  "app": "assets/app.2261e8e5.js",
+  "deployedAt": "2026-07-05T19:59:25.4366205Z",
+  "app": "assets/app.ae7464cc.js",
   "css": "assets/app.bd4a7c61.css",
-  "wasm": "game_core.6a9f7e2f.wasm",
-  "note": "compiled-only GitHub Pages artifact; includes original 8DD0/8E3C/8F79 prematch character state exports"
+  "wasm": "game_core.910f575c.wasm",
+  "note": "compiled-only GitHub Pages artifact; includes original 8EE5/8EFF/8F73 prematch character motion exports"
 }
