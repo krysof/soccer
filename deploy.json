@@ -1,13 +1,13 @@
 {
   "compatApp": [
+    "assets/app.32c70d11.js",
     "assets/app.43ced66a.js",
     "assets/app.36ec729f.js",
-    "assets/app.2ef7ebc9.js",
-    "assets/app.3a0b5244.js"
+    "assets/app.2ef7ebc9.js"
   ],
   "css": "assets/app.bd4a7c61.css",
-  "note": "compiled-only GitHub Pages artifact; CA1F field/status camera setup, CA58 score-status rank, CAEE copy-camera commit, split live/copy camera RAM, and online mobile movement verified",
-  "tests": "ALL_ORIGINAL_TESTS_OK count=191; STATIC_ASSET_URLS OK; ONLINE_CA1F_CA58_CAEE_OK; ONLINE mobile movement OK",
-  "app": "assets/app.32c70d11.js",
-  "wasm": "game_core.c30e7681.wasm"
+  "note": "compiled-only GitHub Pages artifact; CB07 score HUD tile RAM added; CA1F/CA58/CAEE and mobile movement remain verified locally/previous online",
+  "tests": "ALL_ORIGINAL_TESTS_OK count=192; STATIC_ASSET_URLS OK; pending online CB07/mobile verification",
+  "app": "assets/app.c1fa6a94.js",
+  "wasm": "game_core.6de2e785.wasm"
 }
