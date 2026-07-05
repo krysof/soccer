@@ -259,7 +259,7 @@ function inputBits() {
 }
 
 async function loadWasm() {
-  const primary = assetUrl("../game_core.252050.wasm");
+  const primary = assetUrl("../game_core.254227.wasm");
   const fallback = rootAssetUrl("game_core.wasm");
   const response = await withFallback("game_core.wasm", primary, fallback, (url) => fetch(url).then((r) => {
     if (!r.ok) throw new Error(`failed to load ${url}: ${r.status}`);
