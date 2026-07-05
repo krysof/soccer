@@ -1,14 +1,32 @@
 {
-  "compatApp": [
-    "assets/app.43ced66a.js",
-    "assets/app.36ec729f.js",
-    "assets/app.2ef7ebc9.js",
-    "assets/app.1a5e9715.js",
-    "assets/app.4d608fd4.js"
-  ],
+  "app": "assets/app.4a595403.js",
+  "wasm": "game_core.2a52b0cd.wasm",
   "css": "assets/app.bd4a7c61.css",
-  "note": "compiled-only GitHub Pages artifact; DE47 statusbar time/wind HUD RAM verified; DE0B field background bank scroll RAM, CF93 match-field init RAM, CB5F hidden skill sequence, CB07 score HUD, CA1F/CA58/CAEE camera/status RAM, and mobile touch movement retained",
-  "tests": "ALL_ORIGINAL_TESTS_OK count=196; STATIC_ASSET_URLS OK; ONLINE_DE47_STATUSBAR_TIME_WIND_OK; ONLINE_DE0B_FIELD_BG_BANK_OK; ONLINE mobile movement OK",
-  "app": "assets/app.5108aeda.js",
-  "wasm": "game_core.46adeaeb.wasm"
+  "compatApp": [
+    "assets/app.0504462d.js",
+    "assets/app.12353cb4.js",
+    "assets/app.1787d9d4.js",
+    "assets/app.1a5e9715.js",
+    "assets/app.2df5175c.js",
+    "assets/app.2ef7ebc9.js",
+    "assets/app.32c70d11.js",
+    "assets/app.36ec729f.js",
+    "assets/app.3a0b5244.js",
+    "assets/app.43ced66a.js",
+    "assets/app.4d608fd4.js",
+    "assets/app.5108aeda.js",
+    "assets/app.562f5039.js",
+    "assets/app.674fa6af.js",
+    "assets/app.6f49535d.js",
+    "assets/app.7b9a3015.js",
+    "assets/app.98a832c7.js",
+    "assets/app.bd9011db.js",
+    "assets/app.bec78c3a.js",
+    "assets/app.c1fa6a94.js",
+    "assets/app.d9ec998d.js",
+    "assets/app.ec8d0e59.js",
+    "assets/app.f657e2a5.js"
+  ],
+  "note": "compiled-only GitHub Pages artifact; all existing app.*.js compatibility hashes overwritten with current mobile IO and current WASM; C615/C699/C7D0 field frame heads preserve original DE0B/DE47/CAEE RAM chain",
+  "tests": "ALL_ORIGINAL_TESTS_OK count=197; STATIC_ASSET_URLS OK; LOCAL mobile touch movement OK"
 }

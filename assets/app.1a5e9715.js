@@ -286,17 +286,18 @@ function pointInGame(clientX, clientY) {
   return clientX >= rect.left && clientX <= rect.right && clientY >= rect.top && clientY <= rect.bottom;
 }
 function shouldStartFallbackStick(target, clientX, clientY) {
-  if (!pointInGame(clientX, clientY)) return false;
   if (target?.closest?.(".touch-btn")) return false;
   if (target?.closest?.("#stick")) return true;
+  const inGame = pointInGame(clientX, clientY);
   const rect = canvas.getBoundingClientRect();
   const stickRect = stick.getBoundingClientRect();
   const pad = Math.max(24, stickRect.width * 0.20);
   const inExpandedStick =
     clientX >= stickRect.left - pad && clientX <= stickRect.right + pad &&
     clientY >= stickRect.top - pad && clientY <= stickRect.bottom + pad;
-  const inLeftPlayArea = clientX <= rect.left + rect.width * 0.55 && clientY >= rect.top + rect.height * 0.25;
-  return inExpandedStick || inLeftPlayArea;
+  const inLeftPlayArea = inGame && clientX <= rect.left + rect.width * 0.55 && clientY >= rect.top + rect.height * 0.25;
+  const inLeftViewport = clientX <= window.innerWidth * 0.52 && clientY >= Math.max(0, rect.top - stickRect.height * 0.4);
+  return inExpandedStick || inLeftPlayArea || inLeftViewport;
 }
 function beginStickPointer(event, captureElement = stick) {
   event.preventDefault();
@@ -448,7 +449,7 @@ function inputBits() {
 }
 
 async function loadWasm() {
-  const primary = assetUrl("../game_core.c6465dbe.wasm");
+  const primary = assetUrl("../game_core.2a52b0cd.wasm");
   const fallback = rootAssetUrl("game_core.wasm");
   const response = await withFallback("game_core.wasm", primary, fallback, (url) => fetch(url).then((r) => {
     if (!r.ok) throw new Error(`failed to load ${url}: ${r.status}`);

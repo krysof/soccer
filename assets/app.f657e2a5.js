@@ -259,14 +259,22 @@ function resetStick() {
   touch.axisY = 0;
   knob.style.transform = "translate(-50%, -50%)";
 }
-
+function eventClientPoint(event) {
+  const scrollX = window.scrollX || window.pageXOffset || 0;
+  const scrollY = window.scrollY || window.pageYOffset || 0;
+  return {
+    x: Number.isFinite(event.clientX) ? event.clientX : ((event.pageX || 0) - scrollX),
+    y: Number.isFinite(event.clientY) ? event.clientY : ((event.pageY || 0) - scrollY),
+  };
+}
 function updateStick(event) {
   const rect = stick.getBoundingClientRect();
   const cx = rect.left + rect.width / 2;
   const cy = rect.top + rect.height / 2;
   const max = rect.width * 0.34;
-  let dx = event.clientX - cx;
-  let dy = event.clientY - cy;
+  const point = eventClientPoint(event);
+  let dx = point.x - cx;
+  let dy = point.y - cy;
   const len = Math.hypot(dx, dy);
   if (len > max) { dx = dx / len * max; dy = dy / len * max; }
   touch.axisX = Math.abs(dx) < max * 0.22 ? 0 : Math.sign(dx);
@@ -278,11 +286,18 @@ function pointInGame(clientX, clientY) {
   return clientX >= rect.left && clientX <= rect.right && clientY >= rect.top && clientY <= rect.bottom;
 }
 function shouldStartFallbackStick(target, clientX, clientY) {
-  if (!pointInGame(clientX, clientY)) return false;
   if (target?.closest?.(".touch-btn")) return false;
-  if (target?.closest?.("#stick")) return false;
+  if (target?.closest?.("#stick")) return true;
+  const inGame = pointInGame(clientX, clientY);
   const rect = canvas.getBoundingClientRect();
-  return clientX <= rect.left + rect.width * 0.46 && clientY >= rect.top + rect.height * 0.34;
+  const stickRect = stick.getBoundingClientRect();
+  const pad = Math.max(24, stickRect.width * 0.20);
+  const inExpandedStick =
+    clientX >= stickRect.left - pad && clientX <= stickRect.right + pad &&
+    clientY >= stickRect.top - pad && clientY <= stickRect.bottom + pad;
+  const inLeftPlayArea = inGame && clientX <= rect.left + rect.width * 0.55 && clientY >= rect.top + rect.height * 0.25;
+  const inLeftViewport = clientX <= window.innerWidth * 0.52 && clientY >= Math.max(0, rect.top - stickRect.height * 0.4);
+  return inExpandedStick || inLeftPlayArea || inLeftViewport;
 }
 function beginStickPointer(event, captureElement = stick) {
   event.preventDefault();
@@ -317,6 +332,13 @@ for (const element of [gameWrap, canvas]) {
 window.addEventListener("pointermove", (event) => {
   if (touch.stickPointer === event.pointerId) { event.preventDefault(); updateStick(event); }
 });
+for (const element of [document, window]) {
+  element.addEventListener("pointerdown", (event) => {
+    if (touch.stickPointer === event.pointerId) return;
+    if (!shouldStartFallbackStick(event.target, event.clientX, event.clientY)) return;
+    beginStickPointer(event, canvas);
+  }, { capture: true });
+}
 for (const name of ["pointerup", "pointercancel"]) {
   window.addEventListener(name, (event) => {
     if (touch.stickPointer === event.pointerId) {
@@ -337,23 +359,24 @@ for (const name of ["pointerup", "pointercancel", "lostpointercapture"]) {
 }
 
 function touchPointEvent(point) {
-  return { clientX: point.clientX, clientY: point.clientY };
+  return { clientX: point.clientX, clientY: point.clientY, pageX: point.pageX, pageY: point.pageY };
 }
-
-stick.addEventListener("touchstart", (event) => {
+function beginStickTouch(event, point) {
   event.preventDefault();
-  const point = event.changedTouches[0];
-  if (!point) return;
+  ensureAudio();
+  if (touch.stickPointer !== null && touch.stickPointer !== `touch:${point.identifier}`) resetStick();
   touch.stickPointer = `touch:${point.identifier}`;
   updateStick(touchPointEvent(point));
+}
+stick.addEventListener("touchstart", (event) => {
+  const point = event.changedTouches[0];
+  if (!point) return;
+  beginStickTouch(event, point);
 }, { passive: false });
 touchControls.addEventListener("touchstart", (event) => {
   for (const point of event.changedTouches) {
     if (!shouldStartFallbackStick(event.target, point.clientX, point.clientY)) continue;
-    event.preventDefault();
-    ensureAudio();
-    touch.stickPointer = `touch:${point.identifier}`;
-    updateStick(touchPointEvent(point));
+    beginStickTouch(event, point);
     return;
   }
 }, { passive: false });
@@ -361,13 +384,20 @@ for (const element of [gameWrap, canvas]) {
   element.addEventListener("touchstart", (event) => {
     for (const point of event.changedTouches) {
       if (!shouldStartFallbackStick(event.target, point.clientX, point.clientY)) continue;
-      event.preventDefault();
-      ensureAudio();
-      touch.stickPointer = `touch:${point.identifier}`;
-      updateStick(touchPointEvent(point));
+      beginStickTouch(event, point);
       return;
     }
   }, { passive: false });
+}
+for (const element of [document, window]) {
+  element.addEventListener("touchstart", (event) => {
+    if (typeof touch.stickPointer === "string" && touch.stickPointer.startsWith("touch:")) return;
+    for (const point of event.changedTouches) {
+      if (!shouldStartFallbackStick(event.target, point.clientX, point.clientY)) continue;
+      beginStickTouch(event, point);
+      return;
+    }
+  }, { passive: false, capture: true });
 }
 
 function moveStickTouch(event) {
@@ -382,8 +412,9 @@ function moveStickTouch(event) {
   }
 }
 
-stick.addEventListener("touchmove", moveStickTouch, { passive: false });
-window.addEventListener("touchmove", moveStickTouch, { passive: false });
+for (const element of [stick, touchControls, gameWrap, canvas, document, window]) {
+  element.addEventListener("touchmove", moveStickTouch, { passive: false, capture: true });
+}
 
 function endStickTouch(event) {
   if (typeof touch.stickPointer !== "string" || !touch.stickPointer.startsWith("touch:")) return;
@@ -397,10 +428,10 @@ function endStickTouch(event) {
   }
 }
 
-stick.addEventListener("touchend", endStickTouch, { passive: false });
-stick.addEventListener("touchcancel", endStickTouch, { passive: false });
-window.addEventListener("touchend", endStickTouch, { passive: false });
-window.addEventListener("touchcancel", endStickTouch, { passive: false });
+for (const element of [stick, touchControls, gameWrap, canvas, document, window]) {
+  element.addEventListener("touchend", endStickTouch, { passive: false, capture: true });
+  element.addEventListener("touchcancel", endStickTouch, { passive: false, capture: true });
+}
 
 function inputBits() {
   let bits = 0;
@@ -418,7 +449,7 @@ function inputBits() {
 }
 
 async function loadWasm() {
-  const primary = assetUrl("../game_core.351b42f4.wasm");
+  const primary = assetUrl("../game_core.2a52b0cd.wasm");
   const fallback = rootAssetUrl("game_core.wasm");
   const response = await withFallback("game_core.wasm", primary, fallback, (url) => fetch(url).then((r) => {
     if (!r.ok) throw new Error(`failed to load ${url}: ${r.status}`);
