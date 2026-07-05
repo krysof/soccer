@@ -7,8 +7,8 @@
     "assets/app.2df5175c.js"
   ],
   "css": "assets/app.bd4a7c61.css",
-  "note": "compiled-only GitHub Pages artifact; mobile touch IO fallback hardened; DE0B field background bank scroll RAM; CF93/CB5F/CB07/CA1F/CA58/CAEE retained; pending online verification",
-  "tests": "ALL_ORIGINAL_TESTS_OK count=195; STATIC_ASSET_URLS OK; LOCAL_DIST_TOUCH_MOVE_OK; pending ONLINE_DE0B/mobile verification",
+  "note": "compiled-only GitHub Pages artifact; mobile touch IO fallback hardened and verified; DE0B field background bank scroll RAM, CF93 match-field init RAM, CB5F hidden skill sequence, CB07 score HUD, CA1F/CA58/CAEE camera/status RAM retained",
+  "tests": "ALL_ORIGINAL_TESTS_OK count=195; STATIC_ASSET_URLS OK; LOCAL_DIST_TOUCH_MOVE_OK; ONLINE_DE0B_FIELD_BG_BANK_OK; ONLINE mobile movement OK; ONLINE_TOUCH_EDGE_FALLBACK_OK",
   "app": "assets/app.1a5e9715.js",
   "wasm": "game_core.c6465dbe.wasm"
 }
