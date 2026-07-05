@@ -1,7 +1,7 @@
 {
-  "note": "compiled-only GitHub Pages artifact; player profile RAM now follows original bank01 BC1F/tbl_BD18",
-  "wasm": "game_core.83b08915.wasm",
-  "deployedAt": "2026-07-05T20:49:22.0371735Z",
+  "note": "compiled-only GitHub Pages artifact; removed invented TeamProfile/RoleProfile, compat stats now read original BC1F RAM",
+  "wasm": "game_core.1fdd97b6.wasm",
+  "app": "assets/app.36ec729f.js",
   "css": "assets/app.bd4a7c61.css",
-  "app": "assets/app.d9ec998d.js"
+  "deployedAt": "2026-07-05T20:55:00.5641014Z"
 }
