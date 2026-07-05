@@ -27,6 +27,6 @@
     "assets/app.ec8d0e59.js",
     "assets/app.f657e2a5.js"
   ],
-  "note": "compiled-only GitHub Pages artifact; all existing app.*.js compatibility hashes overwritten with current mobile IO and current WASM; C615/C699/C7D0 field frame heads preserve original DE0B/DE47/CAEE RAM chain",
-  "tests": "ALL_ORIGINAL_TESTS_OK count=197; STATIC_ASSET_URLS OK; LOCAL mobile touch movement OK"
+  "note": "compiled-only GitHub Pages artifact; all existing app.*.js compatibility hashes overwritten with current mobile IO/current WASM to defeat stale iPhone index cache; C615/C699/C7D0 field frame heads preserve original DE0B/DE47/CAEE RAM chain",
+  "tests": "ALL_ORIGINAL_TESTS_OK count=197; STATIC_ASSET_URLS OK; LOCAL mobile touch movement OK; ONLINE mobile movement OK; ONLINE touch edge fallback OK; ONLINE_FIELD_HEADS_C615_C699_C7D0_OK"
 }
