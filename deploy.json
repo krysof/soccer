@@ -1,7 +1,7 @@
 {
-  "deployedAt": "2026-07-05T19:18:54.7873418Z",
-  "app": "assets/app.ccd370fc.js",
+  "deployedAt": "2026-07-05T19:25:45.1439198Z",
+  "app": "assets/app.759981be.js",
   "css": "assets/app.bd4a7c61.css",
-  "wasm": "game_core.077334e3.wasm",
+  "wasm": "game_core.14624d0d.wasm",
   "note": "compiled-only GitHub Pages artifact"
 }

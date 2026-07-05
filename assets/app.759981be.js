@@ -53,6 +53,7 @@ const keys = new Set();
 const canvas = document.querySelector("#game");
 const ctx = canvas.getContext("2d");
 const stats = document.querySelector("#stats");
+const gameWrap = document.querySelector(".game-wrap");
 const touchControls = document.querySelector("#touchControls");
 const stick = document.querySelector("#stick");
 const knob = document.querySelector("#knob");
@@ -286,6 +287,7 @@ function shouldStartFallbackStick(target, clientX, clientY) {
 function beginStickPointer(event, captureElement = stick) {
   event.preventDefault();
   ensureAudio();
+  if (touch.stickPointer !== null && touch.stickPointer !== event.pointerId) resetStick();
   touch.stickPointer = event.pointerId;
   safeSetPointerCapture(captureElement, event.pointerId);
   updateStick(event);
@@ -303,6 +305,15 @@ touchControls.addEventListener("pointerdown", (event) => {
 touchControls.addEventListener("pointermove", (event) => {
   if (touch.stickPointer === event.pointerId) { event.preventDefault(); updateStick(event); }
 });
+for (const element of [gameWrap, canvas]) {
+  element.addEventListener("pointerdown", (event) => {
+    if (!shouldStartFallbackStick(event.target, event.clientX, event.clientY)) return;
+    beginStickPointer(event, element);
+  });
+  element.addEventListener("pointermove", (event) => {
+    if (touch.stickPointer === event.pointerId) { event.preventDefault(); updateStick(event); }
+  });
+}
 window.addEventListener("pointermove", (event) => {
   if (touch.stickPointer === event.pointerId) { event.preventDefault(); updateStick(event); }
 });
@@ -346,6 +357,18 @@ touchControls.addEventListener("touchstart", (event) => {
     return;
   }
 }, { passive: false });
+for (const element of [gameWrap, canvas]) {
+  element.addEventListener("touchstart", (event) => {
+    for (const point of event.changedTouches) {
+      if (!shouldStartFallbackStick(event.target, point.clientX, point.clientY)) continue;
+      event.preventDefault();
+      ensureAudio();
+      touch.stickPointer = `touch:${point.identifier}`;
+      updateStick(touchPointEvent(point));
+      return;
+    }
+  }, { passive: false });
+}
 
 function moveStickTouch(event) {
   if (typeof touch.stickPointer !== "string" || !touch.stickPointer.startsWith("touch:")) return;
@@ -395,7 +418,7 @@ function inputBits() {
 }
 
 async function loadWasm() {
-  const primary = assetUrl("../game_core.077334e3.wasm");
+  const primary = assetUrl("../game_core.14624d0d.wasm");
   const fallback = rootAssetUrl("game_core.wasm");
   const response = await withFallback("game_core.wasm", primary, fallback, (url) => fetch(url).then((r) => {
     if (!r.ok) throw new Error(`failed to load ${url}: ${r.status}`);
