@@ -1,7 +1,8 @@
 {
-  "deployed_from": "428f354af0b663320f7c8aa8b389a4b8c082847f",
+  "deployed_from": "cbccc848109966acb562b03bae85b729b2cde345",
   "app": "assets/app.b05c66dd.js",
   "css": "assets/app.2738c0af.css",
   "wasm": "game_core.e82a17c6.wasm",
-  "generated_utc": "2026-07-05T17:49:34.6871316Z"
+  "build_type": "workflow",
+  "generated_utc": "2026-07-05T17:54:26.0682908Z"
 }
