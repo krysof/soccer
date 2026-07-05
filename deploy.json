@@ -1,13 +1,13 @@
 {
-  "note": "compiled-only GitHub Pages artifact; B8C5/B9F5 throw-in script now mirrors original $44 into shell phase before host boundary wrapper; cached app hashes point to current build",
-  "wasm": "game_core.ddcc0ab7.wasm",
-  "app": "assets/app.12353cb4.js",
+  "note": "compiled-only GitHub Pages artifact; BE98 dead-ball passer setup and B8C5 $48/$44 script shell bridge; movement verified locally and online",
+  "wasm": "game_core.d62c8fd5.wasm",
+  "app": "assets/app.674fa6af.js",
+  "css": "assets/app.bd4a7c61.css",
   "compatApp": [
+    "assets/app.12353cb4.js",
     "assets/app.43ced66a.js",
     "assets/app.36ec729f.js",
-    "assets/app.2ef7ebc9.js",
-    "assets/app.js"
+    "assets/app.2ef7ebc9.js"
   ],
-  "css": "assets/app.bd4a7c61.css",
-  "deployedAt": "2026-07-05T21:09:22.3420116Z"
+  "tests": "ALL_ORIGINAL_TESTS_OK count=185; LOCAL/ONLINE mobile movement OK"
 }
