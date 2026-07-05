@@ -1,16 +1,7 @@
 {
-  "updated": "2026-07-06T04:06:45",
-  "url": "https://krysof.github.io/soccer/",
-  "app": "assets/app.1b1d91b2.js",
-  "css": "assets/app.12665bcb.css",
+  "deployedAt": "2026-07-05T19:18:54.7873418Z",
+  "app": "assets/app.ccd370fc.js",
+  "css": "assets/app.bd4a7c61.css",
   "wasm": "game_core.077334e3.wasm",
-  "tests": [
-    "WASM OK web/public/game_core.wasm",
-    "test_original_prematch_post_match_b5e6_bracket_draw ok",
-    "test_original_prematch_post_match_b47c_bracket ok",
-    "ALL_ORIGINAL_TESTS_OK count=172",
-    "test_original_runtime_input_movement ok",
-    "web render/static asset tests ok"
-  ],
-  "fix": "source-backed post-match bracket draw state via src/bank_05.asm B5E6-B6EF; B47C first-entry now runs B5E6 after B4D6; no NES hardware emulation added"
+  "note": "compiled-only GitHub Pages artifact"
 }
