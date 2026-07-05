@@ -6,8 +6,8 @@
     "assets/app.3a0b5244.js"
   ],
   "css": "assets/app.bd4a7c61.css",
-  "note": "compiled-only GitHub Pages artifact; C706-C71B goal cutscene fade gate now runs D047/D073 brightness RAM and C91A script cleanup before kickoff",
-  "tests": "ALL_ORIGINAL_TESTS_OK count=188; STATIC_ASSET_URLS OK; pending online C706/mobile verification",
+  "note": "compiled-only GitHub Pages artifact; C706-C71B goal cutscene fade gate runs D047/D073 brightness RAM and C91A script cleanup before kickoff; online verified",
+  "tests": "ALL_ORIGINAL_TESTS_OK count=188; STATIC_ASSET_URLS OK; ONLINE_C706_GATE_OK; ONLINE mobile movement OK",
   "app": "assets/app.1787d9d4.js",
   "wasm": "game_core.012a72df.wasm"
 }
