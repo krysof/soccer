@@ -1,14 +1,16 @@
 {
-  "updated": "2026-07-06T03:59:42",
+  "updated": "2026-07-06T04:06:45",
   "url": "https://krysof.github.io/soccer/",
-  "app": "assets/app.991a7214.js",
+  "app": "assets/app.1b1d91b2.js",
   "css": "assets/app.12665bcb.css",
-  "wasm": "game_core.c600f031.wasm",
+  "wasm": "game_core.077334e3.wasm",
   "tests": [
-    "LOCAL_TOUCH_FALLBACK_OK phase=3 input right/up and pRam moved",
+    "WASM OK web/public/game_core.wasm",
+    "test_original_prematch_post_match_b5e6_bracket_draw ok",
+    "test_original_prematch_post_match_b47c_bracket ok",
+    "ALL_ORIGINAL_TESTS_OK count=172",
     "test_original_runtime_input_movement ok",
-    "ALL_ORIGINAL_TESTS_OK count=171",
     "web render/static asset tests ok"
   ],
-  "fix": "IO-only mobile controls: capture errors ignored; full lower-left playfield fallback feeds original D-pad bits; no WASM/game-logic change"
+  "fix": "source-backed post-match bracket draw state via src/bank_05.asm B5E6-B6EF; B47C first-entry now runs B5E6 after B4D6; no NES hardware emulation added"
 }
