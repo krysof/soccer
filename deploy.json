@@ -6,8 +6,8 @@
     "assets/app.2ef7ebc9.js"
   ],
   "css": "assets/app.bd4a7c61.css",
-  "note": "compiled-only GitHub Pages artifact; CB07 score HUD tile RAM added; CA1F/CA58/CAEE and mobile movement remain verified locally/previous online",
-  "tests": "ALL_ORIGINAL_TESTS_OK count=192; STATIC_ASSET_URLS OK; pending online CB07/mobile verification",
+  "note": "compiled-only GitHub Pages artifact; CB07 score HUD tile RAM, CA1F/CA58/CAEE camera/status RAM, and online mobile movement verified",
+  "tests": "ALL_ORIGINAL_TESTS_OK count=192; STATIC_ASSET_URLS OK; ONLINE_CB07_SCORE_HUD_OK; ONLINE mobile movement OK",
   "app": "assets/app.c1fa6a94.js",
   "wasm": "game_core.6de2e785.wasm"
 }
