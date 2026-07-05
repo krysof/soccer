@@ -1,6 +1,7 @@
 {
-  "deployed_from": "fd6396523ceb7c56acb7c104b9eef1d0233c5fdd",
-  "short": "fd63965",
+  "deployed_from": "428f354af0b663320f7c8aa8b389a4b8c082847f",
+  "app": "assets/app.b05c66dd.js",
+  "css": "assets/app.2738c0af.css",
   "wasm": "game_core.e82a17c6.wasm",
-  "generated_utc": "2026-07-05T17:41:12.1736273Z"
+  "generated_utc": "2026-07-05T17:49:34.6871316Z"
 }
