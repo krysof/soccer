@@ -1,12 +1,13 @@
 {
-  "note": "compiled-only GitHub Pages artifact; touch IO hardened for iOS movement, cached app hashes point to current build; gameplay logic unchanged",
-  "wasm": "game_core.1fdd97b6.wasm",
-  "app": "assets/app.43ced66a.js",
+  "note": "compiled-only GitHub Pages artifact; B8C5/B9F5 throw-in script now mirrors original $44 into shell phase before host boundary wrapper; cached app hashes point to current build",
+  "wasm": "game_core.ddcc0ab7.wasm",
+  "app": "assets/app.12353cb4.js",
   "compatApp": [
+    "assets/app.43ced66a.js",
     "assets/app.36ec729f.js",
     "assets/app.2ef7ebc9.js",
     "assets/app.js"
   ],
   "css": "assets/app.bd4a7c61.css",
-  "deployedAt": "2026-07-05T21:03:29.9317350Z"
+  "deployedAt": "2026-07-05T21:09:22.3420116Z"
 }
