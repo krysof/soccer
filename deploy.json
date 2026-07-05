@@ -1,9 +1,10 @@
 {
-  "app": "assets/app.094b216e.js",
-  "wasm": "game_core.76fc879a.wasm",
+  "app": "assets/app.ea7fecce.js",
+  "wasm": "game_core.c2c9f2fb.wasm",
   "css": "assets/app.bd4a7c61.css",
   "compatApp": [
     "assets/app.0504462d.js",
+    "assets/app.094b216e.js",
     "assets/app.12353cb4.js",
     "assets/app.1787d9d4.js",
     "assets/app.1a5e9715.js",
@@ -28,6 +29,6 @@
     "assets/app.ec8d0e59.js",
     "assets/app.f657e2a5.js"
   ],
-  "note": "compiled-only GitHub Pages artifact; all existing app.*.js compatibility hashes overwritten with current JS/current WASM; C539/C57D field subtype 00/01 RAM transition added from ASM and verified online",
-  "tests": "ALL_ORIGINAL_TESTS_OK count=198; STATIC_ASSET_URLS OK; LOCAL mobile touch movement OK; ONLINE mobile movement OK; ONLINE touch edge fallback OK; ONLINE_C539_C57D_OK"
+  "note": "compiled-only GitHub Pages artifact; all existing app.*.js compatibility hashes overwritten with current JS/current WASM; mobile TouchList Safari compatibility fix; D0D5 palette buffer RAM ported from ASM",
+  "tests": "ALL_ORIGINAL_TESTS_OK count=199; STATIC_ASSET_URLS OK; LOCAL mobile touch movement OK; LOCAL Safari TouchList compatibility hardened"
 }

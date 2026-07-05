@@ -361,6 +361,15 @@ for (const name of ["pointerup", "pointercancel", "lostpointercapture"]) {
 function touchPointEvent(point) {
   return { clientX: point.clientX, clientY: point.clientY, pageX: point.pageX, pageY: point.pageY };
 }
+function eachChangedTouch(event, callback) {
+  const touches = event.changedTouches;
+  if (!touches) return false;
+  for (let i = 0; i < touches.length; i += 1) {
+    const point = touches.item ? touches.item(i) : touches[i];
+    if (point && callback(point) === true) return true;
+  }
+  return false;
+}
 function beginStickTouch(event, point) {
   event.preventDefault();
   ensureAudio();
@@ -374,42 +383,42 @@ stick.addEventListener("touchstart", (event) => {
   beginStickTouch(event, point);
 }, { passive: false });
 touchControls.addEventListener("touchstart", (event) => {
-  for (const point of event.changedTouches) {
-    if (!shouldStartFallbackStick(event.target, point.clientX, point.clientY)) continue;
+  eachChangedTouch(event, (point) => {
+    if (!shouldStartFallbackStick(event.target, point.clientX, point.clientY)) return false;
     beginStickTouch(event, point);
-    return;
-  }
+    return true;
+  });
 }, { passive: false });
 for (const element of [gameWrap, canvas]) {
   element.addEventListener("touchstart", (event) => {
-    for (const point of event.changedTouches) {
-      if (!shouldStartFallbackStick(event.target, point.clientX, point.clientY)) continue;
+    eachChangedTouch(event, (point) => {
+      if (!shouldStartFallbackStick(event.target, point.clientX, point.clientY)) return false;
       beginStickTouch(event, point);
-      return;
-    }
+      return true;
+    });
   }, { passive: false });
 }
 for (const element of [document, window]) {
   element.addEventListener("touchstart", (event) => {
     if (typeof touch.stickPointer === "string" && touch.stickPointer.startsWith("touch:")) return;
-    for (const point of event.changedTouches) {
-      if (!shouldStartFallbackStick(event.target, point.clientX, point.clientY)) continue;
+    eachChangedTouch(event, (point) => {
+      if (!shouldStartFallbackStick(event.target, point.clientX, point.clientY)) return false;
       beginStickTouch(event, point);
-      return;
-    }
+      return true;
+    });
   }, { passive: false, capture: true });
 }
-
 function moveStickTouch(event) {
   if (typeof touch.stickPointer !== "string" || !touch.stickPointer.startsWith("touch:")) return;
   const id = Number(touch.stickPointer.slice(6));
-  for (const point of event.changedTouches) {
+  eachChangedTouch(event, (point) => {
     if (point.identifier === id) {
       event.preventDefault();
       updateStick(touchPointEvent(point));
-      return;
+      return true;
     }
-  }
+    return false;
+  });
 }
 
 for (const element of [stick, touchControls, gameWrap, canvas, document, window]) {
@@ -419,13 +428,14 @@ for (const element of [stick, touchControls, gameWrap, canvas, document, window]
 function endStickTouch(event) {
   if (typeof touch.stickPointer !== "string" || !touch.stickPointer.startsWith("touch:")) return;
   const id = Number(touch.stickPointer.slice(6));
-  for (const point of event.changedTouches) {
+  eachChangedTouch(event, (point) => {
     if (point.identifier === id) {
       event.preventDefault();
       resetStick();
-      return;
+      return true;
     }
-  }
+    return false;
+  });
 }
 
 for (const element of [stick, touchControls, gameWrap, canvas, document, window]) {
@@ -449,7 +459,7 @@ function inputBits() {
 }
 
 async function loadWasm() {
-  const primary = assetUrl("../game_core.76fc879a.wasm");
+  const primary = assetUrl("../game_core.c2c9f2fb.wasm");
   const fallback = rootAssetUrl("game_core.wasm");
   const response = await withFallback("game_core.wasm", primary, fallback, (url) => fetch(url).then((r) => {
     if (!r.ok) throw new Error(`failed to load ${url}: ${r.status}`);
