@@ -1,8 +1,7 @@
 {
-  "deployed_from": "cbccc848109966acb562b03bae85b729b2cde345",
-  "app": "assets/app.b05c66dd.js",
+  "deployed_at": "2026-07-05T18:02:19.5064700Z",
+  "app": "assets/app.2fc88b80.js",
   "css": "assets/app.2738c0af.css",
-  "wasm": "game_core.e82a17c6.wasm",
-  "build_type": "workflow",
-  "generated_utc": "2026-07-05T17:54:26.0682908Z"
+  "wasm": "game_core.6166efef.wasm",
+  "note": "compiled artifacts only; no source"
 }
