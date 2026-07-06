@@ -60,7 +60,7 @@ const knob = document.querySelector("#knob");
 const btnKick = document.querySelector("#btnKick");
 const btnSprint = document.querySelector("#btnSprint");
 const DEBUG = new URLSearchParams(window.location.search).get("debug") === "1";
-const BUILD_ID = "d6e7-touch-20260706-0935";
+const BUILD_ID = "touch-rel-20260706-0905";
 document.body.classList.toggle("debug", DEBUG);
 stats.hidden = !DEBUG;
 

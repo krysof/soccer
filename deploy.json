@@ -1,8 +1,9 @@
 {
-  "deployedAt": "2026-07-06T00:01:24.0436237Z",
-  "build": "touch-rel-20260706-0905",
-  "app": "assets/app.500a9a07.js",
+  "deployedAt": "2026-07-06T00:13:47.6996906Z",
+  "build": "d6e7-touch-20260706-0935",
+  "app": "assets/app.b05b6248.js",
   "css": "assets/app.bd4a7c61.css",
-  "wasm": "",
-  "note": "IO-only mobile relative touch drag hardening; compiled artifacts only."
+  "wasm": "game_core.44ed241d.wasm",
+  "tests": "ALL_ORIGINAL_TESTS_OK count=200; STATIC_ASSET_URLS OK; LOCAL touch movement+timer OK",
+  "note": "Compiled artifacts only. Mobile relative touch hardening plus ASM D6E7/D7A4 timer/weather/loss-time port in C615 order."
 }
