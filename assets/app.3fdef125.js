@@ -289,9 +289,8 @@ function updateStick(event) {
   const relDead = Math.max(10, rect.width * 0.08);
   const relAxisX = Math.abs(relDx) < relDead ? 0 : Math.sign(relDx);
   const relAxisY = Math.abs(relDy) < relDead ? 0 : Math.sign(relDy);
-  const useRelativeDrag = Math.abs(relDx) >= relDead || Math.abs(relDy) >= relDead;
-  touch.axisX = useRelativeDrag ? relAxisX : fixedAxisX;
-  touch.axisY = useRelativeDrag ? relAxisY : fixedAxisY;
+  touch.axisX = relAxisX || fixedAxisX;
+  touch.axisY = relAxisY || fixedAxisY;
   knob.style.transform = `translate(calc(-50% + ${dx}px), calc(-50% + ${dy}px))`;
 }
 function pointInGame(clientX, clientY) {

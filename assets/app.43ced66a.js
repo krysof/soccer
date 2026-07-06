@@ -60,6 +60,7 @@ const knob = document.querySelector("#knob");
 const btnKick = document.querySelector("#btnKick");
 const btnSprint = document.querySelector("#btnSprint");
 const DEBUG = new URLSearchParams(window.location.search).get("debug") === "1";
+const BUILD_ID = "touch-rel-20260706-0905";
 document.body.classList.toggle("debug", DEBUG);
 stats.hidden = !DEBUG;
 
@@ -70,6 +71,8 @@ const touch = {
   sprintPointer: null,
   axisX: 0,
   axisY: 0,
+  originX: 0,
+  originY: 0,
   kick: false,
   sprint: false,
   kickLatchTicks: 0,
@@ -257,6 +260,8 @@ function resetStick() {
   touch.stickPointer = null;
   touch.axisX = 0;
   touch.axisY = 0;
+  touch.originX = 0;
+  touch.originY = 0;
   knob.style.transform = "translate(-50%, -50%)";
 }
 function eventClientPoint(event) {
@@ -277,8 +282,16 @@ function updateStick(event) {
   let dy = point.y - cy;
   const len = Math.hypot(dx, dy);
   if (len > max) { dx = dx / len * max; dy = dy / len * max; }
-  touch.axisX = Math.abs(dx) < max * 0.22 ? 0 : Math.sign(dx);
-  touch.axisY = Math.abs(dy) < max * 0.22 ? 0 : Math.sign(dy);
+  const fixedAxisX = Math.abs(dx) < max * 0.16 ? 0 : Math.sign(dx);
+  const fixedAxisY = Math.abs(dy) < max * 0.16 ? 0 : Math.sign(dy);
+  const relDx = point.x - touch.originX;
+  const relDy = point.y - touch.originY;
+  const relDead = Math.max(10, rect.width * 0.08);
+  const relAxisX = Math.abs(relDx) < relDead ? 0 : Math.sign(relDx);
+  const relAxisY = Math.abs(relDy) < relDead ? 0 : Math.sign(relDy);
+  const useRelativeDrag = Math.abs(relDx) >= relDead || Math.abs(relDy) >= relDead;
+  touch.axisX = useRelativeDrag ? relAxisX : fixedAxisX;
+  touch.axisY = useRelativeDrag ? relAxisY : fixedAxisY;
   knob.style.transform = `translate(calc(-50% + ${dx}px), calc(-50% + ${dy}px))`;
 }
 function pointInGame(clientX, clientY) {
@@ -304,6 +317,9 @@ function beginStickPointer(event, captureElement = stick) {
   ensureAudio();
   if (touch.stickPointer !== null && touch.stickPointer !== event.pointerId) resetStick();
   touch.stickPointer = event.pointerId;
+  const point = eventClientPoint(event);
+  touch.originX = point.x;
+  touch.originY = point.y;
   safeSetPointerCapture(captureElement, event.pointerId);
   updateStick(event);
 }
@@ -375,6 +391,8 @@ function beginStickTouch(event, point) {
   ensureAudio();
   if (touch.stickPointer !== null && touch.stickPointer !== `touch:${point.identifier}`) resetStick();
   touch.stickPointer = `touch:${point.identifier}`;
+  touch.originX = Number.isFinite(point.clientX) ? point.clientX : (point.pageX || 0) - (window.scrollX || window.pageXOffset || 0);
+  touch.originY = Number.isFinite(point.clientY) ? point.clientY : (point.pageY || 0) - (window.scrollY || window.pageYOffset || 0);
   updateStick(touchPointEvent(point));
 }
 stick.addEventListener("touchstart", (event) => {
@@ -978,7 +996,7 @@ function render(api) {
   const btnPress = api.debug_original_button_ram ? api.debug_original_button_ram(0, 0x08).toString(16).padStart(2, "0") : "??";
   if (DEBUG) {
     stats.hidden = false;
-    stats.textContent = `phase=${phase} input=$${touch.lastBits.toString(16).padStart(2, "0")} stick=${touch.axisX}/${touch.axisY} btn=${btnHold}/${btnPress} script=$${script} pauseRet=${pauseReturn} period=${period} swap=${swapped} cpu=${cpuTeam} menu=${menuTeam} wins=${wins} weather=${weather} hazards=${hazards} wind=${wind} score=${api.score_left()}-${api.score_right()} goal=${goalInfo} fouls=${fouls} foulTeam=${foulTeam} injuries=${injuries} lastHurt=${lastHurt} spShots=${specialShots} lastSp=${lastSpecial} time=${api.match_seconds_left()} tick=${api.game_tick_count()} players=${count} role=${roleInfo} pOrig=${playerOrig}@${playerDispatch}/${playerMainDispatch}/${playerAnimDispatch} pRam=${playerRam} ballObj=$${ballObj}@${ballDispatch} ballRam=${ballRam} ballState=${ballState} ballAnim=${ballAnim} ballSpeed=${ballSpeedRam} owner=${originalOwner} ball=(${bx},${by},z=${bz}) curve=${curve} special=${special} act=${action} charge=${charge} keeper=${keeper}/${hold} touch=${lastTouch}/${lastTouchPlayer} restart=${restart}`;
+    stats.textContent = `build=${BUILD_ID} phase=${phase} input=$${touch.lastBits.toString(16).padStart(2, "0")} stick=${touch.axisX}/${touch.axisY} btn=${btnHold}/${btnPress} script=$${script} pauseRet=${pauseReturn} period=${period} swap=${swapped} cpu=${cpuTeam} menu=${menuTeam} wins=${wins} weather=${weather} hazards=${hazards} wind=${wind} score=${api.score_left()}-${api.score_right()} goal=${goalInfo} fouls=${fouls} foulTeam=${foulTeam} injuries=${injuries} lastHurt=${lastHurt} spShots=${specialShots} lastSp=${lastSpecial} time=${api.match_seconds_left()} tick=${api.game_tick_count()} players=${count} role=${roleInfo} pOrig=${playerOrig}@${playerDispatch}/${playerMainDispatch}/${playerAnimDispatch} pRam=${playerRam} ballObj=$${ballObj}@${ballDispatch} ballRam=${ballRam} ballState=${ballState} ballAnim=${ballAnim} ballSpeed=${ballSpeedRam} owner=${originalOwner} ball=(${bx},${by},z=${bz}) curve=${curve} special=${special} act=${action} charge=${charge} keeper=${keeper}/${hold} touch=${lastTouch}/${lastTouchPlayer} restart=${restart}`;
   }
 }
 
