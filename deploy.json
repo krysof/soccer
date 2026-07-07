@@ -1,9 +1,1 @@
-{
-  "deployedAt": "2026-07-06T00:25:58.0210465Z",
-  "build": "no-pc-boundary-20260706-1015",
-  "app": "assets/app.14bc0557.js",
-  "css": "assets/app.bd4a7c61.css",
-  "wasm": "game_core.25c32af9.wasm",
-  "tests": "ALL_ORIGINAL_TESTS_OK count=201; STATIC_ASSET_URLS OK; LOCAL touch movement+timer OK",
-  "note": "Compiled artifacts only. Removed host ball.pos boundary/goal wrapper; runtime out/goal flow now comes from translated B8C5/BD55/BA31 original RAM path."
-}
+{"deployed_at": "2026-07-07", "app": "assets/app.45729de3.js", "css": "assets/app.bd4a7c61.css", "wasm": "game_core.937583d5.wasm", "fix": "original title/splash screen machine port: bank_02 loc_AA6B all subtypes (logo/title/Kunio attract/demo setup), bank_06 loc_BDDF+AAC8+AB0B, bank_FF C4DB demo exit gate + C3D4 reset tail; kick key doubles as Start on title/demo (IO binding)", "note": "compiled artifacts only; no source", "tests": "JS suite 202 pass; test_original_splash_script.js 14/14; browser flow verified (logo->title->kunio->menu)"}
