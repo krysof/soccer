@@ -48,6 +48,10 @@ const PLAYER_NAMES = [
   ["じんない", "あいはら", "みどう", "ゆうじ", "まもる", "けん"],
   ["ジョン", "マイク", "ピエール", "カルロス", "リー", "アレックス"],
 ];
+const ORIGINAL_MENU_SCREEN_IDS = [
+  0x02, 0x03, 0x0b, 0x04, 0x06, 0x07, 0x05, 0x08,
+  0x0d, 0x0c, 0x09, 0x0f, 0x0a, 0x14, 0x15,
+];
 
 const keys = new Set();
 const canvas = document.querySelector("#game");
@@ -61,7 +65,7 @@ const btnKick = document.querySelector("#btnKick");
 const btnSprint = document.querySelector("#btnSprint");
 const btnStart = document.querySelector("#btnStart");
 const DEBUG = new URLSearchParams(window.location.search).get("debug") === "1";
-const BUILD_ID = "original-field-control-marker-20260710";
+const BUILD_ID = "original-screen02-prematch-flow-20260710";
 document.body.classList.toggle("debug", DEBUG);
 stats.hidden = !DEBUG;
 
@@ -83,7 +87,7 @@ const touch = {
   startLatchTicks: 0,
   lastBits: 0,
 };
-const originalAssets = { chr: null, chrAlt: null, field: null, tileSize: 16, columns: 128, metasprites: [], splash: {} };
+const originalAssets = { chr: null, chrAlt: null, field: null, tileSize: 16, columns: 128, metasprites: [], splash: {}, menu: {} };
 const sfx = { ctx: null, lastScore: "0-0", lastPhase: PHASE.TITLE, lastSpecial: 0, lastAction: ACTION.STAND, lastKeeper: 0 };
 
 function loadImage(src) {
@@ -493,7 +497,7 @@ function inputBits() {
 }
 
 async function loadWasm() {
-  const primary = assetUrl("../game_core.1e817244.wasm");
+  const primary = assetUrl("../game_core.dfa0b2cd.wasm");
   const fallback = rootAssetUrl("game_core.wasm");
   const response = await withFallback("game_core.wasm", primary, fallback, (url) => fetch(url).then((r) => {
     if (!r.ok) throw new Error(`failed to load ${url}: ${r.status}`);
@@ -926,6 +930,79 @@ function drawOriginalSplash(api) {
   ctx.fillText("Start：PC Enter / Space，手机 START 键", canvas.width / 2, canvas.height - 12);
   ctx.textAlign = "left";
 }
+function originalFullScreenLayout() {
+  const scale = Math.min(canvas.width / 256, canvas.height / 240);
+  const w = Math.round(256 * scale);
+  const h = Math.round(240 * scale);
+  return { scale, x: (canvas.width - w) / 2, y: (canvas.height - h) / 2, w, h };
+}
+function drawOriginalMenuObjects(api, layout, subtype) {
+  if (subtype !== 0x03) return;
+  ctx.save();
+  ctx.beginPath();
+  ctx.rect(layout.x, layout.y, layout.w, layout.h);
+  ctx.clip();
+  const objectIds = [0, 1, 3];
+  for (const index of objectIds) {
+    if (!api.original_player_x_lo || !api.original_player_animation) continue;
+    const p = originalPlayerPosition(api, index);
+    const x = layout.x + p.x * layout.scale;
+    const y = layout.y + (p.y - normalizeOriginalHeight(p.z)) * layout.scale;
+    const side = index === 1 ? 1 : 0;
+    const direction = api.original_player_direction ? api.original_player_direction(index) : 0;
+    drawOriginalPlayer(x, y, side, 0, false, direction & 0x80 ? -1 : 1,
+      ACTION.STAND, api.original_player_animation(index), layout.scale);
+  }
+  if (api.original_ball_x_lo) {
+    const ball = originalBallPosition(api);
+    drawOriginalBall(layout.x + ball.x * layout.scale,
+      layout.y + ball.y * layout.scale, normalizeOriginalHeight(ball.z), 0, 0,
+      api.original_ball_animation ? api.original_ball_animation() : null, layout.scale);
+  }
+  ctx.restore();
+}
+function drawOriginalMenuCursor(api, layout, subtype) {
+  const option = api.original_option_number ? api.original_option_number() & 0x7f : 0;
+  ctx.save();
+  ctx.strokeStyle = (api.original_frame_counter && (api.original_frame_counter() & 3) === 0)
+    ? "rgba(255,255,255,.35)" : "#fff";
+  ctx.fillStyle = "#fff";
+  ctx.lineWidth = Math.max(1, layout.scale);
+  if (subtype === 0x01) {
+    const rows = [0x34, 0x93, 0xD2];
+    const y = rows[Math.min(option, rows.length - 1)];
+    ctx.fillRect(layout.x + 0x2D * layout.scale, layout.y + (y - 2) * layout.scale,
+      5 * layout.scale, 5 * layout.scale);
+  } else if (subtype === 0x02) {
+    const col = Math.min(2, option >> 2);
+    const row = option & 3;
+    const x = 8 + col * 82;
+    const y = 38 + row * 48;
+    ctx.strokeRect(layout.x + x * layout.scale, layout.y + y * layout.scale,
+      76 * layout.scale, 42 * layout.scale);
+  } else if (subtype === 0x04) {
+    ctx.font = `${Math.max(9, Math.round(8 * layout.scale))}px ui-monospace, monospace`;
+    ctx.fillText(`${option + 1}`, layout.x + 8 * layout.scale, layout.y + 226 * layout.scale);
+  }
+  ctx.restore();
+}
+function drawOriginalMenuScreen(api) {
+  ctx.fillStyle = "#000";
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  const id = api.original_background_image_id ? api.original_background_image_id() : 0x02;
+  const img = originalAssets.menu[id];
+  const layout = originalFullScreenLayout();
+  const brightness = api.original_current_brightness ? api.original_current_brightness() : 0x40;
+  if (img) {
+    ctx.imageSmoothingEnabled = false;
+    ctx.globalAlpha = Math.max(0, Math.min(1, brightness / 0x40));
+    ctx.drawImage(img, layout.x, layout.y, layout.w, layout.h);
+    ctx.globalAlpha = 1;
+  }
+  const subtype = api.original_screen_subtype ? api.original_screen_subtype() & 0x7f : 0;
+  drawOriginalMenuObjects(api, layout, subtype);
+  drawOriginalMenuCursor(api, layout, subtype);
+}
 
 function playerLabel(api, index) {
   if (index == null || index >= 255) return "—";
@@ -1014,6 +1091,11 @@ function render(api) {
   const phase = api.game_phase ? api.game_phase() : PHASE.PLAYING;
   if (phase === PHASE.TITLE) {
     drawOriginalSplash(api);
+    return;
+  }
+  const originalScreen = api.original_screen_number ? api.original_screen_number() : 0;
+  if (originalScreen === 0x02) {
+    drawOriginalMenuScreen(api);
     return;
   }
   const cpuTeam = api.cpu_team_id ? api.cpu_team_id() : 1;
@@ -1151,7 +1233,6 @@ function render(api) {
     ctx.fillText(`ROLE SPD ${rs} POW ${rp} TKL ${rt} GK ${rk}`, 20, 49);
   }
 
-  if (phase === PHASE.MENU) drawMenuOverlay(api);
   if (phase === PHASE.MATCH_INTRO) drawMatchIntroOverlay(api);
   if (phase === PHASE.KICKOFF) drawOverlay("KICK OFF", ["PC：按 J / Z 开球", "手机：点「踢球」开球，然后摇杆移动"]);
   if (phase === PHASE.GOAL) {
@@ -1232,7 +1313,12 @@ function render(api) {
 }
 
 async function main() {
-  const [api, chr, chrAlt, field, metasprites, splashLogo, splashTitle, splashTitleBlink, splashStory] = await Promise.all([
+  const menuScreensPromise = Promise.all(ORIGINAL_MENU_SCREEN_IDS.map(async (id) => {
+    const name = `screen_${id.toString(16).padStart(2, "0")}.png`;
+    const image = await withFallback(name, originalAssetUrl(name), originalFallbackUrl(name), loadImage);
+    return [id, image];
+  })).then((entries) => Object.fromEntries(entries));
+  const [api, chr, chrAlt, field, metasprites, splashLogo, splashTitle, splashTitleBlink, splashStory, menuScreens] = await Promise.all([
     loadWasm(),
     withFallback("chr_sprite_pal_01.png", originalAssetUrl("chr_sprite_pal_01.png"), originalFallbackUrl("chr_sprite_pal_01.png"), loadImage),
     withFallback("chr_sprite_pal_08.png", originalAssetUrl("chr_sprite_pal_08.png"), originalFallbackUrl("chr_sprite_pal_08.png"), loadImage),
@@ -1242,12 +1328,14 @@ async function main() {
     withFallback("splash_01_title.png", originalAssetUrl("splash_01_title.png"), originalFallbackUrl("splash_01_title.png"), loadImage),
     withFallback("splash_01_title_blink.png", originalAssetUrl("splash_01_title_blink.png"), originalFallbackUrl("splash_01_title_blink.png"), loadImage),
     withFallback("splash_0e_story.png", originalAssetUrl("splash_0e_story.png"), originalFallbackUrl("splash_0e_story.png"), loadImage),
+    menuScreensPromise,
   ]);
   originalAssets.chr = chr;
   originalAssets.chrAlt = chrAlt;
   originalAssets.field = field;
   originalAssets.metasprites = metasprites.frames || [];
   originalAssets.splash = { 0: splashLogo, 1: splashTitle, 0x0e: splashStory, titleBlink: splashTitleBlink };
+  originalAssets.menu = menuScreens;
   api.game_init();
   if (DEBUG) window.__soccerApi = api;
   sfx.lastScore = `${api.score_left()}-${api.score_right()}`;
