@@ -475,7 +475,7 @@ function inputBits() {
   return bits;
 }
 async function loadWasm() {
-  const primary = assetUrl("../game_core.64c95d8e.wasm");
+  const primary = assetUrl("../game_core.f8766ac7.wasm");
   const fallback = rootAssetUrl("game_core.wasm");
   const response = await withFallback("game_core.wasm", primary, fallback, (url) => fetch(url).then((r) => {
     if (!r.ok) throw new Error(`failed to load ${url}: ${r.status}`);
@@ -1073,6 +1073,7 @@ function render(api) {
     drawOriginalMenuScreen(api);
     return;
   }
+  const originalSubtype = api.original_screen_subtype ? api.original_screen_subtype() : 0;
   const cpuTeam = api.cpu_team_id ? api.cpu_team_id() : 1;
   const menuTeam = api.menu_opponent_id ? api.menu_opponent_id() : cpuTeam;
   const wins = api.tournament_wins ? api.tournament_wins() : 0;
@@ -1098,6 +1099,46 @@ function render(api) {
   const view = drawField(api, screenW, screenH, worldW, worldH, cameraX, cameraY);
   if (DEBUG) window.__soccerView = { cameraX: view.cameraX, cameraY: view.cameraY, sourceX: view.sourceX, sourceY: view.sourceY, sourceW: view.sourceW, sourceH: view.sourceH, destX: view.destX, destY: view.destY, destW: view.destW, destH: view.destH };
   drawWeather(api, view, screenW, screenH);
+  let objectView = view;
+  if (originalScreen === 0x00 && originalSubtype >= 0x04 && originalSubtype <= 0x0C) {
+    const copyCameraX = api.original_copy_camera_x_lo && api.original_copy_camera_x_hi
+      ? (api.original_copy_camera_x_hi() << 8) | api.original_copy_camera_x_lo()
+      : cameraX;
+    const copyCameraY = api.original_copy_camera_y_lo && api.original_copy_camera_y_hi
+      ? (api.original_copy_camera_y_hi() << 8) | api.original_copy_camera_y_lo()
+      : cameraY;
+    const targetAspect = 0x100 / 0xF0;
+    let destW = screenW;
+    let destH = destW / targetAspect;
+    if (destH > screenH) {
+      destH = screenH;
+      destW = destH * targetAspect;
+    }
+    objectView = {
+      ...view,
+      cameraX: copyCameraX,
+      cameraY: copyCameraY,
+      sourceW: 0x100,
+      sourceH: 0xF0,
+      destX: (screenW - destW) / 2,
+      destY: (screenH - destH) / 2,
+      destW,
+      destH,
+      logicalScale: destH / 0xF0,
+    };
+    if (DEBUG) window.__soccerObjectView = {
+      cameraX: objectView.cameraX,
+      cameraY: objectView.cameraY,
+      sourceW: objectView.sourceW,
+      sourceH: objectView.sourceH,
+      destX: objectView.destX,
+      destY: objectView.destY,
+      destW: objectView.destW,
+      destH: objectView.destH,
+    };
+  } else if (DEBUG) {
+    window.__soccerObjectView = null;
+  }
   const count = api.player_count ? api.player_count() : 1;
   const sourceControlled = api.original_controlled_player ? api.original_controlled_player(0) : 0xFF;
   const controlled = sourceControlled < count
@@ -1119,22 +1160,22 @@ function render(api) {
   entities.sort((a, b) => a.groundY - b.groundY);
   for (const entity of entities) {
     if (entity.type === "ball") {
-      const b = worldToScreen(view, bx, by);
-      drawOriginalBall(api, b.x, b.y, bz, view.logicalScale || 2);
+      const b = worldToScreen(objectView, bx, by);
+      drawOriginalBall(api, b.x, b.y, bz, objectView.logicalScale || 2);
       continue;
     }
     const i = entity.index;
     const originalPosition = playerPositions[i] || originalPlayerPosition(api, i);
-    const p = worldToScreen(view, originalPosition.x, originalPosition.y);
+    const p = worldToScreen(objectView, originalPosition.x, originalPosition.y);
     const playerHeight = normalizeOriginalHeight(originalPosition.z);
-    const visualY = p.y - playerHeight * (view.logicalScale || 1);
-    drawOriginalObject(api, i, p.x, visualY, view.logicalScale || 2);
+    const visualY = p.y - playerHeight * (objectView.logicalScale || 1);
+    drawOriginalObject(api, i, p.x, visualY, objectView.logicalScale || 2);
   }
   if (controlled < count && playerPositions[controlled]) {
-    const controlledScreenPosition = worldToScreen(view, playerPositions[controlled].x, playerPositions[controlled].y);
+    const controlledScreenPosition = worldToScreen(objectView, playerPositions[controlled].x, playerPositions[controlled].y);
     drawOriginalControlNumberMarker(
       api,
-      view,
+      objectView,
       playerPositions[controlled],
       controlledScreenPosition,
       0,
@@ -1172,26 +1213,28 @@ function render(api) {
       ctx.fillText(`ROLE SPD ${rs} POW ${rp} TKL ${rt} GK ${rk}`, 20, 49);
     }
   }
-  if (phase === PHASE.MATCH_INTRO) drawMatchIntroOverlay(api);
-  if (phase === PHASE.KICKOFF) drawOverlay("KICK OFF", ["PC：按 J / Z 开球", "手机：点 A开球，然后摇杆移动"]);
-  if (phase === PHASE.GOAL) {
-    const scorer = api.last_goal_player ? api.last_goal_player() : 255;
-    const assist = api.last_assist_player ? api.last_assist_player() : 255;
-    const own = api.last_goal_is_own ? api.last_goal_is_own() : 0;
-    drawOverlay("GOAL!", [
-      `比分 ${api.score_left()} - ${api.score_right()}`,
-      own ? "OWN GOAL" : `SCORER ${playerLabel(api, scorer)}`,
-      assist < 255 ? `ASSIST ${playerLabel(api, assist)}` : "NO ASSIST",
-    ]);
+  if (originalScreen !== 0x00) {
+    if (phase === PHASE.MATCH_INTRO) drawMatchIntroOverlay(api);
+    if (phase === PHASE.KICKOFF) drawOverlay("KICK OFF", ["PC：按 J / Z 开球", "手机：点 A开球，然后摇杆移动"]);
+    if (phase === PHASE.GOAL) {
+      const scorer = api.last_goal_player ? api.last_goal_player() : 255;
+      const assist = api.last_assist_player ? api.last_assist_player() : 255;
+      const own = api.last_goal_is_own ? api.last_goal_is_own() : 0;
+      drawOverlay("GOAL!", [
+        `比分 ${api.score_left()} - ${api.score_right()}`,
+        own ? "OWN GOAL" : `SCORER ${playerLabel(api, scorer)}`,
+        assist < 255 ? `ASSIST ${playerLabel(api, assist)}` : "NO ASSIST",
+      ]);
+    }
+    if (phase === PHASE.HALFTIME) drawOverlay("HALF TIME", ["换边，下半场准备", "PC：按 J / Z 继续", "手机：点 A继续"]);
+    if (phase === PHASE.FULL_TIME) drawOverlay("FULL TIME", [`最终比分 ${api.score_left()} - ${api.score_right()}`, api.score_left() > api.score_right() ? "胜利：下场对手升级" : "败北/平局：重新挑战", "PC：按 J / Z 返回菜单", "手机：点 A返回菜单"]);
+    if (phase === PHASE.THROW_IN) drawOverlay("THROW IN", ["PC：按 J / Z 继续", "手机：点 A继续"]);
+    if (phase === PHASE.GOAL_KICK) drawOverlay("GOAL KICK", ["PC：按 J / Z 继续", "手机：点 A继续"]);
+    if (phase === PHASE.CORNER_KICK) drawOverlay("CORNER KICK", ["PC：按 J / Z 继续", "手机：点 A继续"]);
+    if (phase === PHASE.FREE_KICK) drawOverlay("FREE KICK", [`犯规队 ${api.foul_team ? TEAM_NAMES[api.foul_team()] || api.foul_team() : "?"}`, "PC：按 J / Z 继续", "手机：点 A继续"]);
+    if (phase === PHASE.PENALTY_KICK) drawOverlay("PENALTY KICK", [`禁区犯规：${api.foul_team ? TEAM_NAMES[api.foul_team()] || api.foul_team() : "?"}`, "PC：按 J / Z 射门", "手机：点 A射门"]);
+    if (phase === PHASE.PAUSE) drawOverlay("PAUSE", ["START 继续", "原作暂停：A / B 不会解除暂停"]);
   }
-  if (phase === PHASE.HALFTIME) drawOverlay("HALF TIME", ["换边，下半场准备", "PC：按 J / Z 继续", "手机：点 A继续"]);
-  if (phase === PHASE.FULL_TIME) drawOverlay("FULL TIME", [`最终比分 ${api.score_left()} - ${api.score_right()}`, api.score_left() > api.score_right() ? "胜利：下场对手升级" : "败北/平局：重新挑战", "PC：按 J / Z 返回菜单", "手机：点 A返回菜单"]);
-  if (phase === PHASE.THROW_IN) drawOverlay("THROW IN", ["PC：按 J / Z 继续", "手机：点 A继续"]);
-  if (phase === PHASE.GOAL_KICK) drawOverlay("GOAL KICK", ["PC：按 J / Z 继续", "手机：点 A继续"]);
-  if (phase === PHASE.CORNER_KICK) drawOverlay("CORNER KICK", ["PC：按 J / Z 继续", "手机：点 A继续"]);
-  if (phase === PHASE.FREE_KICK) drawOverlay("FREE KICK", [`犯规队 ${api.foul_team ? TEAM_NAMES[api.foul_team()] || api.foul_team() : "?"}`, "PC：按 J / Z 继续", "手机：点 A继续"]);
-  if (phase === PHASE.PENALTY_KICK) drawOverlay("PENALTY KICK", [`禁区犯规：${api.foul_team ? TEAM_NAMES[api.foul_team()] || api.foul_team() : "?"}`, "PC：按 J / Z 射门", "手机：点 A射门"]);
-  if (phase === PHASE.PAUSE) drawOverlay("PAUSE", ["START 继续", "原作暂停：A / B 不会解除暂停"]);
   const restart = api.restart_team ? api.restart_team() : 0;
   const lastTouch = api.last_touch_team ? api.last_touch_team() : 0;
   const action = api.player_action ? api.player_action(controlled) : 0;
