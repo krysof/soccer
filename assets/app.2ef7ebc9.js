@@ -475,7 +475,7 @@ function inputBits() {
   return bits;
 }
 async function loadWasm() {
-  const primary = assetUrl("../game_core.25ca4cf7.wasm");
+  const primary = assetUrl("../game_core.1a7f2d0e.wasm");
   const fallback = rootAssetUrl("game_core.wasm");
   const response = await withFallback("game_core.wasm", primary, fallback, (url) => fetch(url).then((r) => {
     if (!r.ok) throw new Error(`failed to load ${url}: ${r.status}`);
