@@ -65,7 +65,7 @@ const btnKick = document.querySelector("#btnKick");
 const btnSprint = document.querySelector("#btnSprint");
 const btnStart = document.querySelector("#btnStart");
 const DEBUG = new URLSearchParams(window.location.search).get("debug") === "1";
-const BUILD_ID = "original-screen03-credits-20260711";
+const BUILD_ID = "original-team-preview-menu-20260711";
 document.body.classList.toggle("debug", DEBUG);
 stats.hidden = !DEBUG;
 const TOUCH_TAP_LATCH_TICKS = 4;
@@ -506,7 +506,7 @@ function inputBits() {
   return bits;
 }
 async function loadWasm() {
-  const primary = assetUrl("../game_core.e93db6ba.wasm");
+  const primary = assetUrl("../game_core.46023950.wasm");
   const fallback = rootAssetUrl("game_core.wasm");
   const response = await withFallback("game_core.wasm", primary, fallback, (url) => fetch(url).then((r) => {
     if (!r.ok) throw new Error(`failed to load ${url}: ${r.status}`);
@@ -783,6 +783,15 @@ function originalSpriteTile(bankNumber, tileWithinBank, paletteNumber) {
   sprite.tileCache.set(key, tileCanvas);
   return tileCanvas;
 }
+function originalSpriteBankForObject(api, objectIndex, bankSlot) {
+  const screen = api.original_screen_number ? api.original_screen_number() & 0xFF : 0;
+  const subtype = api.original_screen_subtype ? api.original_screen_subtype() & 0x7F : 0;
+  if (screen === 0x02 && subtype === 0x05
+      && (bankSlot === 1 || bankSlot === 2) && api.original_object_work_0061) {
+    return api.original_object_work_0061(bankSlot === 1 ? 5 : 6) & 0xFF;
+  }
+  return api.original_sprite_bank(bankSlot) & 0xFF;
+}
 function originalObjectAnimation(api, objectIndex) {
   if (objectIndex === 0x0C) {
     return api.original_ball_animation ? api.original_ball_animation() & 0xFF : null;
@@ -824,7 +833,7 @@ function drawOriginalObject(api, objectIndex, x, y, displayScale = 2) {
     const paletteSlot = ((animation & 1) + 1) & 3;
     const paletteNumber = api.original_sprite_palette_number(paletteSlot) & 0xFF;
     const bankSlot = resolved.specialTile >> 6;
-    const bankNumber = api.original_sprite_bank(bankSlot) & 0xFF;
+    const bankNumber = originalSpriteBankForObject(api, objectIndex, bankSlot);
     const tileCanvas = originalSpriteTile(bankNumber, resolved.specialTile & 0x3F, paletteNumber);
     if (!tileCanvas) return false;
     drawOriginalSpriteTile(tileCanvas, x - 4 * displayScale, y - 11 * displayScale, paletteSlot, displayScale);
@@ -844,7 +853,7 @@ function drawOriginalObject(api, objectIndex, x, y, displayScale = 2) {
     const paletteSlot = attr & 3;
     const paletteNumber = api.original_sprite_palette_number(paletteSlot) & 0xFF;
     const bankSlot = tile >> 6;
-    const bankNumber = api.original_sprite_bank(bankSlot) & 0xFF;
+    const bankNumber = originalSpriteBankForObject(api, objectIndex, bankSlot);
     const tileCanvas = originalSpriteTile(bankNumber, tile & 0x3F, paletteNumber);
     if (!tileCanvas) continue;
     const offsetX = mirror ? originalMirroredSpriteX(resolved.frame.x[i]) : resolved.frame.x[i];
@@ -1222,6 +1231,7 @@ function drawOriginalMenuObjects(api, layout, subtype) {
     0x02: [0],
     0x03: [0, 1, 3],
     0x04: [0, 1, 3],
+    0x05: [0, 1, 2, 3],
   };
   const objectIds = objectIdsBySubtype[subtype];
   if (!objectIds) return;
@@ -1229,19 +1239,31 @@ function drawOriginalMenuObjects(api, layout, subtype) {
   ctx.beginPath();
   ctx.rect(layout.x, layout.y, layout.w, layout.h);
   ctx.clip();
+  const drawnObjectIds = [];
   for (const index of objectIds) {
     if (!api.original_player_x_lo || !api.original_player_animation) continue;
     const p = originalPlayerPosition(api, index);
     const x = layout.x + p.x * layout.scale;
     const y = layout.y + (p.y - normalizeOriginalHeight(p.z)) * layout.scale;
-    drawOriginalObject(api, index, x, y, layout.scale);
+    if (drawOriginalObject(api, index, x, y, layout.scale)) drawnObjectIds.push(index);
   }
-  if ((subtype === 0x01 || subtype === 0x03 || subtype === 0x0f) && api.original_ball_x_lo) {
+  if ((subtype === 0x01 || subtype === 0x03 || subtype === 0x05 || subtype === 0x0f)
+      && api.original_ball_x_lo) {
     const ball = originalBallPosition(api);
-    drawOriginalBall(api, layout.x + ball.x * layout.scale,
-      layout.y + ball.y * layout.scale, normalizeOriginalHeight(ball.z), layout.scale);
+    if (drawOriginalBall(api, layout.x + ball.x * layout.scale,
+      layout.y + ball.y * layout.scale, normalizeOriginalHeight(ball.z), layout.scale)) {
+      drawnObjectIds.push(12);
+    }
   }
   ctx.restore();
+  if (DEBUG) {
+    window.__soccerMenuRenderer = {
+      subtype,
+      drawnObjectIds,
+      stagedBank1: api.original_object_work_0061 ? api.original_object_work_0061(5) & 0xFF : null,
+      stagedBank2: api.original_object_work_0061 ? api.original_object_work_0061(6) & 0xFF : null,
+    };
+  }
 }
 function writeOriginalBracketPatch(nametable, patch, increment = 1) {
   if (!patch || !Array.isArray(patch.tiles)) return;
