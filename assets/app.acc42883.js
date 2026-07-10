@@ -1319,6 +1319,7 @@ function drawMatchIntroOverlay(api) {
   ctx.textAlign = "left";
 }
 function render(api) {
+  gameWrap.classList.remove("original-result-screen");
   const worldW = api.game_field_w();
   const worldH = api.game_field_h();
   const screenW = canvas.width;
@@ -1358,6 +1359,7 @@ function render(api) {
     : ORIGINAL_CAMERA_BASE_Y;
   const isOriginalResultScreen = originalScreen === 0x00
     && originalSubtype >= 0x04 && originalSubtype <= 0x0C;
+  gameWrap.classList.toggle("original-result-screen", isOriginalResultScreen);
   const resultBackgroundId = api.original_background_image_id
     ? api.original_background_image_id() & 0xFF : 0x10;
   const originalResultBaseBackground = isOriginalResultScreen
