@@ -91,6 +91,14 @@ const originalAssets = {
   columns: 128,
   splash: {},
   menu: {},
+  bracket: {
+    manifest: null,
+    scripts: null,
+    tileImage: null,
+    canvas: null,
+    context: null,
+    key: "",
+  },
   result: {
     manifest: null,
     scripts: null,
@@ -490,7 +498,7 @@ function inputBits() {
   return bits;
 }
 async function loadWasm() {
-  const primary = assetUrl("../game_core.f35b5f7f.wasm");
+  const primary = assetUrl("../game_core.7bd3ad86.wasm");
   const fallback = rootAssetUrl("game_core.wasm");
   const response = await withFallback("game_core.wasm", primary, fallback, (url) => fetch(url).then((r) => {
     if (!r.ok) throw new Error(`failed to load ${url}: ${r.status}`);
@@ -1220,18 +1228,108 @@ function drawOriginalMenuObjects(api, layout, subtype) {
     const y = layout.y + (p.y - normalizeOriginalHeight(p.z)) * layout.scale;
     drawOriginalObject(api, index, x, y, layout.scale);
   }
-  if ((subtype === 0x01 || subtype === 0x03) && api.original_ball_x_lo) {
+  if ((subtype === 0x01 || subtype === 0x03 || subtype === 0x0f) && api.original_ball_x_lo) {
     const ball = originalBallPosition(api);
     drawOriginalBall(api, layout.x + ball.x * layout.scale,
       layout.y + ball.y * layout.scale, normalizeOriginalHeight(ball.z), layout.scale);
   }
   ctx.restore();
 }
+function writeOriginalBracketPatch(nametable, patch, increment = 1) {
+  if (!patch || !Array.isArray(patch.tiles)) return;
+  let address = patch.address & 0x3fff;
+  for (const tile of patch.tiles) {
+    if (address >= 0x2000 && address < 0x2400) {
+      nametable[address - 0x2000] = tile & 0xff;
+    }
+    address = (address + increment) & 0x3fff;
+  }
+}
+function applyOriginalBracketPatchGroup(nametable, group, verticalGraphics) {
+  if (!Array.isArray(group)) return;
+  for (let channel = 0; channel < group.length; channel++) {
+    const increment = verticalGraphics && channel === 1 ? 32 : 1;
+    writeOriginalBracketPatch(nametable, group[channel], increment);
+  }
+}
+function renderOriginalBracketNametable(nametable, manifest, tileImage, target) {
+  const targetContext = target.getContext("2d");
+  targetContext.clearRect(0, 0, 256, 240);
+  targetContext.imageSmoothingEnabled = false;
+  const attributes = nametable.subarray(0x3c0, 0x400);
+  for (let row = 0; row < 30; row++) {
+    for (let col = 0; col < 32; col++) {
+      const tile = nametable[row * 32 + col];
+      const attribute = attributes[Math.floor(row / 4) * 8 + Math.floor(col / 4)];
+      const shift = ((row & 2) << 1) | (col & 2);
+      const palette = (attribute >> shift) & 3;
+      targetContext.drawImage(
+        tileImage,
+        (tile & 0x0f) * 8,
+        palette * 128 + (tile >> 4) * 8,
+        8,
+        8,
+        col * 8,
+        row * 8,
+        8,
+        8,
+      );
+    }
+  }
+}
+function composeOriginalBracketScreen(api) {
+  const bracket = originalAssets.bracket;
+  const manifest = bracket.manifest;
+  const scripts = bracket.scripts;
+  if (!manifest || !scripts || !bracket.tileImage || !api.original_ram_054b) return null;
+  const round = api.original_ram_054a ? api.original_ram_054a() & 0xff : 0;
+  const slots = Array.from({ length: 10 }, (_, index) => api.original_ram_054b(index) & 0xff);
+  const teams = [0, 1].map((side) => api.original_team_number ? api.original_team_number(side) & 0xff : 0);
+  const key = `${round}:${slots.join(",")}:${teams.join(",")}`;
+  if (bracket.canvas && bracket.key === key) return bracket.canvas;
+  if (!bracket.canvas) {
+    bracket.canvas = document.createElement("canvas");
+    bracket.canvas.width = 256;
+    bracket.canvas.height = 240;
+  }
+  const nametable = Uint8Array.from(manifest.nametable || []);
+  for (let slot = 0; slot < 6; slot++) {
+    const team = slots[slot] & 0x0f;
+    const label = scripts.teamLabels?.[team];
+    const address = scripts.teamLabelAddresses?.[slot];
+    if (label && Number.isFinite(address)) {
+      writeOriginalBracketPatch(nametable, { address, tiles: label.top }, 1);
+      writeOriginalBracketPatch(nametable, { address: address + 0x20, tiles: label.bottom }, 1);
+    }
+    if (teams.some((value) => (value & 0x0f) === team)) {
+      for (const patch of scripts.activeMarkers?.[slot] || []) {
+        writeOriginalBracketPatch(nametable, patch, 1);
+      }
+    }
+  }
+  for (let completed = 0; completed < round; completed++) {
+    for (let slot = 0; slot < 10; slot++) {
+      if (slots[slot] & 0x80) {
+        applyOriginalBracketPatchGroup(nametable, scripts.progressPatches?.[slot], true);
+      }
+    }
+    applyOriginalBracketPatchGroup(nametable, scripts.progressPatches?.[round + 8], false);
+  }
+  renderOriginalBracketNametable(nametable, manifest, bracket.tileImage, bracket.canvas);
+  bracket.key = key;
+  if (DEBUG) {
+    window.__soccerBracketRenderer = { round, slots: [...slots], teams: [...teams], key };
+  }
+  return bracket.canvas;
+}
 function drawOriginalMenuScreen(api) {
   ctx.fillStyle = "#000";
   ctx.fillRect(0, 0, canvas.width, canvas.height);
   const id = api.original_background_image_id ? api.original_background_image_id() : 0x02;
-  const img = originalAssets.menu[id];
+  const subtype = api.original_screen_subtype ? api.original_screen_subtype() & 0x7f : 0;
+  const img = subtype === 0x0f
+    ? (composeOriginalBracketScreen(api) || originalAssets.menu[id])
+    : originalAssets.menu[id];
   const layout = originalFullScreenLayout();
   const brightness = api.original_current_brightness ? api.original_current_brightness() : 0x40;
   if (img) {
@@ -1240,7 +1338,6 @@ function drawOriginalMenuScreen(api) {
     ctx.drawImage(img, layout.x, layout.y, layout.w, layout.h);
     ctx.globalAlpha = 1;
   }
-  const subtype = api.original_screen_subtype ? api.original_screen_subtype() & 0x7f : 0;
   drawOriginalMenuObjects(api, layout, subtype);
 }
 function playerLabel(api, index) {
@@ -1325,11 +1422,12 @@ function render(api) {
   const screenW = canvas.width;
   const screenH = canvas.height;
   const phase = api.game_phase ? api.game_phase() : PHASE.PLAYING;
+  const originalScreen = api.original_screen_number ? api.original_screen_number() : 0;
+  gameWrap.classList.toggle("original-4x3-screen", phase === PHASE.TITLE || originalScreen === 0x02);
   if (phase === PHASE.TITLE) {
     drawOriginalSplash(api);
     return;
   }
-  const originalScreen = api.original_screen_number ? api.original_screen_number() : 0;
   if (originalScreen === 0x02) {
     drawOriginalMenuScreen(api);
     return;
@@ -1360,6 +1458,7 @@ function render(api) {
   const isOriginalResultScreen = originalScreen === 0x00
     && originalSubtype >= 0x04 && originalSubtype <= 0x0C;
   gameWrap.classList.toggle("original-result-screen", isOriginalResultScreen);
+  gameWrap.classList.toggle("original-4x3-screen", isOriginalResultScreen);
   const resultBackgroundId = api.original_background_image_id
     ? api.original_background_image_id() & 0xFF : 0x10;
   const originalResultBaseBackground = isOriginalResultScreen
@@ -1597,7 +1696,7 @@ async function main() {
     const image = await withFallback(name, originalAssetUrl(name), originalFallbackUrl(name), loadImage);
     return [id, image];
   })).then((entries) => Object.fromEntries(entries));
-  const [api, chr, chrAlt, field, spriteManifest, spriteIndexImage, palettes, splashLogo, splashTitle, splashTitleBlink, splashStory, resultScreenManifest, resultRenderer, menuScreens] = await Promise.all([
+  const [api, chr, chrAlt, field, spriteManifest, spriteIndexImage, palettes, splashLogo, splashTitle, splashTitleBlink, splashStory, resultScreenManifest, resultRenderer, bracketScreenManifest, bracketRenderer, bracketTiles, menuScreens] = await Promise.all([
     loadWasm(),
     withFallback("chr_sprite_pal_01.png", originalAssetUrl("chr_sprite_pal_01.png"), originalFallbackUrl("chr_sprite_pal_01.png"), loadImage),
     withFallback("chr_sprite_pal_08.png", originalAssetUrl("chr_sprite_pal_08.png"), originalFallbackUrl("chr_sprite_pal_08.png"), loadImage),
@@ -1611,6 +1710,9 @@ async function main() {
     withFallback("splash_0e_story.png", originalAssetUrl("splash_0e_story.png"), originalFallbackUrl("splash_0e_story.png"), loadImage),
     withFallback("result_screen_manifest.json", originalAssetUrl("result_screen_manifest.json"), originalFallbackUrl("result_screen_manifest.json"), loadJson),
     withFallback("result_renderer.json", originalAssetUrl("result_renderer.json"), originalFallbackUrl("result_renderer.json"), loadJson),
+    withFallback("bracket_screen_manifest.json", originalAssetUrl("bracket_screen_manifest.json"), originalFallbackUrl("bracket_screen_manifest.json"), loadJson),
+    withFallback("bracket_renderer.json", originalAssetUrl("bracket_renderer.json"), originalFallbackUrl("bracket_renderer.json"), loadJson),
+    withFallback("bracket_tiles.png", originalAssetUrl("bracket_tiles.png"), originalFallbackUrl("bracket_tiles.png"), loadImage),
     menuScreensPromise,
   ]);
   originalAssets.chr = chr;
@@ -1624,6 +1726,9 @@ async function main() {
   originalAssets.menu = menuScreens;
   originalAssets.result.manifest = resultScreenManifest;
   originalAssets.result.scripts = resultRenderer;
+  originalAssets.bracket.manifest = bracketScreenManifest;
+  originalAssets.bracket.scripts = bracketRenderer;
+  originalAssets.bracket.tileImage = bracketTiles;
   api.game_init();
   if (DEBUG) {
     window.__soccerApi = api;
