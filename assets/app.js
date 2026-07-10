@@ -61,7 +61,7 @@ const btnKick = document.querySelector("#btnKick");
 const btnSprint = document.querySelector("#btnSprint");
 const btnStart = document.querySelector("#btnStart");
 const DEBUG = new URLSearchParams(window.location.search).get("debug") === "1";
-const BUILD_ID = "original-camera-follow-20260710";
+const BUILD_ID = "original-field-control-marker-20260710";
 document.body.classList.toggle("debug", DEBUG);
 stats.hidden = !DEBUG;
 
@@ -493,7 +493,7 @@ function inputBits() {
 }
 
 async function loadWasm() {
-  const primary = assetUrl("../game_core.d83a9437.wasm");
+  const primary = assetUrl("../game_core.1e817244.wasm");
   const fallback = rootAssetUrl("game_core.wasm");
   const response = await withFallback("game_core.wasm", primary, fallback, (url) => fetch(url).then((r) => {
     if (!r.ok) throw new Error(`failed to load ${url}: ${r.status}`);
@@ -509,28 +509,98 @@ function clamp(value, min, max) {
 }
 
 const ORIGINAL_CAMERA_VIEW_W = 0x100;
+const ORIGINAL_CAMERA_VIEW_H = 0xB0;
 const ORIGINAL_CAMERA_BASE_Y = 0x48;
-function drawField(screenW, screenH, worldW = screenW, worldH = screenH, cameraX = null, cameraY = ORIGINAL_CAMERA_BASE_Y) {
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
-  if (originalAssets.field) {
-    ctx.imageSmoothingEnabled = false;
-    const img = originalAssets.field;
-    const sourceH = img.naturalHeight || img.height;
-    const sourceW = Math.min(img.naturalWidth || img.width, sourceH * screenW / screenH);
-    const fullW = img.naturalWidth || img.width;
-    const focusX = cameraX == null ? worldW / 2 : cameraX + ORIGINAL_CAMERA_VIEW_W / 2;
-    const focal = focusX / worldW * fullW;
-    const sourceX = clamp(focal - sourceW / 2, 0, fullW - sourceW);
-    const verticalOffset = (ORIGINAL_CAMERA_BASE_Y - cameraY) / worldH * screenH;
-    ctx.fillStyle = "#43d52e";
-    ctx.fillRect(0, 0, screenW, screenH);
-    let firstY = verticalOffset % screenH;
-    if (firstY > 0) firstY -= screenH;
-    for (let destY = firstY; destY < screenH; destY += screenH) {
-      ctx.drawImage(img, sourceX, 0, sourceW, sourceH, 0, destY, screenW, screenH);
+function composeOriginalField(api) {
+  const field = originalAssets.field;
+  if (!field?.manifest) return null;
+  const coverage = clamp(api.original_field_puddle_coverage ? api.original_field_puddle_coverage() : 0, 0, 2);
+  const fieldColor = clamp(api.original_field_color ? api.original_field_color() : 0, 0, 4);
+  const puddleSet = api.original_puddle_set ? api.original_puddle_set() & 0xFF : 0;
+  const key = `${coverage}/${fieldColor}/${puddleSet}`;
+  if (field.compositeKey === key && field.composite) return field.composite;
+  const base = field.images[String(coverage)]?.[String(fieldColor)];
+  if (!base) return null;
+  if (!field.composite) {
+    field.composite = document.createElement("canvas");
+    field.compositeContext = field.composite.getContext("2d");
+  }
+  field.composite.width = base.naturalWidth || base.width;
+  field.composite.height = base.naturalHeight || base.height;
+  const fieldContext = field.compositeContext;
+  fieldContext.imageSmoothingEnabled = false;
+  fieldContext.clearRect(0, 0, field.composite.width, field.composite.height);
+  fieldContext.drawImage(base, 0, 0);
+  const wetVariant = Math.min(coverage + 1, 2);
+  const wet = field.images[String(wetVariant)]?.[String(fieldColor)];
+  if (wet && wetVariant !== coverage && puddleSet) {
+    const assetScale = field.manifest.scale || 1;
+    const sectorWidth = field.manifest.sector_width * assetScale;
+    const topHeight = field.manifest.top_height * assetScale;
+    const bottomHeight = field.manifest.bottom_height * assetScale;
+    for (let sector = 0; sector < 8; sector++) {
+      if ((puddleSet & (1 << sector)) === 0) continue;
+      const column = sector & 3;
+      const sourceX = column * sectorWidth;
+      const sourceY = sector < 4 ? 0 : topHeight;
+      const height = sector < 4 ? topHeight : bottomHeight;
+      fieldContext.drawImage(wet, sourceX, sourceY, sectorWidth, height, sourceX, sourceY, sectorWidth, height);
     }
+  }
+  field.compositeKey = key;
+  return field.composite;
+}
+function drawField(api, screenW, screenH, worldW = screenW, worldH = screenH, cameraX = null, cameraY = ORIGINAL_CAMERA_BASE_Y) {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  const img = composeOriginalField(api);
+  if (img) {
+    ctx.imageSmoothingEnabled = false;
+    const manifest = originalAssets.field.manifest;
+    const assetScale = manifest.scale || 1;
+    const logicalWidth = manifest.logical_width;
+    const logicalHeight = manifest.logical_height;
+    const viewWidth = manifest.camera_width || ORIGINAL_CAMERA_VIEW_W;
+    const viewHeight = manifest.camera_height || ORIGINAL_CAMERA_VIEW_H;
+    const clampedCameraX = clamp(cameraX == null ? 0 : cameraX, 0, logicalWidth - viewWidth);
+    const clampedCameraY = clamp(cameraY == null ? 0 : cameraY, 0, logicalHeight - viewHeight);
+    const sourceX = clampedCameraX * assetScale;
+    const sourceY = clampedCameraY * assetScale;
+    const sourceW = viewWidth * assetScale;
+    const sourceH = viewHeight * assetScale;
+    const targetAspect = viewWidth / viewHeight;
+    let destW = screenW;
+    let destH = destW / targetAspect;
+    if (destH > screenH) {
+      destH = screenH;
+      destW = destH * targetAspect;
+    }
+    const destX = (screenW - destW) / 2;
+    const destY = (screenH - destH) / 2;
+    ctx.fillStyle = "#000";
+    ctx.fillRect(0, 0, screenW, screenH);
+    ctx.drawImage(img, sourceX, sourceY, sourceW, sourceH, destX, destY, destW, destH);
     ctx.imageSmoothingEnabled = true;
-    return { sourceX, sourceW, sourceH, fullW, fullH: sourceH, screenW, screenH, worldW, worldH, cameraX, cameraY, verticalOffset, original: true };
+    return {
+      sourceX: clampedCameraX,
+      sourceY: clampedCameraY,
+      sourceW: viewWidth,
+      sourceH: viewHeight,
+      fullW: logicalWidth,
+      fullH: logicalHeight,
+      screenW,
+      screenH,
+      worldW,
+      worldH,
+      cameraX: clampedCameraX,
+      cameraY: clampedCameraY,
+      destX,
+      destY,
+      destW,
+      destH,
+      logicalScale: destH / viewHeight,
+      verticalOffset: 0,
+      original: true,
+    };
   }
   ctx.fillStyle = "#166f39";
   ctx.fillRect(0, 0, screenW, screenH);
@@ -551,18 +621,96 @@ function drawField(screenW, screenH, worldW = screenW, worldH = screenH, cameraX
   ctx.strokeRect(screenW - 118, screenH / 2 - 82, 88, 164);
   return { sourceX: 0, sourceW: screenW, sourceH: screenH, fullW: screenW, fullH: screenH, screenW, screenH, worldW, worldH, cameraX, cameraY, verticalOffset: (ORIGINAL_CAMERA_BASE_Y - cameraY) / worldH * screenH, original: false };
 }
+async function loadOriginalFieldAssets() {
+  const manifest = await withFallback(
+    "field_manifest.json",
+    originalAssetUrl("field_manifest.json"),
+    originalFallbackUrl("field_manifest.json"),
+    loadJson,
+  );
+  const images = {};
+  const requests = [];
+  for (const [coverage, paletteFiles] of Object.entries(manifest.images || {})) {
+    images[coverage] = {};
+    for (const [palette, fileName] of Object.entries(paletteFiles)) {
+      requests.push(
+        withFallback(fileName, originalAssetUrl(fileName), originalFallbackUrl(fileName), loadImage)
+          .then((image) => { images[coverage][palette] = image; }),
+      );
+    }
+  }
+  await Promise.all(requests);
+  return { manifest, images, composite: null, compositeContext: null, compositeKey: "" };
+}
 function worldToScreen(view, x, y) {
   if (!view || !view.original) {
     return { x: x / view.worldW * view.screenW, y: y / view.worldH * view.screenH + (view.verticalOffset || 0) };
   }
-  const sx = x / view.worldW * view.fullW;
-  const sy = y / view.worldH * view.fullH;
   return {
-    x: (sx - view.sourceX) * (view.screenW / view.sourceW),
-    y: sy * (view.screenH / view.sourceH) + view.verticalOffset,
+    x: view.destX + (x - view.cameraX) * (view.destW / view.sourceW),
+    y: view.destY + (y - view.cameraY) * (view.destH / view.sourceH),
   };
 }
-
+function originalPlayerPosition(api, index) {
+  if (api.original_player_x_lo && api.original_player_x_hi && api.original_player_y_lo && api.original_player_y_hi) {
+    return {
+      x: (api.original_player_x_hi(index) << 8) | api.original_player_x_lo(index),
+      y: (api.original_player_y_hi(index) << 8) | api.original_player_y_lo(index),
+      z: api.original_player_z_lo && api.original_player_z_hi
+        ? ((api.original_player_z_hi(index) << 8) | api.original_player_z_lo(index))
+        : 0,
+    };
+  }
+  return { x: api.player_x(index), y: api.player_y(index), z: 0 };
+}
+function originalBallPosition(api) {
+  if (api.original_ball_x_lo && api.original_ball_x_hi && api.original_ball_y_lo && api.original_ball_y_hi) {
+    return {
+      x: (api.original_ball_x_hi() << 8) | api.original_ball_x_lo(),
+      y: (api.original_ball_y_hi() << 8) | api.original_ball_y_lo(),
+      z: api.original_ball_z_lo && api.original_ball_z_hi
+        ? ((api.original_ball_z_hi() << 8) | api.original_ball_z_lo())
+        : 0,
+    };
+  }
+  return { x: api.ball_x(), y: api.ball_y(), z: api.ball_z ? api.ball_z() : 0 };
+}
+function normalizeOriginalHeight(value) {
+  return value >= 0 && value < 0x8000 ? value : 0;
+}
+function drawOriginalControlNumberMarker(view, playerPosition, screenPosition, slot = 0) {
+  if (!view?.original) return;
+  const relativeX = playerPosition.x - view.cameraX;
+  const relativeY = playerPosition.y - view.cameraY;
+  if (relativeX < 0x08 || relativeX >= 0x100 || relativeY < 0x18 || relativeY >= 0xE0) return;
+  const scale = view.logicalScale || 1;
+  const height = normalizeOriginalHeight(playerPosition.z);
+  const centerX = screenPosition.x - 4 * scale;
+  const topY = screenPosition.y - (height + 0x20 + 11) * scale;
+  const patterns = [
+    ["010", "110", "010", "010", "111"],
+    ["110", "001", "010", "100", "111"],
+    ["110", "001", "010", "001", "110"],
+    ["101", "101", "111", "001", "001"],
+  ];
+  const pattern = patterns[slot & 3];
+  const unit = Math.max(2, Math.round(scale * 1.5));
+  const width = 3 * unit;
+  const heightPixels = 5 * unit;
+  const left = Math.round(centerX - width / 2);
+  const top = Math.round(topY);
+  ctx.save();
+  ctx.imageSmoothingEnabled = false;
+  ctx.fillStyle = "rgba(0,0,0,.92)";
+  ctx.fillRect(left - unit, top - unit, width + unit * 2, heightPixels + unit * 2);
+  ctx.fillStyle = "#ffffff";
+  for (let row = 0; row < pattern.length; row++) {
+    for (let column = 0; column < pattern[row].length; column++) {
+      if (pattern[row][column] === "1") ctx.fillRect(left + column * unit, top + row * unit, unit, unit);
+    }
+  }
+  ctx.restore();
+}
 function drawCircle(x, y, r, fill, stroke = "rgba(0,0,0,.35)") {
   ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2); ctx.fillStyle = fill; ctx.fill(); ctx.lineWidth = 2; ctx.strokeStyle = stroke; ctx.stroke();
 }
@@ -577,12 +725,11 @@ function drawOriginalTile(tileIndex, x, y, size = 16, alt = false) {
   return true;
 }
 
-function drawMetaSprite(frame, x, y, team, controlled = false, flip = false, teamMirror = true) {
+function drawMetaSprite(frame, x, y, team, flip = false, teamMirror = true, drawScale = 2) {
   if (!frame) return false;
   const img = team === 1 ? originalAssets.chrAlt : originalAssets.chr;
   if (!img) return false;
   const srcTileSize = originalAssets.tileSize;
-  const drawScale = controlled ? 2.2 : 2.0;
   const destTileSize = 8 * drawScale;
 
   for (let i = 0; i < frame.count; i++) {
@@ -607,21 +754,14 @@ function drawMetaSprite(frame, x, y, team, controlled = false, flip = false, tea
   return true;
 }
 
-function drawOriginalPlayer(x, y, team, controlled = false, frameHint = 0, moving = false, facingX = 1, action = ACTION.STAND, originalAnimation = null) {
+function drawOriginalPlayer(x, y, team, frameHint = 0, moving = false, facingX = 1, action = ACTION.STAND, originalAnimation = null, displayScale = 2) {
   const frames = originalAssets.metasprites;
   if (frames.length) {
     if (Number.isFinite(originalAnimation)) {
       const originalIdx = originalAnimation & 0x7F;
       if (originalIdx < frames.length) {
         const flip = (originalAnimation & 0x80) !== 0;
-        if (drawMetaSprite(frames[originalIdx], x, y, team, controlled, flip, false)) {
-          if (controlled) {
-            ctx.strokeStyle = "#ffff66";
-            ctx.lineWidth = 2;
-            ctx.beginPath(); ctx.arc(x, y - 34, 13, 0, Math.PI * 2); ctx.stroke();
-          }
-          return;
-        }
+        if (drawMetaSprite(frames[originalIdx], x, y, team, flip, false, displayScale)) return;
       }
     }
     const runFrames = [0, 1, 2, 1];
@@ -635,37 +775,29 @@ function drawOriginalPlayer(x, y, team, controlled = false, frameHint = 0, movin
     if (action === ACTION.DEJECT) idx = 4;
     idx = Math.min(idx, frames.length - 1);
     const flip = facingX < 0;
-    if (drawMetaSprite(frames[idx], x, y, team, controlled, flip)) {
-      if (controlled) {
-        ctx.strokeStyle = "#ffff66";
-        ctx.lineWidth = 2;
-        ctx.beginPath(); ctx.arc(x, y - 34, 13, 0, Math.PI * 2); ctx.stroke();
-      }
-      return;
-    }
+    if (drawMetaSprite(frames[idx], x, y, team, flip, true, displayScale)) return;
   }
-
   const base = 0x120;
-  const size = controlled ? 20 : 18;
+  const size = 8 * displayScale;
   const ox = Math.round(x - size);
   const oy = Math.round(y - size * 1.8);
   const tiles = [base, base + 1, base + 0x20, base + 0x21, base + 0x40, base + 0x41];
   for (let i = 0; i < tiles.length; i++) drawOriginalTile(tiles[i], ox + (i % 2) * size, oy + Math.floor(i / 2) * size, size, team === 1);
 }
 
-function drawOriginalBall(x, y, z = 0, spin = 0, special = 0, originalAnimation = null) {
-  const visualY = y - z;
+function drawOriginalBall(x, y, z = 0, spin = 0, special = 0, originalAnimation = null, displayScale = 2) {
+  const visualY = y - z * displayScale;
   const shadowScale = Math.max(0.35, 1 - z / 90);
   ctx.save();
   ctx.fillStyle = `rgba(0,0,0,${0.30 * shadowScale})`;
   ctx.beginPath();
-  ctx.ellipse(Math.round(x), Math.round(y + 5), 9 * shadowScale, 4 * shadowScale, 0, 0, Math.PI * 2);
+  ctx.ellipse(Math.round(x), Math.round(y + 2 * displayScale), 4.5 * displayScale * shadowScale, 2 * displayScale * shadowScale, 0, 0, Math.PI * 2);
   ctx.fill();
   ctx.restore();
   const originalPhase = Number.isFinite(originalAnimation) ? (originalAnimation & 0x07) : (spin & 0x07);
   const tile = 0x1AEC;
-  const size = (z > 0 ? 18 : 16) + (special > 0 ? 4 : 0);
-  const bob = z > 0 ? Math.sin(originalPhase * 0.9) * 1.5 : 0;
+  const size = 8 * displayScale + (special > 0 ? 2 * displayScale : 0);
+  const bob = z > 0 ? Math.sin(originalPhase * 0.9) * 0.75 * displayScale : 0;
   if (special > 0) {
     ctx.save();
     ctx.strokeStyle = "rgba(255,245,120,.85)";
@@ -691,6 +823,7 @@ function drawOriginalBall(x, y, z = 0, spin = 0, special = 0, originalAnimation 
 }
 
 function drawWeather(api, view, screenW, screenH) {
+  if (view?.original) return;
   const weather = api.field_weather ? api.field_weather() : 0;
   const hazards = api.field_hazard_count ? api.field_hazard_count() : 0;
   for (let i = 0; i < hazards; i++) {
@@ -887,9 +1020,10 @@ function render(api) {
   const menuTeam = api.menu_opponent_id ? api.menu_opponent_id() : cpuTeam;
   const wins = api.tournament_wins ? api.tournament_wins() : 0;
 
-  const bx = api.ball_x();
-  const by = api.ball_y();
-  const bz = api.ball_z ? api.ball_z() : 0;
+  const ballPosition = originalBallPosition(api);
+  const bx = ballPosition.x;
+  const by = ballPosition.y;
+  const bz = normalizeOriginalHeight(ballPosition.z);
   const bspin = api.ball_spin ? api.ball_spin() : Math.floor(api.game_tick_count() / 6);
   const bspecial = api.ball_special_timer ? api.ball_special_timer() : 0;
   const exposesOriginalCamera = api.original_camera_x_lo && api.original_camera_x_hi
@@ -901,19 +1035,26 @@ function render(api) {
   const hasOriginalCamera = exposesOriginalCamera && (rawCameraX !== 0 || rawCameraY !== 0);
   const cameraX = hasOriginalCamera
     ? rawCameraX
-    : clamp(bx - ORIGINAL_CAMERA_VIEW_W / 2, 0, worldW - ORIGINAL_CAMERA_VIEW_W);
+    : clamp(bx - ORIGINAL_CAMERA_VIEW_W / 2, 0, 1024 - ORIGINAL_CAMERA_VIEW_W);
   const cameraY = hasOriginalCamera
     ? rawCameraY
     : ORIGINAL_CAMERA_BASE_Y;
-  const view = drawField(screenW, screenH, worldW, worldH, cameraX, cameraY);
-  if (DEBUG) window.__soccerView = { cameraX, cameraY, sourceX: view.sourceX, verticalOffset: view.verticalOffset };
+  const view = drawField(api, screenW, screenH, worldW, worldH, cameraX, cameraY);
+  if (DEBUG) window.__soccerView = { cameraX: view.cameraX, cameraY: view.cameraY, sourceX: view.sourceX, sourceY: view.sourceY, sourceW: view.sourceW, sourceH: view.sourceH, destX: view.destX, destY: view.destY, destW: view.destW, destH: view.destH };
   drawWeather(api, view, screenW, screenH);
-  const controlled = api.controlled_player ? api.controlled_player() : 0;
   const count = api.player_count ? api.player_count() : 1;
+  const sourceControlled = api.original_controlled_player ? api.original_controlled_player(0) : 0xFF;
+  const controlled = sourceControlled < count
+    ? sourceControlled
+    : (api.controlled_player ? api.controlled_player() : 0);
+  const playerPositions = [];
   for (let i = 0; i < count; i++) {
     if (api.player_active && !api.player_active(i)) continue;
-    const p = worldToScreen(view, api.player_x(i), api.player_y(i));
-    drawCircle(p.x + 3, p.y + 5, api.player_radius(i), "rgba(0,0,0,.20)", "transparent");
+    const originalPosition = originalPlayerPosition(api, i);
+    playerPositions[i] = originalPosition;
+    const p = worldToScreen(view, originalPosition.x, originalPosition.y);
+    const shadowRadius = Math.max(3, (api.player_radius ? api.player_radius(i) : 8) * (view.logicalScale || 1) * 0.55);
+    drawCircle(p.x + 1 * (view.logicalScale || 1), p.y + 2 * (view.logicalScale || 1), shadowRadius, "rgba(0,0,0,.20)", "transparent");
     const injury = api.player_injury ? api.player_injury(i) : 0;
     if (injury > 0) {
       ctx.strokeStyle = `rgba(255,70,70,${Math.min(0.85, 0.25 + injury / 130)})`;
@@ -924,7 +1065,9 @@ function render(api) {
   const entities = [{ type: "ball", groundY: by }];
   for (let i = 0; i < count; i++) {
     if (api.player_active && !api.player_active(i)) continue;
-    entities.push({ type: "player", index: i, groundY: api.player_y(i) });
+    const originalPosition = playerPositions[i] || originalPlayerPosition(api, i);
+    playerPositions[i] = originalPosition;
+    entities.push({ type: "player", index: i, groundY: originalPosition.y });
   }
   entities.sort((a, b) => a.groundY - b.groundY);
 
@@ -932,7 +1075,7 @@ function render(api) {
     if (entity.type === "ball") {
       const b = worldToScreen(view, bx, by);
       const banim = api.original_ball_animation ? api.original_ball_animation() : null;
-      drawOriginalBall(b.x, b.y, bz, bspin, bspecial, banim);
+      drawOriginalBall(b.x, b.y, bz, bspin, bspecial, banim, view.logicalScale || 2);
       continue;
     }
     const i = entity.index;
@@ -941,9 +1084,12 @@ function render(api) {
     const action = api.player_action ? api.player_action(i) : ACTION.STAND;
     const moving = Math.abs(vx) + Math.abs(vy) > 1;
     const facingX = api.player_facing_x ? api.player_facing_x(i) : (api.player_team && api.player_team(i) ? -1 : 1);
-    const p = worldToScreen(view, api.player_x(i), api.player_y(i));
+    const originalPosition = playerPositions[i] || originalPlayerPosition(api, i);
+    const p = worldToScreen(view, originalPosition.x, originalPosition.y);
+    const playerHeight = normalizeOriginalHeight(originalPosition.z);
+    const visualY = p.y - playerHeight * (view.logicalScale || 1);
     const originalAnimation = api.original_player_animation ? api.original_player_animation(i) : null;
-    drawOriginalPlayer(p.x, p.y, api.player_team ? api.player_team(i) : 0, i === controlled, Math.floor(api.game_tick_count() / 10) + i, moving, facingX, action, originalAnimation);
+    drawOriginalPlayer(p.x, visualY, api.player_team ? api.player_team(i) : 0, Math.floor(api.game_tick_count() / 10) + i, moving, facingX, action, originalAnimation, view.logicalScale || 2);
     if (action === ACTION.CELEBRATE) {
       ctx.save();
       ctx.strokeStyle = "rgba(255,230,70,.85)";
@@ -962,6 +1108,25 @@ function render(api) {
       ctx.textAlign = "center";
       ctx.fillText("...", p.x, p.y - 44);
       ctx.restore();
+    }
+  }
+  if (controlled < count && playerPositions[controlled]) {
+    const controlledScreenPosition = worldToScreen(view, playerPositions[controlled].x, playerPositions[controlled].y);
+    drawOriginalControlNumberMarker(
+      view,
+      playerPositions[controlled],
+      controlledScreenPosition,
+      0,
+    );
+    if (DEBUG) {
+      window.__soccerControlledMarker = {
+        index: controlled,
+        worldX: playerPositions[controlled].x,
+        worldY: playerPositions[controlled].y,
+        screenX: controlledScreenPosition.x,
+        screenY: controlledScreenPosition.y,
+        fieldKey: originalAssets.field?.compositeKey || "",
+      };
     }
   }
   drawScore(api, screenW);
@@ -1071,7 +1236,7 @@ async function main() {
     loadWasm(),
     withFallback("chr_sprite_pal_01.png", originalAssetUrl("chr_sprite_pal_01.png"), originalFallbackUrl("chr_sprite_pal_01.png"), loadImage),
     withFallback("chr_sprite_pal_08.png", originalAssetUrl("chr_sprite_pal_08.png"), originalFallbackUrl("chr_sprite_pal_08.png"), loadImage),
-    withFallback("field_grass.png", originalAssetUrl("field_grass.png"), originalFallbackUrl("field_grass.png"), loadImage),
+    loadOriginalFieldAssets(),
     withFallback("metasprites.json", originalAssetUrl("metasprites.json"), originalFallbackUrl("metasprites.json"), loadJson),
     withFallback("splash_00_logo.png", originalAssetUrl("splash_00_logo.png"), originalFallbackUrl("splash_00_logo.png"), loadImage),
     withFallback("splash_01_title.png", originalAssetUrl("splash_01_title.png"), originalFallbackUrl("splash_01_title.png"), loadImage),
