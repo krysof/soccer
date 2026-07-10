@@ -475,7 +475,7 @@ function inputBits() {
   return bits;
 }
 async function loadWasm() {
-  const primary = assetUrl("../game_core.6a92c4de.wasm");
+  const primary = assetUrl("../game_core.2b8f2b53.wasm");
   const fallback = rootAssetUrl("game_core.wasm");
   const response = await withFallback("game_core.wasm", primary, fallback, (url) => fetch(url).then((r) => {
     if (!r.ok) throw new Error(`failed to load ${url}: ${r.status}`);
@@ -658,38 +658,30 @@ function originalBallPosition(api) {
 function normalizeOriginalHeight(value) {
   return value >= 0 && value < 0x8000 ? value : 0;
 }
-function drawOriginalControlNumberMarker(view, playerPosition, screenPosition, slot = 0) {
+function drawOriginalControlNumberMarker(api, view, playerPosition, screenPosition, slot = 0) {
   if (!view?.original) return;
   const relativeX = playerPosition.x - view.cameraX;
   const relativeY = playerPosition.y - view.cameraY;
   if (relativeX < 0x08 || relativeX >= 0x100 || relativeY < 0x18 || relativeY >= 0xE0) return;
   const scale = view.logicalScale || 1;
   const height = normalizeOriginalHeight(playerPosition.z);
-  const centerX = screenPosition.x - 4 * scale;
-  const topY = screenPosition.y - (height + 0x20 + 11) * scale;
-  const patterns = [
-    ["010", "110", "010", "010", "111"],
-    ["110", "001", "010", "100", "111"],
-    ["110", "001", "010", "001", "110"],
-    ["101", "101", "111", "001", "001"],
-  ];
-  const pattern = patterns[slot & 3];
-  const unit = Math.max(2, Math.round(scale * 1.5));
-  const width = 3 * unit;
-  const heightPixels = 5 * unit;
-  const left = Math.round(centerX - width / 2);
-  const top = Math.round(topY);
-  ctx.save();
-  ctx.imageSmoothingEnabled = false;
-  ctx.fillStyle = "rgba(0,0,0,.92)";
-  ctx.fillRect(left - unit, top - unit, width + unit * 2, heightPixels + unit * 2);
-  ctx.fillStyle = "#ffffff";
-  for (let row = 0; row < pattern.length; row++) {
-    for (let column = 0; column < pattern[row].length; column++) {
-      if (pattern[row][column] === "1") ctx.fillRect(left + column * unit, top + row * unit, unit, unit);
-    }
-  }
-  ctx.restore();
+  const manifest = originalAssets.sprite.manifest;
+  const animation = 0x80 | (slot & 3);
+  const tile = manifest?.specialGroup3Tiles?.[animation & 0x7F];
+  if (!Number.isFinite(tile)) return;
+  const paletteSlot = ((animation & 1) + 1) & 3;
+  const paletteNumber = api.original_sprite_palette_number(paletteSlot) & 0xFF;
+  const bankSlot = tile >> 6;
+  const bankNumber = api.original_sprite_bank(bankSlot) & 0xFF;
+  const tileCanvas = originalSpriteTile(bankNumber, tile & 0x3F, paletteNumber);
+  if (!tileCanvas) return;
+  drawOriginalSpriteTile(
+    tileCanvas,
+    screenPosition.x - 4 * scale,
+    screenPosition.y - (height + 0x20 + 11) * scale,
+    paletteSlot,
+    scale,
+  );
 }
 function drawCircle(x, y, r, fill, stroke = "rgba(0,0,0,.35)") {
   ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2); ctx.fillStyle = fill; ctx.fill(); ctx.lineWidth = 2; ctx.strokeStyle = stroke; ctx.stroke();
@@ -760,10 +752,17 @@ function originalSpriteTile(bankNumber, tileWithinBank, paletteNumber) {
   sprite.tileCache.set(key, tileCanvas);
   return tileCanvas;
 }
-function resolveOriginalPlayerFrame(api, objectIndex) {
+function originalObjectAnimation(api, objectIndex) {
+  if (objectIndex === 0x0C) {
+    return api.original_ball_animation ? api.original_ball_animation() & 0xFF : null;
+  }
+  return api.original_player_animation ? api.original_player_animation(objectIndex) & 0xFF : null;
+}
+function resolveOriginalObjectFrame(api, objectIndex) {
   const manifest = originalAssets.sprite.manifest;
-  if (!manifest || !api.original_player_animation || !api.original_object_work_0061) return null;
-  const animation = api.original_player_animation(objectIndex) & 0xFF;
+  if (!manifest || !api.original_object_work_0061) return null;
+  const animation = originalObjectAnimation(api, objectIndex);
+  if (!Number.isFinite(animation)) return null;
   const groupNumber = api.original_object_work_0061(objectIndex) & 0xFF;
   if (groupNumber === 3) {
     const index = animation & 0x7F;
@@ -785,8 +784,8 @@ function drawOriginalSpriteTile(tileCanvas, x, y, attr, drawScale) {
   ctx.drawImage(tileCanvas, -size / 2, -size / 2, size, size);
   ctx.restore();
 }
-function drawOriginalPlayer(api, objectIndex, x, y, displayScale = 2) {
-  const resolved = resolveOriginalPlayerFrame(api, objectIndex);
+function drawOriginalObject(api, objectIndex, x, y, displayScale = 2) {
+  const resolved = resolveOriginalObjectFrame(api, objectIndex);
   const manifest = originalAssets.sprite.manifest;
   if (!resolved || !manifest) return false;
   const animation = resolved.animation;
@@ -801,7 +800,8 @@ function drawOriginalPlayer(api, objectIndex, x, y, displayScale = 2) {
     return true;
   }
   const objectPaletteSlot = manifest.objectPaletteSlots[objectIndex] || 0;
-  const faceNumber = api.original_player_face ? api.original_player_face(objectIndex) & 0xFF : 0;
+  const faceNumber = objectIndex < 0x0C && api.original_player_face
+    ? api.original_player_face(objectIndex) & 0xFF : 0;
   const mirror = (animation & 0x80) === 0;
   for (let i = 0; i < resolved.frame.count; i++) {
     let tile = resolved.frame.tile[i] & 0xFF;
@@ -828,41 +828,9 @@ function drawOriginalPlayer(api, objectIndex, x, y, displayScale = 2) {
   }
   return true;
 }
-function drawOriginalBall(x, y, z = 0, spin = 0, special = 0, originalAnimation = null, displayScale = 2) {
+function drawOriginalBall(api, x, y, z = 0, displayScale = 2) {
   const visualY = y - z * displayScale;
-  const shadowScale = Math.max(0.35, 1 - z / 90);
-  ctx.save();
-  ctx.fillStyle = `rgba(0,0,0,${0.30 * shadowScale})`;
-  ctx.beginPath();
-  ctx.ellipse(Math.round(x), Math.round(y + 2 * displayScale), 4.5 * displayScale * shadowScale, 2 * displayScale * shadowScale, 0, 0, Math.PI * 2);
-  ctx.fill();
-  ctx.restore();
-  const originalPhase = Number.isFinite(originalAnimation) ? (originalAnimation & 0x07) : (spin & 0x07);
-  const tile = 0x1AEC;
-  const size = 8 * displayScale + (special > 0 ? 2 * displayScale : 0);
-  const bob = z > 0 ? Math.sin(originalPhase * 0.9) * 0.75 * displayScale : 0;
-  if (special > 0) {
-    ctx.save();
-    ctx.strokeStyle = "rgba(255,245,120,.85)";
-    ctx.lineWidth = 2;
-    ctx.beginPath();
-    ctx.arc(Math.round(x), Math.round(visualY + bob), size * 0.8 + Math.sin(originalPhase) * 2, 0, Math.PI * 2);
-    ctx.stroke();
-    ctx.restore();
-  }
-  const ok = drawOriginalTile(tile, Math.round(x - size / 2), Math.round(visualY - size / 2 + bob), size, false);
-  if (!ok) {
-    ctx.save();
-    ctx.translate(Math.round(x), Math.round(visualY));
-    ctx.fillStyle = "#f8f8f0";
-    ctx.strokeStyle = "#111";
-    ctx.lineWidth = 2;
-    ctx.beginPath();
-    ctx.arc(0, 0, 7, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.stroke();
-    ctx.restore();
-  }
+  return drawOriginalObject(api, 0x0C, x, visualY, displayScale);
 }
 function drawWeather(api, view, screenW, screenH) {
   if (view?.original) return;
@@ -973,49 +941,29 @@ function originalFullScreenLayout() {
   return { scale, x: (canvas.width - w) / 2, y: (canvas.height - h) / 2, w, h };
 }
 function drawOriginalMenuObjects(api, layout, subtype) {
-  if (subtype !== 0x03) return;
+  const objectIdsBySubtype = {
+    0x01: [0, 2],
+    0x02: [0],
+    0x03: [0, 1, 3],
+    0x04: [0, 1, 3],
+  };
+  const objectIds = objectIdsBySubtype[subtype];
+  if (!objectIds) return;
   ctx.save();
   ctx.beginPath();
   ctx.rect(layout.x, layout.y, layout.w, layout.h);
   ctx.clip();
-  const objectIds = [0, 1, 3];
   for (const index of objectIds) {
     if (!api.original_player_x_lo || !api.original_player_animation) continue;
     const p = originalPlayerPosition(api, index);
     const x = layout.x + p.x * layout.scale;
     const y = layout.y + (p.y - normalizeOriginalHeight(p.z)) * layout.scale;
-    drawOriginalPlayer(api, index, x, y, layout.scale);
+    drawOriginalObject(api, index, x, y, layout.scale);
   }
-  if (api.original_ball_x_lo) {
+  if ((subtype === 0x01 || subtype === 0x03) && api.original_ball_x_lo) {
     const ball = originalBallPosition(api);
-    drawOriginalBall(layout.x + ball.x * layout.scale,
-      layout.y + ball.y * layout.scale, normalizeOriginalHeight(ball.z), 0, 0,
-      api.original_ball_animation ? api.original_ball_animation() : null, layout.scale);
-  }
-  ctx.restore();
-}
-function drawOriginalMenuCursor(api, layout, subtype) {
-  const option = api.original_option_number ? api.original_option_number() & 0x7f : 0;
-  ctx.save();
-  ctx.strokeStyle = (api.original_frame_counter && (api.original_frame_counter() & 3) === 0)
-    ? "rgba(255,255,255,.35)" : "#fff";
-  ctx.fillStyle = "#fff";
-  ctx.lineWidth = Math.max(1, layout.scale);
-  if (subtype === 0x01) {
-    const rows = [0x34, 0x93, 0xD2];
-    const y = rows[Math.min(option, rows.length - 1)];
-    ctx.fillRect(layout.x + 0x2D * layout.scale, layout.y + (y - 2) * layout.scale,
-      5 * layout.scale, 5 * layout.scale);
-  } else if (subtype === 0x02) {
-    const col = Math.min(2, option >> 2);
-    const row = option & 3;
-    const x = 8 + col * 82;
-    const y = 38 + row * 48;
-    ctx.strokeRect(layout.x + x * layout.scale, layout.y + y * layout.scale,
-      76 * layout.scale, 42 * layout.scale);
-  } else if (subtype === 0x04) {
-    ctx.font = `${Math.max(9, Math.round(8 * layout.scale))}px ui-monospace, monospace`;
-    ctx.fillText(`${option + 1}`, layout.x + 8 * layout.scale, layout.y + 226 * layout.scale);
+    drawOriginalBall(api, layout.x + ball.x * layout.scale,
+      layout.y + ball.y * layout.scale, normalizeOriginalHeight(ball.z), layout.scale);
   }
   ctx.restore();
 }
@@ -1034,7 +982,6 @@ function drawOriginalMenuScreen(api) {
   }
   const subtype = api.original_screen_subtype ? api.original_screen_subtype() & 0x7f : 0;
   drawOriginalMenuObjects(api, layout, subtype);
-  drawOriginalMenuCursor(api, layout, subtype);
 }
 function playerLabel(api, index) {
   if (index == null || index >= 255) return "—";
@@ -1085,7 +1032,7 @@ function drawMenuOverlay(api) {
   }
   ctx.fillStyle = "#fff";
   ctx.font = "16px system-ui, sans-serif";
-  ctx.fillText("方向键/摇杆选择对手；PC：J/Z/Enter 开赛；手机：点「踢球」开赛", canvas.width / 2, startY + 5 * 48 + 18);
+  ctx.fillText("方向键/摇杆选择对手；PC：J/Z/Enter 开赛；手机：点 A开赛", canvas.width / 2, startY + 5 * 48 + 18);
   ctx.textAlign = "left";
 }
 function drawMatchIntroOverlay(api) {
@@ -1108,7 +1055,7 @@ function drawMatchIntroOverlay(api) {
   ctx.fillText(`READY ${Math.ceil(timer / 60)}`, canvas.width / 2, 290);
   ctx.font = "16px system-ui, sans-serif";
   ctx.fillStyle = "#fff";
-  ctx.fillText("PC：按 J / Z / Enter 跳过；手机：点「踢球」跳过", canvas.width / 2, 326);
+  ctx.fillText("PC：按 J / Z / Enter 跳过；手机：点 A跳过", canvas.width / 2, 326);
   ctx.textAlign = "left";
 }
 function render(api) {
@@ -1161,15 +1108,6 @@ function render(api) {
     if (api.player_active && !api.player_active(i)) continue;
     const originalPosition = originalPlayerPosition(api, i);
     playerPositions[i] = originalPosition;
-    const p = worldToScreen(view, originalPosition.x, originalPosition.y);
-    const shadowRadius = Math.max(3, (api.player_radius ? api.player_radius(i) : 8) * (view.logicalScale || 1) * 0.55);
-    drawCircle(p.x + 1 * (view.logicalScale || 1), p.y + 2 * (view.logicalScale || 1), shadowRadius, "rgba(0,0,0,.20)", "transparent");
-    const injury = api.player_injury ? api.player_injury(i) : 0;
-    if (injury > 0) {
-      ctx.strokeStyle = `rgba(255,70,70,${Math.min(0.85, 0.25 + injury / 130)})`;
-      ctx.lineWidth = 2;
-      ctx.beginPath(); ctx.arc(p.x, p.y - 18, 8 + injury / 12, 0, Math.PI * 2); ctx.stroke();
-    }
   }
   const entities = [{ type: "ball", groundY: by }];
   for (let i = 0; i < count; i++) {
@@ -1182,40 +1120,20 @@ function render(api) {
   for (const entity of entities) {
     if (entity.type === "ball") {
       const b = worldToScreen(view, bx, by);
-      const banim = api.original_ball_animation ? api.original_ball_animation() : null;
-      drawOriginalBall(b.x, b.y, bz, bspin, bspecial, banim, view.logicalScale || 2);
+      drawOriginalBall(api, b.x, b.y, bz, view.logicalScale || 2);
       continue;
     }
     const i = entity.index;
-    const action = api.player_action ? api.player_action(i) : ACTION.STAND;
     const originalPosition = playerPositions[i] || originalPlayerPosition(api, i);
     const p = worldToScreen(view, originalPosition.x, originalPosition.y);
     const playerHeight = normalizeOriginalHeight(originalPosition.z);
     const visualY = p.y - playerHeight * (view.logicalScale || 1);
-    drawOriginalPlayer(api, i, p.x, visualY, view.logicalScale || 2);
-    if (action === ACTION.CELEBRATE) {
-      ctx.save();
-      ctx.strokeStyle = "rgba(255,230,70,.85)";
-      ctx.lineWidth = 2;
-      const pulse = 10 + Math.sin(api.game_tick_count() / 4 + i) * 3;
-      ctx.beginPath(); ctx.arc(p.x, p.y - 38, pulse, 0, Math.PI * 2); ctx.stroke();
-      ctx.fillStyle = "#ffe64a";
-      ctx.font = "bold 12px ui-monospace, Consolas, monospace";
-      ctx.textAlign = "center";
-      ctx.fillText("GO!", p.x, p.y - 48);
-      ctx.restore();
-    } else if (action === ACTION.DEJECT) {
-      ctx.save();
-      ctx.fillStyle = "rgba(120,170,255,.9)";
-      ctx.font = "bold 13px ui-monospace, Consolas, monospace";
-      ctx.textAlign = "center";
-      ctx.fillText("...", p.x, p.y - 44);
-      ctx.restore();
-    }
+    drawOriginalObject(api, i, p.x, visualY, view.logicalScale || 2);
   }
   if (controlled < count && playerPositions[controlled]) {
     const controlledScreenPosition = worldToScreen(view, playerPositions[controlled].x, playerPositions[controlled].y);
     drawOriginalControlNumberMarker(
+      api,
       view,
       playerPositions[controlled],
       controlledScreenPosition,
@@ -1233,27 +1151,29 @@ function render(api) {
     }
   }
   drawScore(api, screenW);
-  const stamina = api.player_stamina(controlled);
-  const controlledInjury = api.player_injury ? api.player_injury(controlled) : 0;
-  ctx.fillStyle = "rgba(0,0,0,.45)";
-  ctx.fillRect(16, 16, 132, 16);
-  ctx.fillStyle = stamina > 30 ? "#62e572" : "#ffcc4d";
-  ctx.fillRect(18, 18, Math.max(0, stamina) * 1.28, 12);
-  ctx.fillStyle = "#ff7777";
-  ctx.font = "11px ui-monospace, Consolas, monospace";
-  ctx.fillText(`INJ ${controlledInjury}`, 154, 28);
-  if (api.player_role_speed) {
+  if (DEBUG) {
+    const stamina = api.player_stamina(controlled);
+    const controlledInjury = api.player_injury ? api.player_injury(controlled) : 0;
     ctx.fillStyle = "rgba(0,0,0,.45)";
-    ctx.fillRect(16, 36, 260, 18);
-    ctx.fillStyle = "#d7f7ff";
-    const rs = api.player_role_speed(controlled);
-    const rp = api.player_role_power(controlled);
-    const rt = api.player_role_tackle(controlled);
-    const rk = api.player_role_keeper(controlled);
-    ctx.fillText(`ROLE SPD ${rs} POW ${rp} TKL ${rt} GK ${rk}`, 20, 49);
+    ctx.fillRect(16, 16, 132, 16);
+    ctx.fillStyle = stamina > 30 ? "#62e572" : "#ffcc4d";
+    ctx.fillRect(18, 18, Math.max(0, stamina) * 1.28, 12);
+    ctx.fillStyle = "#ff7777";
+    ctx.font = "11px ui-monospace, Consolas, monospace";
+    ctx.fillText(`INJ ${controlledInjury}`, 154, 28);
+    if (api.player_role_speed) {
+      ctx.fillStyle = "rgba(0,0,0,.45)";
+      ctx.fillRect(16, 36, 260, 18);
+      ctx.fillStyle = "#d7f7ff";
+      const rs = api.player_role_speed(controlled);
+      const rp = api.player_role_power(controlled);
+      const rt = api.player_role_tackle(controlled);
+      const rk = api.player_role_keeper(controlled);
+      ctx.fillText(`ROLE SPD ${rs} POW ${rp} TKL ${rt} GK ${rk}`, 20, 49);
+    }
   }
   if (phase === PHASE.MATCH_INTRO) drawMatchIntroOverlay(api);
-  if (phase === PHASE.KICKOFF) drawOverlay("KICK OFF", ["PC：按 J / Z 开球", "手机：点「踢球」开球，然后摇杆移动"]);
+  if (phase === PHASE.KICKOFF) drawOverlay("KICK OFF", ["PC：按 J / Z 开球", "手机：点 A开球，然后摇杆移动"]);
   if (phase === PHASE.GOAL) {
     const scorer = api.last_goal_player ? api.last_goal_player() : 255;
     const assist = api.last_assist_player ? api.last_assist_player() : 255;
@@ -1264,14 +1184,14 @@ function render(api) {
       assist < 255 ? `ASSIST ${playerLabel(api, assist)}` : "NO ASSIST",
     ]);
   }
-  if (phase === PHASE.HALFTIME) drawOverlay("HALF TIME", ["换边，下半场准备", "PC：按 J / Z 继续", "手机：点「踢球」继续"]);
-  if (phase === PHASE.FULL_TIME) drawOverlay("FULL TIME", [`最终比分 ${api.score_left()} - ${api.score_right()}`, api.score_left() > api.score_right() ? "胜利：下场对手升级" : "败北/平局：重新挑战", "PC：按 J / Z 返回菜单", "手机：点「踢球」返回菜单"]);
-  if (phase === PHASE.THROW_IN) drawOverlay("THROW IN", ["PC：按 J / Z 继续", "手机：点「踢球」继续"]);
-  if (phase === PHASE.GOAL_KICK) drawOverlay("GOAL KICK", ["PC：按 J / Z 继续", "手机：点「踢球」继续"]);
-  if (phase === PHASE.CORNER_KICK) drawOverlay("CORNER KICK", ["PC：按 J / Z 继续", "手机：点「踢球」继续"]);
-  if (phase === PHASE.FREE_KICK) drawOverlay("FREE KICK", [`犯规队 ${api.foul_team ? TEAM_NAMES[api.foul_team()] || api.foul_team() : "?"}`, "PC：按 J / Z 继续", "手机：点「踢球」继续"]);
-  if (phase === PHASE.PENALTY_KICK) drawOverlay("PENALTY KICK", [`禁区犯规：${api.foul_team ? TEAM_NAMES[api.foul_team()] || api.foul_team() : "?"}`, "PC：按 J / Z 射门", "手机：点「踢球」射门"]);
-  if (phase === PHASE.PAUSE) drawOverlay("PAUSE", ["Start / J / Z 继续", "Sprint + Start：比赛中切换控制球员"]);
+  if (phase === PHASE.HALFTIME) drawOverlay("HALF TIME", ["换边，下半场准备", "PC：按 J / Z 继续", "手机：点 A继续"]);
+  if (phase === PHASE.FULL_TIME) drawOverlay("FULL TIME", [`最终比分 ${api.score_left()} - ${api.score_right()}`, api.score_left() > api.score_right() ? "胜利：下场对手升级" : "败北/平局：重新挑战", "PC：按 J / Z 返回菜单", "手机：点 A返回菜单"]);
+  if (phase === PHASE.THROW_IN) drawOverlay("THROW IN", ["PC：按 J / Z 继续", "手机：点 A继续"]);
+  if (phase === PHASE.GOAL_KICK) drawOverlay("GOAL KICK", ["PC：按 J / Z 继续", "手机：点 A继续"]);
+  if (phase === PHASE.CORNER_KICK) drawOverlay("CORNER KICK", ["PC：按 J / Z 继续", "手机：点 A继续"]);
+  if (phase === PHASE.FREE_KICK) drawOverlay("FREE KICK", [`犯规队 ${api.foul_team ? TEAM_NAMES[api.foul_team()] || api.foul_team() : "?"}`, "PC：按 J / Z 继续", "手机：点 A继续"]);
+  if (phase === PHASE.PENALTY_KICK) drawOverlay("PENALTY KICK", [`禁区犯规：${api.foul_team ? TEAM_NAMES[api.foul_team()] || api.foul_team() : "?"}`, "PC：按 J / Z 射门", "手机：点 A射门"]);
+  if (phase === PHASE.PAUSE) drawOverlay("PAUSE", ["Start / J / Z 继续", "B + Start：比赛中切换控制球员"]);
   const restart = api.restart_team ? api.restart_team() : 0;
   const lastTouch = api.last_touch_team ? api.last_touch_team() : 0;
   const action = api.player_action ? api.player_action(controlled) : 0;
@@ -1364,7 +1284,7 @@ async function main() {
     window.__soccerRender = () => render(api);
     window.__soccerInputBits = () => inputBits();
     window.__soccerSpriteFrame = (index) => {
-      const frame = resolveOriginalPlayerFrame(api, index);
+      const frame = resolveOriginalObjectFrame(api, index);
       if (!frame) return null;
       return {
         animation: frame.animation,
