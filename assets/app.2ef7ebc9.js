@@ -61,7 +61,7 @@ const btnKick = document.querySelector("#btnKick");
 const btnSprint = document.querySelector("#btnSprint");
 const btnStart = document.querySelector("#btnStart");
 const DEBUG = new URLSearchParams(window.location.search).get("debug") === "1";
-const BUILD_ID = "original-controls-20260710";
+const BUILD_ID = "original-camera-follow-20260710";
 document.body.classList.toggle("debug", DEBUG);
 stats.hidden = !DEBUG;
 
@@ -493,7 +493,7 @@ function inputBits() {
 }
 
 async function loadWasm() {
-  const primary = assetUrl("../game_core.6667cc37.wasm");
+  const primary = assetUrl("../game_core.d83a9437.wasm");
   const fallback = rootAssetUrl("game_core.wasm");
   const response = await withFallback("game_core.wasm", primary, fallback, (url) => fetch(url).then((r) => {
     if (!r.ok) throw new Error(`failed to load ${url}: ${r.status}`);
@@ -508,7 +508,9 @@ function clamp(value, min, max) {
   return Math.max(min, Math.min(max, value));
 }
 
-function drawField(screenW, screenH, worldW = screenW, worldH = screenH, focusX = worldW / 2) {
+const ORIGINAL_CAMERA_VIEW_W = 0x100;
+const ORIGINAL_CAMERA_BASE_Y = 0x48;
+function drawField(screenW, screenH, worldW = screenW, worldH = screenH, cameraX = null, cameraY = ORIGINAL_CAMERA_BASE_Y) {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
   if (originalAssets.field) {
     ctx.imageSmoothingEnabled = false;
@@ -516,11 +518,19 @@ function drawField(screenW, screenH, worldW = screenW, worldH = screenH, focusX 
     const sourceH = img.naturalHeight || img.height;
     const sourceW = Math.min(img.naturalWidth || img.width, sourceH * screenW / screenH);
     const fullW = img.naturalWidth || img.width;
+    const focusX = cameraX == null ? worldW / 2 : cameraX + ORIGINAL_CAMERA_VIEW_W / 2;
     const focal = focusX / worldW * fullW;
     const sourceX = clamp(focal - sourceW / 2, 0, fullW - sourceW);
-    ctx.drawImage(img, sourceX, 0, sourceW, sourceH, 0, 0, screenW, screenH);
+    const verticalOffset = (ORIGINAL_CAMERA_BASE_Y - cameraY) / worldH * screenH;
+    ctx.fillStyle = "#43d52e";
+    ctx.fillRect(0, 0, screenW, screenH);
+    let firstY = verticalOffset % screenH;
+    if (firstY > 0) firstY -= screenH;
+    for (let destY = firstY; destY < screenH; destY += screenH) {
+      ctx.drawImage(img, sourceX, 0, sourceW, sourceH, 0, destY, screenW, screenH);
+    }
     ctx.imageSmoothingEnabled = true;
-    return { sourceX, sourceW, sourceH, fullW, fullH: sourceH, screenW, screenH, worldW, worldH, original: true };
+    return { sourceX, sourceW, sourceH, fullW, fullH: sourceH, screenW, screenH, worldW, worldH, cameraX, cameraY, verticalOffset, original: true };
   }
   ctx.fillStyle = "#166f39";
   ctx.fillRect(0, 0, screenW, screenH);
@@ -539,18 +549,17 @@ function drawField(screenW, screenH, worldW = screenW, worldH = screenH, focusX 
   ctx.strokeStyle = "rgba(255,255,255,.65)";
   ctx.strokeRect(30, screenH / 2 - 82, 88, 164);
   ctx.strokeRect(screenW - 118, screenH / 2 - 82, 88, 164);
-  return { sourceX: 0, sourceW: screenW, sourceH: screenH, fullW: screenW, fullH: screenH, screenW, screenH, worldW, worldH, original: false };
+  return { sourceX: 0, sourceW: screenW, sourceH: screenH, fullW: screenW, fullH: screenH, screenW, screenH, worldW, worldH, cameraX, cameraY, verticalOffset: (ORIGINAL_CAMERA_BASE_Y - cameraY) / worldH * screenH, original: false };
 }
-
 function worldToScreen(view, x, y) {
   if (!view || !view.original) {
-    return { x: x / view.worldW * view.screenW, y: y / view.worldH * view.screenH };
+    return { x: x / view.worldW * view.screenW, y: y / view.worldH * view.screenH + (view.verticalOffset || 0) };
   }
   const sx = x / view.worldW * view.fullW;
   const sy = y / view.worldH * view.fullH;
   return {
     x: (sx - view.sourceX) * (view.screenW / view.sourceW),
-    y: sy * (view.screenH / view.sourceH),
+    y: sy * (view.screenH / view.sourceH) + view.verticalOffset,
   };
 }
 
@@ -883,7 +892,21 @@ function render(api) {
   const bz = api.ball_z ? api.ball_z() : 0;
   const bspin = api.ball_spin ? api.ball_spin() : Math.floor(api.game_tick_count() / 6);
   const bspecial = api.ball_special_timer ? api.ball_special_timer() : 0;
-  const view = drawField(screenW, screenH, worldW, worldH, bx);
+  const exposesOriginalCamera = api.original_camera_x_lo && api.original_camera_x_hi
+    && api.original_camera_y_lo && api.original_camera_y_hi;
+  const rawCameraX = exposesOriginalCamera
+    ? ((api.original_camera_x_hi() << 8) | api.original_camera_x_lo()) : 0;
+  const rawCameraY = exposesOriginalCamera
+    ? ((api.original_camera_y_hi() << 8) | api.original_camera_y_lo()) : 0;
+  const hasOriginalCamera = exposesOriginalCamera && (rawCameraX !== 0 || rawCameraY !== 0);
+  const cameraX = hasOriginalCamera
+    ? rawCameraX
+    : clamp(bx - ORIGINAL_CAMERA_VIEW_W / 2, 0, worldW - ORIGINAL_CAMERA_VIEW_W);
+  const cameraY = hasOriginalCamera
+    ? rawCameraY
+    : ORIGINAL_CAMERA_BASE_Y;
+  const view = drawField(screenW, screenH, worldW, worldH, cameraX, cameraY);
+  if (DEBUG) window.__soccerView = { cameraX, cameraY, sourceX: view.sourceX, verticalOffset: view.verticalOffset };
   drawWeather(api, view, screenW, screenH);
   const controlled = api.controlled_player ? api.controlled_player() : 0;
   const count = api.player_count ? api.player_count() : 1;
@@ -1039,7 +1062,7 @@ function render(api) {
   const btnPress = api.debug_original_button_ram ? api.debug_original_button_ram(0, 0x08).toString(16).padStart(2, "0") : "??";
   if (DEBUG) {
     stats.hidden = false;
-    stats.textContent = `build=${BUILD_ID} phase=${phase} input=$${touch.lastBits.toString(16).padStart(2, "0")} stick=${touch.axisX}/${touch.axisY} btn=${btnHold}/${btnPress} script=$${script} pauseRet=${pauseReturn} period=${period} swap=${swapped} cpu=${cpuTeam} menu=${menuTeam} wins=${wins} weather=${weather} hazards=${hazards} wind=${wind} score=${api.score_left()}-${api.score_right()} goal=${goalInfo} fouls=${fouls} foulTeam=${foulTeam} injuries=${injuries} lastHurt=${lastHurt} spShots=${specialShots} lastSp=${lastSpecial} time=${api.match_seconds_left()} tick=${api.game_tick_count()} players=${count} role=${roleInfo} pOrig=${playerOrig}@${playerDispatch}/${playerMainDispatch}/${playerAnimDispatch} pRam=${playerRam} ballObj=$${ballObj}@${ballDispatch} ballRam=${ballRam} ballState=${ballState} ballAnim=${ballAnim} ballSpeed=${ballSpeedRam} owner=${originalOwner} ball=(${bx},${by},z=${bz}) curve=${curve} special=${special} act=${action} charge=${charge} keeper=${keeper}/${hold} touch=${lastTouch}/${lastTouchPlayer} restart=${restart}`;
+    stats.textContent = `build=${BUILD_ID} phase=${phase} input=$${touch.lastBits.toString(16).padStart(2, "0")} stick=${touch.axisX}/${touch.axisY} btn=${btnHold}/${btnPress} script=$${script} pauseRet=${pauseReturn} period=${period} swap=${swapped} cpu=${cpuTeam} menu=${menuTeam} wins=${wins} weather=${weather} hazards=${hazards} wind=${wind} score=${api.score_left()}-${api.score_right()} goal=${goalInfo} fouls=${fouls} foulTeam=${foulTeam} injuries=${injuries} lastHurt=${lastHurt} spShots=${specialShots} lastSp=${lastSpecial} time=${api.match_seconds_left()} tick=${api.game_tick_count()} players=${count} role=${roleInfo} pOrig=${playerOrig}@${playerDispatch}/${playerMainDispatch}/${playerAnimDispatch} pRam=${playerRam} ballObj=$${ballObj}@${ballDispatch} ballRam=${ballRam} ballState=${ballState} ballAnim=${ballAnim} ballSpeed=${ballSpeedRam} owner=${originalOwner} camera=${cameraX.toString(16)}/${cameraY.toString(16)} ball=(${bx},${by},z=${bz}) curve=${curve} special=${special} act=${action} charge=${charge} keeper=${keeper}/${hold} touch=${lastTouch}/${lastTouchPlayer} restart=${restart}`;
   }
 }
 
@@ -1061,6 +1084,7 @@ async function main() {
   originalAssets.metasprites = metasprites.frames || [];
   originalAssets.splash = { 0: splashLogo, 1: splashTitle, 0x0e: splashStory, titleBlink: splashTitleBlink };
   api.game_init();
+  if (DEBUG) window.__soccerApi = api;
   sfx.lastScore = `${api.score_left()}-${api.score_right()}`;
   sfx.lastPhase = api.game_phase ? api.game_phase() : PHASE.TITLE;
 
