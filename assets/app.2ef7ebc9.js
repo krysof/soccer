@@ -59,8 +59,9 @@ const stick = document.querySelector("#stick");
 const knob = document.querySelector("#knob");
 const btnKick = document.querySelector("#btnKick");
 const btnSprint = document.querySelector("#btnSprint");
+const btnStart = document.querySelector("#btnStart");
 const DEBUG = new URLSearchParams(window.location.search).get("debug") === "1";
-const BUILD_ID = "no-pc-boundary-20260706-1015";
+const BUILD_ID = "original-controls-20260710";
 document.body.classList.toggle("debug", DEBUG);
 stats.hidden = !DEBUG;
 
@@ -69,17 +70,20 @@ const touch = {
   stickPointer: null,
   kickPointer: null,
   sprintPointer: null,
+  startPointer: null,
   axisX: 0,
   axisY: 0,
   originX: 0,
   originY: 0,
   kick: false,
   sprint: false,
+  start: false,
   kickLatchTicks: 0,
   sprintLatchTicks: 0,
+  startLatchTicks: 0,
   lastBits: 0,
 };
-const originalAssets = { chr: null, chrAlt: null, field: null, tileSize: 16, columns: 128, metasprites: [] };
+const originalAssets = { chr: null, chrAlt: null, field: null, tileSize: 16, columns: 128, metasprites: [], splash: {} };
 const sfx = { ctx: null, lastScore: "0-0", lastPhase: PHASE.TITLE, lastSpecial: 0, lastAction: ACTION.STAND, lastKeeper: 0 };
 
 function loadImage(src) {
@@ -133,12 +137,14 @@ window.addEventListener("keydown", (event) => {
   if (["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", "Space"].includes(event.code)) event.preventDefault();
 });
 window.addEventListener("keyup", (event) => keys.delete(event.code));
+
 function safeSetPointerCapture(element, pointerId) {
   try {
     element.setPointerCapture?.(pointerId);
-  } catch (_err) {
+  } catch (_err) {
   }
 }
+
 function setTouchButton(button, prop) {
   const latchProp = `${prop}LatchTicks`;
   const pointerProp = `${prop}Pointer`;
@@ -152,8 +158,7 @@ function setTouchButton(button, prop) {
     touch[prop] = false;
     button.classList.remove("active");
   };
-  const down = (event) => {
-
+  const down = (event) => {
     event.preventDefault();
     touch[pointerProp] = event.pointerId;
     safeSetPointerCapture(button, event.pointerId);
@@ -170,19 +175,19 @@ function setTouchButton(button, prop) {
   button.addEventListener("lostpointercapture", (event) => {
     if (event.pointerType === "touch") return;
     up(event);
-  });
+  });
   for (const name of ["pointerup", "pointercancel"]) {
     window.addEventListener(name, (event) => {
       if (touch[pointerProp] === event.pointerId) up(event);
     });
-  }
-
+  }
   button.addEventListener("touchstart", (event) => { event.preventDefault(); activate(); }, { passive: false });
   button.addEventListener("touchend", (event) => { event.preventDefault(); deactivate(); }, { passive: false });
   button.addEventListener("touchcancel", (event) => { event.preventDefault(); deactivate(); }, { passive: false });
 }
 setTouchButton(btnKick, "kick");
 setTouchButton(btnSprint, "sprint");
+setTouchButton(btnStart, "start");
 
 function ensureAudio() {
   if (sfx.ctx) {
@@ -264,7 +269,8 @@ function resetStick() {
   touch.originY = 0;
   knob.style.transform = "translate(-50%, -50%)";
 }
-function eventClientPoint(event) {
+
+function eventClientPoint(event) {
   const scrollX = window.scrollX || window.pageXOffset || 0;
   const scrollY = window.scrollY || window.pageYOffset || 0;
   return {
@@ -272,6 +278,7 @@ function eventClientPoint(event) {
     y: Number.isFinite(event.clientY) ? event.clientY : ((event.pageY || 0) - scrollY),
   };
 }
+
 function updateStick(event) {
   const rect = stick.getBoundingClientRect();
   const cx = rect.left + rect.width / 2;
@@ -288,16 +295,18 @@ function updateStick(event) {
   const relDy = point.y - touch.originY;
   const relDead = Math.max(10, rect.width * 0.08);
   const relAxisX = Math.abs(relDx) < relDead ? 0 : Math.sign(relDx);
-  const relAxisY = Math.abs(relDy) < relDead ? 0 : Math.sign(relDy);
+  const relAxisY = Math.abs(relDy) < relDead ? 0 : Math.sign(relDy);
   const useRelativeDrag = Math.abs(relDx) >= relDead || Math.abs(relDy) >= relDead;
   touch.axisX = useRelativeDrag ? relAxisX : fixedAxisX;
   touch.axisY = useRelativeDrag ? relAxisY : fixedAxisY;
   knob.style.transform = `translate(calc(-50% + ${dx}px), calc(-50% + ${dy}px))`;
 }
+
 function pointInGame(clientX, clientY) {
   const rect = canvas.getBoundingClientRect();
   return clientX >= rect.left && clientX <= rect.right && clientY >= rect.top && clientY <= rect.bottom;
 }
+
 function shouldStartFallbackStick(target, clientX, clientY) {
   if (target?.closest?.(".touch-btn")) return false;
   if (target?.closest?.("#stick")) return true;
@@ -307,11 +316,12 @@ function shouldStartFallbackStick(target, clientX, clientY) {
   const pad = Math.max(24, stickRect.width * 0.20);
   const inExpandedStick =
     clientX >= stickRect.left - pad && clientX <= stickRect.right + pad &&
-    clientY >= stickRect.top - pad && clientY <= stickRect.bottom + pad;
-  const inLeftPlayArea = inGame && clientX <= rect.left + rect.width * 0.55 && clientY >= rect.top + rect.height * 0.25;
+    clientY >= stickRect.top - pad && clientY <= stickRect.bottom + pad;
+  const inLeftPlayArea = inGame && clientX <= rect.left + rect.width * 0.55 && clientY >= rect.top + rect.height * 0.25;
   const inLeftViewport = clientX <= window.innerWidth * 0.52 && clientY >= Math.max(0, rect.top - stickRect.height * 0.4);
   return inExpandedStick || inLeftPlayArea || inLeftViewport;
 }
+
 function beginStickPointer(event, captureElement = stick) {
   event.preventDefault();
   ensureAudio();
@@ -323,6 +333,7 @@ function beginStickPointer(event, captureElement = stick) {
   safeSetPointerCapture(captureElement, event.pointerId);
   updateStick(event);
 }
+
 stick.addEventListener("pointerdown", (event) => {
   beginStickPointer(event, stick);
 });
@@ -335,7 +346,7 @@ touchControls.addEventListener("pointerdown", (event) => {
 });
 touchControls.addEventListener("pointermove", (event) => {
   if (touch.stickPointer === event.pointerId) { event.preventDefault(); updateStick(event); }
-});
+});
 for (const element of [gameWrap, canvas]) {
   element.addEventListener("pointerdown", (event) => {
     if (!shouldStartFallbackStick(event.target, event.clientX, event.clientY)) return;
@@ -344,7 +355,7 @@ for (const element of [gameWrap, canvas]) {
   element.addEventListener("pointermove", (event) => {
     if (touch.stickPointer === event.pointerId) { event.preventDefault(); updateStick(event); }
   });
-}
+}
 window.addEventListener("pointermove", (event) => {
   if (touch.stickPointer === event.pointerId) { event.preventDefault(); updateStick(event); }
 });
@@ -364,8 +375,7 @@ for (const name of ["pointerup", "pointercancel"]) {
   });
 }
 for (const name of ["pointerup", "pointercancel", "lostpointercapture"]) {
-  stick.addEventListener(name, (event) => {
-
+  stick.addEventListener(name, (event) => {
     if (name === "lostpointercapture" && event.pointerType === "touch") return;
     if (touch.stickPointer === event.pointerId || (name === "lostpointercapture" && typeof touch.stickPointer !== "string")) {
       event.preventDefault();
@@ -377,7 +387,8 @@ for (const name of ["pointerup", "pointercancel", "lostpointercapture"]) {
 function touchPointEvent(point) {
   return { clientX: point.clientX, clientY: point.clientY, pageX: point.pageX, pageY: point.pageY };
 }
-function eachChangedTouch(event, callback) {
+
+function eachChangedTouch(event, callback) {
   const touches = event.changedTouches;
   if (!touches) return false;
   for (let i = 0; i < touches.length; i += 1) {
@@ -386,6 +397,7 @@ function eachChangedTouch(event, callback) {
   }
   return false;
 }
+
 function beginStickTouch(event, point) {
   event.preventDefault();
   ensureAudio();
@@ -395,11 +407,13 @@ function beginStickTouch(event, point) {
   touch.originY = Number.isFinite(point.clientY) ? point.clientY : (point.pageY || 0) - (window.scrollY || window.pageYOffset || 0);
   updateStick(touchPointEvent(point));
 }
+
 stick.addEventListener("touchstart", (event) => {
   const point = event.changedTouches[0];
   if (!point) return;
   beginStickTouch(event, point);
 }, { passive: false });
+
 touchControls.addEventListener("touchstart", (event) => {
   eachChangedTouch(event, (point) => {
     if (!shouldStartFallbackStick(event.target, point.clientX, point.clientY)) return false;
@@ -415,7 +429,7 @@ for (const element of [gameWrap, canvas]) {
       return true;
     });
   }, { passive: false });
-}
+}
 for (const element of [document, window]) {
   element.addEventListener("touchstart", (event) => {
     if (typeof touch.stickPointer === "string" && touch.stickPointer.startsWith("touch:")) return;
@@ -426,6 +440,7 @@ for (const element of [document, window]) {
     });
   }, { passive: false, capture: true });
 }
+
 function moveStickTouch(event) {
   if (typeof touch.stickPointer !== "string" || !touch.stickPointer.startsWith("touch:")) return;
   const id = Number(touch.stickPointer.slice(6));
@@ -466,18 +481,19 @@ function inputBits() {
   if (keys.has("ArrowUp") || keys.has("KeyW") || touch.axisY < 0) bits |= INPUT.UP;
   if (keys.has("ArrowDown") || keys.has("KeyS") || touch.axisY > 0) bits |= INPUT.DOWN;
   if (keys.has("ArrowLeft") || keys.has("KeyA") || touch.axisX < 0) bits |= INPUT.LEFT;
-  if (keys.has("ArrowRight") || keys.has("KeyD") || touch.axisX > 0) bits |= INPUT.RIGHT;
+  if (keys.has("ArrowRight") || keys.has("KeyD") || touch.axisX > 0) bits |= INPUT.RIGHT;
   if (keys.has("KeyJ") || keys.has("KeyZ") || touch.kick || touch.kickLatchTicks > 0) bits |= INPUT.KICK;
   if (keys.has("KeyK") || keys.has("KeyX") || touch.sprint || touch.sprintLatchTicks > 0) bits |= INPUT.SPRINT;
-  if (keys.has("Enter") || keys.has("Space")) bits |= INPUT.START;
+  if (keys.has("Enter") || keys.has("Space") || touch.start || touch.startLatchTicks > 0) bits |= INPUT.START;
   if (touch.kickLatchTicks > 0) touch.kickLatchTicks -= 1;
   if (touch.sprintLatchTicks > 0) touch.sprintLatchTicks -= 1;
+  if (touch.startLatchTicks > 0) touch.startLatchTicks -= 1;
   touch.lastBits = bits;
   return bits;
 }
 
 async function loadWasm() {
-  const primary = assetUrl("../game_core.25c32af9.wasm");
+  const primary = assetUrl("../game_core.6667cc37.wasm");
   const fallback = rootAssetUrl("game_core.wasm");
   const response = await withFallback("game_core.wasm", primary, fallback, (url) => fetch(url).then((r) => {
     if (!r.ok) throw new Error(`failed to load ${url}: ${r.status}`);
@@ -743,6 +759,30 @@ function drawOverlay(title, lines = []) {
   ctx.font = "18px system-ui, sans-serif";
   lines.forEach((line, i) => ctx.fillText(line, canvas.width / 2, 230 + i * 32));
   ctx.textAlign = "left";
+}
+function drawOriginalSplash(api) {
+  ctx.fillStyle = "#000";
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  const id = api.original_background_image_id ? api.original_background_image_id() : 0;
+  let img = originalAssets.splash[id];
+  if (id === 1 && api.original_frame_counter && (api.original_frame_counter() & 4) !== 0) {
+    img = originalAssets.splash.titleBlink || img;
+  }
+  const brightness = api.original_current_brightness ? api.original_current_brightness() : 0x40;
+  if (img) {
+    const scale = Math.min(canvas.width / 256, canvas.height / 240);
+    const w = Math.round(256 * scale);
+    const h = Math.round(240 * scale);
+    ctx.imageSmoothingEnabled = false;
+    ctx.globalAlpha = Math.max(0, Math.min(1, brightness / 0x40));
+    ctx.drawImage(img, (canvas.width - w) / 2, (canvas.height - h) / 2, w, h);
+    ctx.globalAlpha = 1;
+  }
+  ctx.textAlign = "center";
+  ctx.fillStyle = "rgba(255,255,255,.75)";
+  ctx.font = "15px system-ui, sans-serif";
+  ctx.fillText("Start：PC Enter / Space，手机 START 键", canvas.width / 2, canvas.height - 12);
+  ctx.textAlign = "left";
 }
 
 function playerLabel(api, index) {
@@ -830,6 +870,10 @@ function render(api) {
   const screenW = canvas.width;
   const screenH = canvas.height;
   const phase = api.game_phase ? api.game_phase() : PHASE.PLAYING;
+  if (phase === PHASE.TITLE) {
+    drawOriginalSplash(api);
+    return;
+  }
   const cpuTeam = api.cpu_team_id ? api.cpu_team_id() : 1;
   const menuTeam = api.menu_opponent_id ? api.menu_opponent_id() : cpuTeam;
   const wins = api.tournament_wins ? api.tournament_wins() : 0;
@@ -919,7 +963,6 @@ function render(api) {
     ctx.fillText(`ROLE SPD ${rs} POW ${rp} TKL ${rt} GK ${rk}`, 20, 49);
   }
 
-  if (phase === PHASE.TITLE) drawOverlay("熱血足球リーグ", ["WASM 高保真复刻工程", "PC：按 J / Z / Enter 开始", "手机：点「踢球」开始"]);
   if (phase === PHASE.MENU) drawMenuOverlay(api);
   if (phase === PHASE.MATCH_INTRO) drawMatchIntroOverlay(api);
   if (phase === PHASE.KICKOFF) drawOverlay("KICK OFF", ["PC：按 J / Z 开球", "手机：点「踢球」开球，然后摇杆移动"]);
@@ -1001,17 +1044,22 @@ function render(api) {
 }
 
 async function main() {
-  const [api, chr, chrAlt, field, metasprites] = await Promise.all([
+  const [api, chr, chrAlt, field, metasprites, splashLogo, splashTitle, splashTitleBlink, splashStory] = await Promise.all([
     loadWasm(),
     withFallback("chr_sprite_pal_01.png", originalAssetUrl("chr_sprite_pal_01.png"), originalFallbackUrl("chr_sprite_pal_01.png"), loadImage),
     withFallback("chr_sprite_pal_08.png", originalAssetUrl("chr_sprite_pal_08.png"), originalFallbackUrl("chr_sprite_pal_08.png"), loadImage),
     withFallback("field_grass.png", originalAssetUrl("field_grass.png"), originalFallbackUrl("field_grass.png"), loadImage),
     withFallback("metasprites.json", originalAssetUrl("metasprites.json"), originalFallbackUrl("metasprites.json"), loadJson),
+    withFallback("splash_00_logo.png", originalAssetUrl("splash_00_logo.png"), originalFallbackUrl("splash_00_logo.png"), loadImage),
+    withFallback("splash_01_title.png", originalAssetUrl("splash_01_title.png"), originalFallbackUrl("splash_01_title.png"), loadImage),
+    withFallback("splash_01_title_blink.png", originalAssetUrl("splash_01_title_blink.png"), originalFallbackUrl("splash_01_title_blink.png"), loadImage),
+    withFallback("splash_0e_story.png", originalAssetUrl("splash_0e_story.png"), originalFallbackUrl("splash_0e_story.png"), loadImage),
   ]);
   originalAssets.chr = chr;
   originalAssets.chrAlt = chrAlt;
   originalAssets.field = field;
   originalAssets.metasprites = metasprites.frames || [];
+  originalAssets.splash = { 0: splashLogo, 1: splashTitle, 0x0e: splashStory, titleBlink: splashTitleBlink };
   api.game_init();
   sfx.lastScore = `${api.score_left()}-${api.score_right()}`;
   sfx.lastPhase = api.game_phase ? api.game_phase() : PHASE.TITLE;
