@@ -65,7 +65,7 @@ const btnKick = document.querySelector("#btnKick");
 const btnSprint = document.querySelector("#btnSprint");
 const btnStart = document.querySelector("#btnStart");
 const DEBUG = new URLSearchParams(window.location.search).get("debug") === "1";
-const BUILD_ID = "original-screen02-prematch-flow-20260710";
+const BUILD_ID = "original-main-loop-20hz-field-timing-20260710";
 document.body.classList.toggle("debug", DEBUG);
 stats.hidden = !DEBUG;
 
@@ -497,7 +497,7 @@ function inputBits() {
 }
 
 async function loadWasm() {
-  const primary = assetUrl("../game_core.dfa0b2cd.wasm");
+  const primary = assetUrl("../game_core.0b6c27f2.wasm");
   const fallback = rootAssetUrl("game_core.wasm");
   const response = await withFallback("game_core.wasm", primary, fallback, (url) => fetch(url).then((r) => {
     if (!r.ok) throw new Error(`failed to load ${url}: ${r.status}`);
@@ -1344,10 +1344,11 @@ async function main() {
   let last = performance.now();
   let acc = 0;
   const stepMs = 1000 / 60;
+  const advanceVideoFrame = api.game_video_frame || api.game_tick;
   function frame(now) {
     if (keys.has("KeyR")) api.game_init();
     acc += now - last; last = now; acc = Math.min(acc, stepMs * 8);
-    while (acc >= stepMs) { api.game_tick(inputBits()); acc -= stepMs; }
+    while (acc >= stepMs) { advanceVideoFrame(inputBits()); acc -= stepMs; }
     render(api);
     updateSfx(api);
     requestAnimationFrame(frame);
