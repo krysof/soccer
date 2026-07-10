@@ -45,9 +45,10 @@ const PLAYER_NAMES = [
   ["じんない", "あいはら", "みどう", "ゆうじ", "まもる", "けん"],
   ["ジョン", "マイク", "ピエール", "カルロス", "リー", "アレックス"],
 ];
-const ORIGINAL_MENU_SCREEN_IDS = [
+const ORIGINAL_BACKGROUND_SCREEN_IDS = [
   0x02, 0x03, 0x0b, 0x04, 0x06, 0x07, 0x05, 0x08,
   0x0d, 0x0c, 0x09, 0x0f, 0x0a, 0x14, 0x15,
+  0x10, 0x11, 0x12, 0x13,
 ];
 const keys = new Set();
 const canvas = document.querySelector("#game");
@@ -90,6 +91,20 @@ const originalAssets = {
   columns: 128,
   splash: {},
   menu: {},
+  result: {
+    manifest: null,
+    scripts: null,
+    canvas: null,
+    context: null,
+    key: "",
+    appliedUpdates: 0,
+    mode: 0,
+    supporterFrame: 0,
+    supporterPpuLo: 0x18,
+    supporterPpuHi: 0x24,
+    supporterSubframe: 0,
+    tileCache: new Map(),
+  },
   sprite: {
     manifest: null,
     palettes: null,
@@ -475,7 +490,7 @@ function inputBits() {
   return bits;
 }
 async function loadWasm() {
-  const primary = assetUrl("../game_core.f8766ac7.wasm");
+  const primary = assetUrl("../game_core.f35b5f7f.wasm");
   const fallback = rootAssetUrl("game_core.wasm");
   const response = await withFallback("game_core.wasm", primary, fallback, (url) => fetch(url).then((r) => {
     if (!r.ok) throw new Error(`failed to load ${url}: ${r.status}`);
@@ -940,6 +955,251 @@ function originalFullScreenLayout() {
   const h = Math.round(240 * scale);
   return { scale, x: (canvas.width - w) / 2, y: (canvas.height - h) / 2, w, h };
 }
+function originalResultBackgroundTile(screenMeta, tileNumber, paletteSlot) {
+  const result = originalAssets.result;
+  const sprite = originalAssets.sprite;
+  const rendererManifest = sprite.manifest;
+  const paletteData = sprite.palettes;
+  if (!screenMeta || !rendererManifest || !paletteData || !sprite.indexPixels) return null;
+  const palette = screenMeta.subPalettes?.[paletteSlot & 3];
+  if (!palette || palette.length < 4) return null;
+  const key = `${screenMeta.chr0}:${screenMeta.chr1}:${tileNumber & 0xFF}:${palette.join("/")}`;
+  const cached = result.tileCache.get(key);
+  if (cached) return cached;
+  const tile = tileNumber & 0xFF;
+  const absoluteTile = tile < 0x80
+    ? (screenMeta.chr0 & 0xFE) * 64 + tile
+    : (screenMeta.chr1 & 0xFE) * 64 + (tile - 0x80);
+  if (absoluteTile >= rendererManifest.chr.tileCount) return null;
+  const sourceX = (absoluteTile % rendererManifest.chr.columns) * rendererManifest.chr.tileSize;
+  const sourceY = Math.floor(absoluteTile / rendererManifest.chr.columns) * rendererManifest.chr.tileSize;
+  const tileCanvas = document.createElement("canvas");
+  tileCanvas.width = 8;
+  tileCanvas.height = 8;
+  const tileContext = tileCanvas.getContext("2d");
+  const image = tileContext.createImageData(8, 8);
+  for (let y = 0; y < 8; y++) {
+    for (let x = 0; x < 8; x++) {
+      const sourceOffset = ((sourceY + y) * sprite.indexWidth + sourceX + x) * 4;
+      const colorIndex = Math.round(sprite.indexPixels[sourceOffset] / 85) & 3;
+      const destinationOffset = (y * 8 + x) * 4;
+      const color = paletteData.nes_rgb[(palette[colorIndex] || 0) & 0x3F];
+      image.data[destinationOffset] = color[0];
+      image.data[destinationOffset + 1] = color[1];
+      image.data[destinationOffset + 2] = color[2];
+      image.data[destinationOffset + 3] = 255;
+    }
+  }
+  tileContext.putImageData(image, 0, 0);
+  result.tileCache.set(key, tileCanvas);
+  return tileCanvas;
+}
+function drawOriginalResultTile(resultContext, screenMeta, ppuAddress, tileNumber) {
+  const normalized = (ppuAddress - 0x2000) & 0x07FF;
+  const nametable = (normalized >> 10) & 1;
+  const local = normalized & 0x03FF;
+  const row = local >> 5;
+  const column = local & 0x1F;
+  if (row >= 30) return;
+  const attributes = screenMeta.nametableAttributes?.[nametable]
+    || screenMeta.nametableAttributes?.[0];
+  const attribute = attributes?.[(row >> 2) * 8 + (column >> 2)] || 0;
+  const shift = ((row & 2) << 1) | (column & 2);
+  const paletteSlot = (attribute >> shift) & 3;
+  const tile = originalResultBackgroundTile(screenMeta, tileNumber, paletteSlot);
+  if (tile) resultContext.drawImage(tile, nametable * 256 + column * 8, row * 8);
+}
+function writeOriginalResultTiles(resultContext, screenMeta, ppuAddress, tiles, increment = 1) {
+  for (let index = 0; index < tiles.length; index++) {
+    drawOriginalResultTile(
+      resultContext,
+      screenMeta,
+      (ppuAddress + index * increment) & 0x3FFF,
+      tiles[index],
+    );
+  }
+}
+function drawOriginalResultLargeDigit(resultContext, screenMeta, ppuAddress, digitTiles) {
+  for (let column = 0; column < 4; column++) {
+    for (let row = 0; row < 6; row++) {
+      drawOriginalResultTile(
+        resultContext,
+        screenMeta,
+        ppuAddress + column + row * 0x20,
+        digitTiles[column * 6 + row],
+      );
+    }
+  }
+}
+function drawOriginalResultNamesAndScore(api, resultContext, screenMeta) {
+  const scripts = originalAssets.result.scripts;
+  if (!scripts) return;
+  const subtype = api.original_screen_subtype ? api.original_screen_subtype() & 0x7F : 0;
+  if (subtype === 0x08) {
+    writeOriginalResultTiles(resultContext, screenMeta, 0x24CC, scripts.halfTimeTeamName);
+    writeOriginalResultTiles(
+      resultContext,
+      screenMeta,
+      0x24EC,
+      scripts.halfTimeTeamName.map((tile) => tile === 0x35 ? 0x35 : (tile + 0x10) & 0xFF),
+    );
+  } else {
+    for (let side = 0; side < 2; side++) {
+      const team = api.original_team_number ? api.original_team_number(side) & 0x0F : 0;
+      const tiles = scripts.teamNames[team];
+      const address = 0x2400 | scripts.teamNamePpuLo[side];
+      writeOriginalResultTiles(resultContext, screenMeta, address, tiles);
+      writeOriginalResultTiles(
+        resultContext,
+        screenMeta,
+        address + 0x20,
+        tiles.map((tile) => tile === 0x35 ? 0x35 : (tile + 0x10) & 0xFF),
+      );
+    }
+  }
+  const scores = [api.score_left ? api.score_left() : 0, api.score_right ? api.score_right() : 0];
+  for (let side = 0; side < 2; side++) {
+    const score = clamp(scores[side], 0, 99);
+    if (score < 10) {
+      drawOriginalResultLargeDigit(
+        resultContext,
+        screenMeta,
+        0x2500 | scripts.singleScorePpuLo[side],
+        scripts.scoreDigits[score],
+      );
+    } else {
+      drawOriginalResultLargeDigit(
+        resultContext,
+        screenMeta,
+        0x2500 | scripts.tensScorePpuLo[side],
+        scripts.scoreDigits[Math.floor(score / 10)],
+      );
+      drawOriginalResultLargeDigit(
+        resultContext,
+        screenMeta,
+        0x2500 | scripts.onesScorePpuLo[side],
+        scripts.scoreDigits[score % 10],
+      );
+    }
+  }
+  writeOriginalResultTiles(resultContext, screenMeta, 0x256F, [0x36, 0x46], 0x20);
+  writeOriginalResultTiles(resultContext, screenMeta, 0x2570, [0x36, 0x46], 0x20);
+}
+function drawOriginalResultWetnessRows(api, resultContext, screenMeta) {
+  const scripts = originalAssets.result.scripts;
+  if (!scripts) return;
+  const wetness = api.original_surface_wetness ? api.original_surface_wetness() & 0x0F : 0;
+  const pattern = scripts.wetnessPatterns[Math.min(wetness, scripts.wetnessPatterns.length - 1)];
+  for (const base of [0x2300, 0x2700]) {
+    for (let column = 0; column < 0x20; column++) {
+      writeOriginalResultTiles(resultContext, screenMeta, base + column, pattern, 0x20);
+    }
+  }
+}
+function applyOriginalResultSupporterUpdate(resultContext, screenMeta) {
+  const result = originalAssets.result;
+  const scripts = result.scripts;
+  if (!scripts || result.mode === 0) return;
+  if (result.mode === 1) {
+    do {
+      const group = result.supporterSubframe & 1;
+      const frame = result.supporterFrame;
+      const strip = scripts.supporterScrollFrames[group][frame];
+      const count = result.supporterPpuHi === 0x24
+        && result.supporterPpuLo >= 0x04 && result.supporterPpuLo < 0x1C ? 4 : 18;
+      writeOriginalResultTiles(
+        resultContext,
+        screenMeta,
+        (result.supporterPpuHi << 8) | result.supporterPpuLo,
+        strip.slice(0, count),
+        0x20,
+      );
+      result.supporterFrame = (result.supporterFrame + 1) & 0xFF;
+      result.supporterPpuLo = (result.supporterPpuLo + 1) & 0xFF;
+    } while ((result.supporterPpuLo & 1) !== 0);
+    if (result.supporterPpuLo >= 0x20) {
+      result.supporterPpuLo = 0;
+      result.supporterPpuHi = result.supporterPpuHi === 0x20 ? 0x24 : 0x20;
+    }
+    if (result.supporterFrame >= 0x12) {
+      result.supporterFrame = 0;
+      result.supporterSubframe = (result.supporterSubframe + 1) & 0xFF;
+      if (result.supporterPpuLo >= 0x14) {
+        result.supporterPpuLo = (result.supporterPpuLo - 0x14) & 0xFF;
+      } else {
+        result.supporterPpuLo = ((result.supporterPpuLo - 0x14) & 0xFF) & 0x1F;
+        result.supporterPpuHi = result.supporterPpuHi === 0x20 ? 0x24 : 0x20;
+      }
+    }
+    return;
+  }
+  const frame = result.supporterFrame;
+  const addresses = scripts.supporterPatchAddresses[frame & 0x7F];
+  const ppuHi = scripts.supporterPatchPpuHi;
+  const tiles = scripts.supporterTiles[String(result.mode)] || scripts.supporterTiles["3"];
+  for (let index = 0; index < 8; index++) {
+    const ppuLo = addresses[index];
+    let tileOffset = frame & 0x80 ? 8 : 0;
+    if ((((ppuLo >> 5) ^ ppuLo) & 0x02) !== 0) tileOffset += 4;
+    const address = (ppuHi[index] << 8) | ppuLo;
+    writeOriginalResultTiles(resultContext, screenMeta, address, tiles.slice(tileOffset, tileOffset + 2));
+    writeOriginalResultTiles(resultContext, screenMeta, address + 0x20, tiles.slice(tileOffset + 2, tileOffset + 4));
+  }
+  result.supporterFrame = (result.supporterFrame + 1) & 0xFF;
+  if ((result.supporterFrame & 0x7F) >= 0x0D) result.supporterFrame &= 0x80;
+  result.supporterFrame ^= 0x80;
+}
+function composeOriginalResultBackground(api, backgroundId, baseImage) {
+  const result = originalAssets.result;
+  const screenMeta = result.manifest?.screens?.[String(backgroundId)];
+  if (!baseImage || !screenMeta || !result.scripts) return baseImage;
+  const teams = [0, 1].map((side) => api.original_team_number ? api.original_team_number(side) & 0x0F : 0);
+  const scores = [api.score_left ? api.score_left() : 0, api.score_right ? api.score_right() : 0];
+  const wetness = api.original_surface_wetness ? api.original_surface_wetness() & 0xFF : 0;
+  const subtype = api.original_screen_subtype ? api.original_screen_subtype() & 0x7F : 0;
+  const mode = api.original_footprint_ppu_lo ? api.original_footprint_ppu_lo() & 0xFF : 0;
+  const key = `${backgroundId}/${teams.join("/")}/${scores.join("/")}/${wetness}/${subtype}/${mode}`;
+  const targetUpdates = api.original_cutscene_timer ? api.original_cutscene_timer() & 0xFF : 0;
+  if (result.key !== key || targetUpdates < result.appliedUpdates) {
+    const resultCanvas = document.createElement("canvas");
+    resultCanvas.width = 0x200;
+    resultCanvas.height = 0xF0;
+    const resultContext = resultCanvas.getContext("2d");
+    resultContext.imageSmoothingEnabled = false;
+    resultContext.fillStyle = "#000";
+    resultContext.fillRect(0, 0, resultCanvas.width, resultCanvas.height);
+    const imageWidth = baseImage.naturalWidth || baseImage.width;
+    if (imageWidth >= 0x200) resultContext.drawImage(baseImage, 0, 0);
+    else resultContext.drawImage(baseImage, 0x100, 0);
+    result.canvas = resultCanvas;
+    result.context = resultContext;
+    result.key = key;
+    result.appliedUpdates = 0;
+    result.mode = mode;
+    result.supporterFrame = 0;
+    result.supporterPpuLo = 0x18;
+    result.supporterPpuHi = 0x24;
+    result.supporterSubframe = 0;
+    drawOriginalResultNamesAndScore(api, resultContext, screenMeta);
+    drawOriginalResultWetnessRows(api, resultContext, screenMeta);
+  }
+  while (result.appliedUpdates < targetUpdates) {
+    applyOriginalResultSupporterUpdate(result.context, screenMeta);
+    result.appliedUpdates++;
+  }
+  if (DEBUG) {
+    window.__soccerResultRenderer = {
+      backgroundId,
+      mode: result.mode,
+      updates: result.appliedUpdates,
+      frame: result.supporterFrame,
+      ppuLo: result.supporterPpuLo,
+      ppuHi: result.supporterPpuHi,
+      subframe: result.supporterSubframe,
+    };
+  }
+  return result.canvas;
+}
 function drawOriginalMenuObjects(api, layout, subtype) {
   const objectIdsBySubtype = {
     0x01: [0, 2],
@@ -1096,37 +1356,73 @@ function render(api) {
   const cameraY = hasOriginalCamera
     ? rawCameraY
     : ORIGINAL_CAMERA_BASE_Y;
-  const view = drawField(api, screenW, screenH, worldW, worldH, cameraX, cameraY);
-  if (DEBUG) window.__soccerView = { cameraX: view.cameraX, cameraY: view.cameraY, sourceX: view.sourceX, sourceY: view.sourceY, sourceW: view.sourceW, sourceH: view.sourceH, destX: view.destX, destY: view.destY, destW: view.destW, destH: view.destH };
-  drawWeather(api, view, screenW, screenH);
-  let objectView = view;
-  if (originalScreen === 0x00 && originalSubtype >= 0x04 && originalSubtype <= 0x0C) {
-    const copyCameraX = api.original_copy_camera_x_lo && api.original_copy_camera_x_hi
-      ? (api.original_copy_camera_x_hi() << 8) | api.original_copy_camera_x_lo()
-      : cameraX;
-    const copyCameraY = api.original_copy_camera_y_lo && api.original_copy_camera_y_hi
-      ? (api.original_copy_camera_y_hi() << 8) | api.original_copy_camera_y_lo()
-      : cameraY;
-    const targetAspect = 0x100 / 0xF0;
-    let destW = screenW;
-    let destH = destW / targetAspect;
-    if (destH > screenH) {
-      destH = screenH;
-      destW = destH * targetAspect;
+  const isOriginalResultScreen = originalScreen === 0x00
+    && originalSubtype >= 0x04 && originalSubtype <= 0x0C;
+  const resultBackgroundId = api.original_background_image_id
+    ? api.original_background_image_id() & 0xFF : 0x10;
+  const originalResultBaseBackground = isOriginalResultScreen
+    ? originalAssets.menu[resultBackgroundId] : null;
+  const originalResultBackground = isOriginalResultScreen
+    ? composeOriginalResultBackground(api, resultBackgroundId, originalResultBaseBackground)
+    : null;
+  const copyCameraX = api.original_copy_camera_x_lo && api.original_copy_camera_x_hi
+    ? (api.original_copy_camera_x_hi() << 8) | api.original_copy_camera_x_lo()
+    : cameraX;
+  const copyCameraY = api.original_copy_camera_y_lo && api.original_copy_camera_y_hi
+    ? (api.original_copy_camera_y_hi() << 8) | api.original_copy_camera_y_lo()
+    : cameraY;
+  let view;
+  let objectView;
+  if (isOriginalResultScreen) {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.fillStyle = "#000";
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    const layout = originalFullScreenLayout();
+    if (originalResultBackground) {
+      const brightness = api.original_current_brightness
+        ? api.original_current_brightness() : 0x40;
+      ctx.imageSmoothingEnabled = false;
+      ctx.globalAlpha = Math.max(0, Math.min(1, brightness / 0x40));
+      const resultWidth = originalResultBackground.naturalWidth || originalResultBackground.width;
+      if (resultWidth >= 0x200) {
+        const sourceX = clamp(copyCameraX, 0, resultWidth - 0x100);
+        ctx.drawImage(
+          originalResultBackground,
+          sourceX, 0, 0x100, 0xF0,
+          layout.x, layout.y, layout.w, layout.h,
+        );
+      } else {
+        ctx.drawImage(originalResultBackground, layout.x, layout.y, layout.w, layout.h);
+      }
+      ctx.globalAlpha = 1;
     }
-    objectView = {
-      ...view,
+    view = {
+      original: true,
       cameraX: copyCameraX,
       cameraY: copyCameraY,
+      sourceX: copyCameraX,
+      sourceY: copyCameraY,
       sourceW: 0x100,
       sourceH: 0xF0,
-      destX: (screenW - destW) / 2,
-      destY: (screenH - destH) / 2,
-      destW,
-      destH,
-      logicalScale: destH / 0xF0,
+      destX: layout.x,
+      destY: layout.y,
+      destW: layout.w,
+      destH: layout.h,
+      logicalScale: layout.scale,
+      screenW,
+      screenH,
+      worldW,
+      worldH,
     };
-    if (DEBUG) window.__soccerObjectView = {
+    objectView = view;
+  } else {
+    view = drawField(api, screenW, screenH, worldW, worldH, cameraX, cameraY);
+    drawWeather(api, view, screenW, screenH);
+    objectView = view;
+  }
+  if (DEBUG) {
+    window.__soccerView = { cameraX: view.cameraX, cameraY: view.cameraY, sourceX: view.sourceX, sourceY: view.sourceY, sourceW: view.sourceW, sourceH: view.sourceH, destX: view.destX, destY: view.destY, destW: view.destW, destH: view.destH };
+    window.__soccerObjectView = isOriginalResultScreen ? {
       cameraX: objectView.cameraX,
       cameraY: objectView.cameraY,
       sourceW: objectView.sourceW,
@@ -1135,9 +1431,9 @@ function render(api) {
       destY: objectView.destY,
       destW: objectView.destW,
       destH: objectView.destH,
-    };
-  } else if (DEBUG) {
-    window.__soccerObjectView = null;
+      backgroundId: resultBackgroundId,
+      hasBackground: Boolean(originalResultBackground),
+    } : null;
   }
   const count = api.player_count ? api.player_count() : 1;
   const sourceControlled = api.original_controlled_player ? api.original_controlled_player(0) : 0xFF;
@@ -1171,7 +1467,7 @@ function render(api) {
     const visualY = p.y - playerHeight * (objectView.logicalScale || 1);
     drawOriginalObject(api, i, p.x, visualY, objectView.logicalScale || 2);
   }
-  if (controlled < count && playerPositions[controlled]) {
+  if (!isOriginalResultScreen && controlled < count && playerPositions[controlled]) {
     const controlledScreenPosition = worldToScreen(objectView, playerPositions[controlled].x, playerPositions[controlled].y);
     drawOriginalControlNumberMarker(
       api,
@@ -1191,8 +1487,8 @@ function render(api) {
       };
     }
   }
-  drawScore(api, screenW);
-  if (DEBUG) {
+  if (!isOriginalResultScreen) drawScore(api, screenW);
+  if (DEBUG && !isOriginalResultScreen) {
     const stamina = api.player_stamina(controlled);
     const controlledInjury = api.player_injury ? api.player_injury(controlled) : 0;
     ctx.fillStyle = "rgba(0,0,0,.45)";
@@ -1293,12 +1589,13 @@ function render(api) {
   }
 }
 async function main() {
-  const menuScreensPromise = Promise.all(ORIGINAL_MENU_SCREEN_IDS.map(async (id) => {
-    const name = `screen_${id.toString(16).padStart(2, "0")}.png`;
+  const menuScreensPromise = Promise.all(ORIGINAL_BACKGROUND_SCREEN_IDS.map(async (id) => {
+    const suffix = id >= 0x10 && id <= 0x12 ? "_wide" : "";
+    const name = `screen_${id.toString(16).padStart(2, "0")}${suffix}.png`;
     const image = await withFallback(name, originalAssetUrl(name), originalFallbackUrl(name), loadImage);
     return [id, image];
   })).then((entries) => Object.fromEntries(entries));
-  const [api, chr, chrAlt, field, spriteManifest, spriteIndexImage, palettes, splashLogo, splashTitle, splashTitleBlink, splashStory, menuScreens] = await Promise.all([
+  const [api, chr, chrAlt, field, spriteManifest, spriteIndexImage, palettes, splashLogo, splashTitle, splashTitleBlink, splashStory, resultScreenManifest, resultRenderer, menuScreens] = await Promise.all([
     loadWasm(),
     withFallback("chr_sprite_pal_01.png", originalAssetUrl("chr_sprite_pal_01.png"), originalFallbackUrl("chr_sprite_pal_01.png"), loadImage),
     withFallback("chr_sprite_pal_08.png", originalAssetUrl("chr_sprite_pal_08.png"), originalFallbackUrl("chr_sprite_pal_08.png"), loadImage),
@@ -1310,6 +1607,8 @@ async function main() {
     withFallback("splash_01_title.png", originalAssetUrl("splash_01_title.png"), originalFallbackUrl("splash_01_title.png"), loadImage),
     withFallback("splash_01_title_blink.png", originalAssetUrl("splash_01_title_blink.png"), originalFallbackUrl("splash_01_title_blink.png"), loadImage),
     withFallback("splash_0e_story.png", originalAssetUrl("splash_0e_story.png"), originalFallbackUrl("splash_0e_story.png"), loadImage),
+    withFallback("result_screen_manifest.json", originalAssetUrl("result_screen_manifest.json"), originalFallbackUrl("result_screen_manifest.json"), loadJson),
+    withFallback("result_renderer.json", originalAssetUrl("result_renderer.json"), originalFallbackUrl("result_renderer.json"), loadJson),
     menuScreensPromise,
   ]);
   originalAssets.chr = chr;
@@ -1321,6 +1620,8 @@ async function main() {
   initializeOriginalSpritePixels();
   originalAssets.splash = { 0: splashLogo, 1: splashTitle, 0x0e: splashStory, titleBlink: splashTitleBlink };
   originalAssets.menu = menuScreens;
+  originalAssets.result.manifest = resultScreenManifest;
+  originalAssets.result.scripts = resultRenderer;
   api.game_init();
   if (DEBUG) {
     window.__soccerApi = api;
