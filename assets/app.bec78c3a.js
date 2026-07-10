@@ -22,6 +22,7 @@ const PHASE = {
   PENALTY_KICK: 11,
   PAUSE: 12,
   MATCH_INTRO: 13,
+  CREDITS: 14,
 };
 const ACTION = {
   STAND: 0,
@@ -49,7 +50,9 @@ const ORIGINAL_BACKGROUND_SCREEN_IDS = [
   0x02, 0x03, 0x0b, 0x04, 0x06, 0x07, 0x05, 0x08,
   0x0d, 0x0c, 0x09, 0x0f, 0x0a, 0x14, 0x15,
   0x10, 0x11, 0x12, 0x13,
+  0x1c, 0x1d, 0x1e, 0x1f, 0x20, 0x21, 0x22, 0x23, 0x24,
 ];
+const ORIGINAL_CREDITS_SCREEN_IDS = [0x1c, 0x1d, 0x1e, 0x1f, 0x20, 0x21, 0x22, 0x23, 0x24];
 const keys = new Set();
 const canvas = document.querySelector("#game");
 const ctx = canvas.getContext("2d");
@@ -62,7 +65,7 @@ const btnKick = document.querySelector("#btnKick");
 const btnSprint = document.querySelector("#btnSprint");
 const btnStart = document.querySelector("#btnStart");
 const DEBUG = new URLSearchParams(window.location.search).get("debug") === "1";
-const BUILD_ID = "original-bank04-sprite-actions-20260711";
+const BUILD_ID = "original-screen03-credits-20260711";
 document.body.classList.toggle("debug", DEBUG);
 stats.hidden = !DEBUG;
 const TOUCH_TAP_LATCH_TICKS = 4;
@@ -91,6 +94,11 @@ const originalAssets = {
   columns: 128,
   splash: {},
   menu: {},
+  credits: {
+    manifest: null,
+    tileImages: {},
+    states: new Map(),
+  },
   bracket: {
     manifest: null,
     scripts: null,
@@ -498,7 +506,7 @@ function inputBits() {
   return bits;
 }
 async function loadWasm() {
-  const primary = assetUrl("../game_core.7bd3ad86.wasm");
+  const primary = assetUrl("../game_core.e93db6ba.wasm");
   const fallback = rootAssetUrl("game_core.wasm");
   const response = await withFallback("game_core.wasm", primary, fallback, (url) => fetch(url).then((r) => {
     if (!r.ok) throw new Error(`failed to load ${url}: ${r.status}`);
@@ -1340,6 +1348,113 @@ function drawOriginalMenuScreen(api) {
   }
   drawOriginalMenuObjects(api, layout, subtype);
 }
+function applyOriginalCreditsBuffer(api, nametable, bufferName, countName, addressName) {
+  if (!api[bufferName] || !api[countName] || !api[addressName]) return "";
+  const count = Math.min(0x20, api[countName]() & 0xff);
+  const address = api[addressName]() & 0x3fff;
+  const values = [];
+  for (let index = 0; index < count; index++) {
+    const value = api[bufferName](index) & 0xff;
+    values.push(value);
+    const target = address + index;
+    if (target >= 0x2000 && target < 0x2400) nametable[target - 0x2000] = value;
+  }
+  return `${address.toString(16)}:${values.join(",")}`;
+}
+function composeOriginalCreditsBackground(api, backgroundId) {
+  const credits = originalAssets.credits;
+  const meta = credits.manifest?.screens?.[String(backgroundId)];
+  const tileImage = credits.tileImages[backgroundId];
+  if (!meta || !tileImage) return originalAssets.menu[backgroundId] || null;
+  let state = credits.states.get(backgroundId);
+  if (!state) {
+    const canvas = document.createElement("canvas");
+    canvas.width = 256;
+    canvas.height = 240;
+    state = { canvas, nametable: Uint8Array.from(meta.nametable || []), signature: "" };
+    credits.states.set(backgroundId, state);
+  }
+  const attrSignature = applyOriginalCreditsBuffer(
+    api, state.nametable, "original_attribute_buffer",
+    "original_attribute_buffer_count", "original_attribute_buffer_address",
+  );
+  const graphicsSignature = applyOriginalCreditsBuffer(
+    api, state.nametable, "original_graphics_buffer",
+    "original_graphics_buffer_count", "original_graphics_buffer_address",
+  );
+  const signature = `${attrSignature}|${graphicsSignature}`;
+  if (state.signature !== signature || !state.rendered) {
+    renderOriginalBracketNametable(state.nametable, meta, tileImage, state.canvas);
+    state.signature = signature;
+    state.rendered = true;
+  }
+  return state.canvas;
+}
+function drawOriginalCreditsScreen(api) {
+  ctx.fillStyle = "#000";
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  const subtype = api.original_screen_subtype ? api.original_screen_subtype() & 0x7f : 0;
+  const backgroundId = api.original_background_image_id
+    ? api.original_background_image_id() & 0xff : 0x1c;
+  const background = backgroundId === 0
+    ? originalAssets.splash[0]
+    : composeOriginalCreditsBackground(api, backgroundId);
+  const layout = originalFullScreenLayout();
+  const cameraX = api.original_camera_x_lo && api.original_camera_x_hi
+    ? (api.original_camera_x_hi() << 8) | api.original_camera_x_lo() : 0;
+  const cameraY = api.original_camera_y_lo && api.original_camera_y_hi
+    ? (api.original_camera_y_hi() << 8) | api.original_camera_y_lo() : 0;
+  const brightness = api.original_current_brightness ? api.original_current_brightness() : 0x40;
+  if (background) {
+    ctx.imageSmoothingEnabled = false;
+    ctx.globalAlpha = Math.max(0, Math.min(1, brightness / 0x40));
+    const backgroundWidth = background.naturalWidth || background.width;
+    if (backgroundWidth >= 0x200) {
+      const sourceX = clamp(cameraX, 0, backgroundWidth - 0x100);
+      ctx.drawImage(
+        background, sourceX, 0, 0x100, 0xf0,
+        layout.x, layout.y, layout.w, layout.h,
+      );
+    } else {
+      ctx.drawImage(background, layout.x, layout.y, layout.w, layout.h);
+    }
+    ctx.globalAlpha = 1;
+  }
+  ctx.save();
+  ctx.beginPath();
+  ctx.rect(layout.x, layout.y, layout.w, layout.h);
+  ctx.clip();
+  const drawnObjects = [];
+  const drawPlayer = (index) => {
+    if (!api.original_player_z_hi || (api.original_player_z_hi(index) & 0x80) !== 0) return;
+    const player = originalPlayerPosition(api, index);
+    const x = layout.x + (player.x - cameraX) * layout.scale;
+    const y = layout.y + (player.y - cameraY - normalizeOriginalHeight(player.z)) * layout.scale;
+    if (drawOriginalObject(api, index, x, y, layout.scale)) drawnObjects.push(index);
+  };
+  if (subtype <= 7) {
+    for (let index = 0; index < 4; index++) drawPlayer(index);
+  }
+  if (api.original_ball_z_hi && (api.original_ball_z_hi() & 0x80) === 0) {
+    const ball = originalBallPosition(api);
+    if (drawOriginalBall(
+      api,
+      layout.x + (ball.x - cameraX) * layout.scale,
+      layout.y + (ball.y - cameraY) * layout.scale,
+      normalizeOriginalHeight(ball.z),
+      layout.scale,
+    )) drawnObjects.push(0x0c);
+  }
+  ctx.restore();
+  if (DEBUG) {
+    window.__soccerCreditsRenderer = {
+      subtype, backgroundId, cameraX, cameraY,
+      scene: api.original_credits_scene_index ? api.original_credits_scene_index() : 0,
+      effectDone: api.original_credits_effect_done ? api.original_credits_effect_done() : 0,
+      drawnObjects,
+    };
+  }
+}
 function playerLabel(api, index) {
   if (index == null || index >= 255) return "—";
   const role = api.original_player_role ? api.original_player_role(index) : index % 6;
@@ -1423,13 +1538,20 @@ function render(api) {
   const screenH = canvas.height;
   const phase = api.game_phase ? api.game_phase() : PHASE.PLAYING;
   const originalScreen = api.original_screen_number ? api.original_screen_number() : 0;
-  gameWrap.classList.toggle("original-4x3-screen", phase === PHASE.TITLE || originalScreen === 0x02);
+  gameWrap.classList.toggle(
+    "original-4x3-screen",
+    phase === PHASE.TITLE || originalScreen === 0x02 || originalScreen === 0x03,
+  );
   if (phase === PHASE.TITLE) {
     drawOriginalSplash(api);
     return;
   }
   if (originalScreen === 0x02) {
     drawOriginalMenuScreen(api);
+    return;
+  }
+  if (originalScreen === 0x03) {
+    drawOriginalCreditsScreen(api);
     return;
   }
   const originalSubtype = api.original_screen_subtype ? api.original_screen_subtype() : 0;
@@ -1696,7 +1818,12 @@ async function main() {
     const image = await withFallback(name, originalAssetUrl(name), originalFallbackUrl(name), loadImage);
     return [id, image];
   })).then((entries) => Object.fromEntries(entries));
-  const [api, chr, chrAlt, field, spriteManifest, spriteIndexImage, palettes, splashLogo, splashTitle, splashTitleBlink, splashStory, resultScreenManifest, resultRenderer, bracketScreenManifest, bracketRenderer, bracketTiles, menuScreens] = await Promise.all([
+  const creditsTilesPromise = Promise.all(ORIGINAL_CREDITS_SCREEN_IDS.map(async (id) => {
+    const name = `credits_tiles_${id.toString(16).padStart(2, "0")}.png`;
+    const image = await withFallback(name, originalAssetUrl(name), originalFallbackUrl(name), loadImage);
+    return [id, image];
+  })).then((entries) => Object.fromEntries(entries));
+  const [api, chr, chrAlt, field, spriteManifest, spriteIndexImage, palettes, splashLogo, splashTitle, splashTitleBlink, splashStory, resultScreenManifest, resultRenderer, bracketScreenManifest, bracketRenderer, bracketTiles, creditsScreenManifest, creditsTiles, menuScreens] = await Promise.all([
     loadWasm(),
     withFallback("chr_sprite_pal_01.png", originalAssetUrl("chr_sprite_pal_01.png"), originalFallbackUrl("chr_sprite_pal_01.png"), loadImage),
     withFallback("chr_sprite_pal_08.png", originalAssetUrl("chr_sprite_pal_08.png"), originalFallbackUrl("chr_sprite_pal_08.png"), loadImage),
@@ -1713,6 +1840,8 @@ async function main() {
     withFallback("bracket_screen_manifest.json", originalAssetUrl("bracket_screen_manifest.json"), originalFallbackUrl("bracket_screen_manifest.json"), loadJson),
     withFallback("bracket_renderer.json", originalAssetUrl("bracket_renderer.json"), originalFallbackUrl("bracket_renderer.json"), loadJson),
     withFallback("bracket_tiles.png", originalAssetUrl("bracket_tiles.png"), originalFallbackUrl("bracket_tiles.png"), loadImage),
+    withFallback("credits_screen_manifest.json", originalAssetUrl("credits_screen_manifest.json"), originalFallbackUrl("credits_screen_manifest.json"), loadJson),
+    creditsTilesPromise,
     menuScreensPromise,
   ]);
   originalAssets.chr = chr;
@@ -1729,6 +1858,8 @@ async function main() {
   originalAssets.bracket.manifest = bracketScreenManifest;
   originalAssets.bracket.scripts = bracketRenderer;
   originalAssets.bracket.tileImage = bracketTiles;
+  originalAssets.credits.manifest = creditsScreenManifest;
+  originalAssets.credits.tileImages = creditsTiles;
   api.game_init();
   if (DEBUG) {
     window.__soccerApi = api;
