@@ -7,7 +7,6 @@ const INPUT = {
   SPRINT: 1 << 5,
   START: 1 << 6,
 };
-
 const PHASE = {
   TITLE: 0,
   MENU: 1,
@@ -24,7 +23,6 @@ const PHASE = {
   PAUSE: 12,
   MATCH_INTRO: 13,
 };
-
 const ACTION = {
   STAND: 0,
   RUN: 1,
@@ -36,7 +34,6 @@ const ACTION = {
   CELEBRATE: 7,
   DEJECT: 8,
 };
-
 const TEAM_NAMES = ["熱血", "花園", "連合", "工業", "選抜", "世界"];
 const WEATHER_NAMES = ["CLEAR", "RAIN", "MUD", "SNOW", "WIND"];
 const ROLE_NAMES = ["GK", "DF", "DF", "FW", "WG", "WG"];
@@ -52,7 +49,6 @@ const ORIGINAL_MENU_SCREEN_IDS = [
   0x02, 0x03, 0x0b, 0x04, 0x06, 0x07, 0x05, 0x08,
   0x0d, 0x0c, 0x09, 0x0f, 0x0a, 0x14, 0x15,
 ];
-
 const keys = new Set();
 const canvas = document.querySelector("#game");
 const ctx = canvas.getContext("2d");
@@ -65,10 +61,9 @@ const btnKick = document.querySelector("#btnKick");
 const btnSprint = document.querySelector("#btnSprint");
 const btnStart = document.querySelector("#btnStart");
 const DEBUG = new URLSearchParams(window.location.search).get("debug") === "1";
-const BUILD_ID = "original-main-loop-20hz-field-timing-20260710";
+const BUILD_ID = "original-bank04-sprite-actions-20260711";
 document.body.classList.toggle("debug", DEBUG);
 stats.hidden = !DEBUG;
-
 const TOUCH_TAP_LATCH_TICKS = 4;
 const touch = {
   stickPointer: null,
@@ -87,9 +82,24 @@ const touch = {
   startLatchTicks: 0,
   lastBits: 0,
 };
-const originalAssets = { chr: null, chrAlt: null, field: null, tileSize: 16, columns: 128, metasprites: [], splash: {}, menu: {} };
+const originalAssets = {
+  chr: null,
+  chrAlt: null,
+  field: null,
+  tileSize: 16,
+  columns: 128,
+  splash: {},
+  menu: {},
+  sprite: {
+    manifest: null,
+    palettes: null,
+    indexImage: null,
+    indexPixels: null,
+    indexWidth: 0,
+    tileCache: new Map(),
+  },
+};
 const sfx = { ctx: null, lastScore: "0-0", lastPhase: PHASE.TITLE, lastSpecial: 0, lastAction: ACTION.STAND, lastKeeper: 0 };
-
 function loadImage(src) {
   return new Promise((resolve, reject) => {
     const img = new Image();
@@ -98,13 +108,11 @@ function loadImage(src) {
     img.src = src;
   });
 }
-
 async function loadJson(src) {
   const response = await fetch(src);
   if (!response.ok) throw new Error(`failed to load ${src}: ${response.status}`);
   return response.json();
 }
-
 async function withFallback(label, primary, fallback, loader) {
   try {
     return await loader(primary);
@@ -118,37 +126,30 @@ async function withFallback(label, primary, fallback, loader) {
     }
   }
 }
-
-function assetUrl(path) {
+function assetUrl(path) {
   return new URL(path, import.meta.url).toString();
 }
-
 function rootAssetUrl(path) {
   return new URL(path, document.baseURI).toString();
 }
-
 function originalAssetUrl(name) {
   return assetUrl(`../original/${name}`);
 }
-
 function originalFallbackUrl(name) {
   return rootAssetUrl(`original/${name}`);
 }
-
 window.addEventListener("keydown", (event) => {
   ensureAudio();
   keys.add(event.code);
   if (["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", "Space"].includes(event.code)) event.preventDefault();
 });
 window.addEventListener("keyup", (event) => keys.delete(event.code));
-
 function safeSetPointerCapture(element, pointerId) {
   try {
     element.setPointerCapture?.(pointerId);
-  } catch (_err) {
+  } catch (_err) {
   }
 }
-
 function setTouchButton(button, prop) {
   const latchProp = `${prop}LatchTicks`;
   const pointerProp = `${prop}Pointer`;
@@ -162,7 +163,7 @@ function setTouchButton(button, prop) {
     touch[prop] = false;
     button.classList.remove("active");
   };
-  const down = (event) => {
+  const down = (event) => {
     event.preventDefault();
     touch[pointerProp] = event.pointerId;
     safeSetPointerCapture(button, event.pointerId);
@@ -179,12 +180,12 @@ function setTouchButton(button, prop) {
   button.addEventListener("lostpointercapture", (event) => {
     if (event.pointerType === "touch") return;
     up(event);
-  });
+  });
   for (const name of ["pointerup", "pointercancel"]) {
     window.addEventListener(name, (event) => {
       if (touch[pointerProp] === event.pointerId) up(event);
     });
-  }
+  }
   button.addEventListener("touchstart", (event) => { event.preventDefault(); activate(); }, { passive: false });
   button.addEventListener("touchend", (event) => { event.preventDefault(); deactivate(); }, { passive: false });
   button.addEventListener("touchcancel", (event) => { event.preventDefault(); deactivate(); }, { passive: false });
@@ -192,7 +193,6 @@ function setTouchButton(button, prop) {
 setTouchButton(btnKick, "kick");
 setTouchButton(btnSprint, "sprint");
 setTouchButton(btnStart, "start");
-
 function ensureAudio() {
   if (sfx.ctx) {
     if (sfx.ctx.state === "suspended") sfx.ctx.resume?.();
@@ -203,7 +203,6 @@ function ensureAudio() {
   sfx.ctx = new AudioCtor();
   return sfx.ctx;
 }
-
 function tone(freq, duration = 0.08, type = "square", gain = 0.045, delay = 0) {
   const ctx = sfx.ctx;
   if (!ctx || ctx.state === "suspended") return;
@@ -219,7 +218,6 @@ function tone(freq, duration = 0.08, type = "square", gain = 0.045, delay = 0) {
   osc.start(now);
   osc.stop(now + duration + 0.02);
 }
-
 function noise(duration = 0.06, gain = 0.035, delay = 0) {
   const ctx = sfx.ctx;
   if (!ctx || ctx.state === "suspended") return;
@@ -234,7 +232,6 @@ function noise(duration = 0.06, gain = 0.035, delay = 0) {
   src.connect(amp).connect(ctx.destination);
   src.start(ctx.currentTime + delay);
 }
-
 function playSfx(name) {
   if (!sfx.ctx || sfx.ctx.state === "suspended") return;
   if (name === "kick") { tone(190, 0.045, "square", 0.035); noise(0.035, 0.018); }
@@ -244,7 +241,6 @@ function playSfx(name) {
   if (name === "whistle") { tone(1350, 0.12, "square", 0.028); tone(1750, 0.08, "square", 0.022, 0.10); }
   if (name === "goal") { tone(523, 0.10, "square", 0.045); tone(659, 0.10, "square", 0.045, 0.10); tone(784, 0.18, "square", 0.05, 0.20); noise(0.22, 0.025, 0.06); }
 }
-
 function updateSfx(api) {
   if (!sfx.ctx || sfx.ctx.state === "suspended") return;
   const score = `${api.score_left()}-${api.score_right()}`;
@@ -264,7 +260,6 @@ function updateSfx(api) {
   sfx.lastAction = action;
   sfx.lastKeeper = keeper;
 }
-
 function resetStick() {
   touch.stickPointer = null;
   touch.axisX = 0;
@@ -273,8 +268,7 @@ function resetStick() {
   touch.originY = 0;
   knob.style.transform = "translate(-50%, -50%)";
 }
-
-function eventClientPoint(event) {
+function eventClientPoint(event) {
   const scrollX = window.scrollX || window.pageXOffset || 0;
   const scrollY = window.scrollY || window.pageYOffset || 0;
   return {
@@ -282,7 +276,6 @@ function eventClientPoint(event) {
     y: Number.isFinite(event.clientY) ? event.clientY : ((event.pageY || 0) - scrollY),
   };
 }
-
 function updateStick(event) {
   const rect = stick.getBoundingClientRect();
   const cx = rect.left + rect.width / 2;
@@ -299,18 +292,16 @@ function updateStick(event) {
   const relDy = point.y - touch.originY;
   const relDead = Math.max(10, rect.width * 0.08);
   const relAxisX = Math.abs(relDx) < relDead ? 0 : Math.sign(relDx);
-  const relAxisY = Math.abs(relDy) < relDead ? 0 : Math.sign(relDy);
+  const relAxisY = Math.abs(relDy) < relDead ? 0 : Math.sign(relDy);
   const useRelativeDrag = Math.abs(relDx) >= relDead || Math.abs(relDy) >= relDead;
   touch.axisX = useRelativeDrag ? relAxisX : fixedAxisX;
   touch.axisY = useRelativeDrag ? relAxisY : fixedAxisY;
   knob.style.transform = `translate(calc(-50% + ${dx}px), calc(-50% + ${dy}px))`;
 }
-
 function pointInGame(clientX, clientY) {
   const rect = canvas.getBoundingClientRect();
   return clientX >= rect.left && clientX <= rect.right && clientY >= rect.top && clientY <= rect.bottom;
 }
-
 function shouldStartFallbackStick(target, clientX, clientY) {
   if (target?.closest?.(".touch-btn")) return false;
   if (target?.closest?.("#stick")) return true;
@@ -320,12 +311,11 @@ function shouldStartFallbackStick(target, clientX, clientY) {
   const pad = Math.max(24, stickRect.width * 0.20);
   const inExpandedStick =
     clientX >= stickRect.left - pad && clientX <= stickRect.right + pad &&
-    clientY >= stickRect.top - pad && clientY <= stickRect.bottom + pad;
-  const inLeftPlayArea = inGame && clientX <= rect.left + rect.width * 0.55 && clientY >= rect.top + rect.height * 0.25;
+    clientY >= stickRect.top - pad && clientY <= stickRect.bottom + pad;
+  const inLeftPlayArea = inGame && clientX <= rect.left + rect.width * 0.55 && clientY >= rect.top + rect.height * 0.25;
   const inLeftViewport = clientX <= window.innerWidth * 0.52 && clientY >= Math.max(0, rect.top - stickRect.height * 0.4);
   return inExpandedStick || inLeftPlayArea || inLeftViewport;
 }
-
 function beginStickPointer(event, captureElement = stick) {
   event.preventDefault();
   ensureAudio();
@@ -337,7 +327,6 @@ function beginStickPointer(event, captureElement = stick) {
   safeSetPointerCapture(captureElement, event.pointerId);
   updateStick(event);
 }
-
 stick.addEventListener("pointerdown", (event) => {
   beginStickPointer(event, stick);
 });
@@ -350,7 +339,7 @@ touchControls.addEventListener("pointerdown", (event) => {
 });
 touchControls.addEventListener("pointermove", (event) => {
   if (touch.stickPointer === event.pointerId) { event.preventDefault(); updateStick(event); }
-});
+});
 for (const element of [gameWrap, canvas]) {
   element.addEventListener("pointerdown", (event) => {
     if (!shouldStartFallbackStick(event.target, event.clientX, event.clientY)) return;
@@ -359,7 +348,7 @@ for (const element of [gameWrap, canvas]) {
   element.addEventListener("pointermove", (event) => {
     if (touch.stickPointer === event.pointerId) { event.preventDefault(); updateStick(event); }
   });
-}
+}
 window.addEventListener("pointermove", (event) => {
   if (touch.stickPointer === event.pointerId) { event.preventDefault(); updateStick(event); }
 });
@@ -379,7 +368,7 @@ for (const name of ["pointerup", "pointercancel"]) {
   });
 }
 for (const name of ["pointerup", "pointercancel", "lostpointercapture"]) {
-  stick.addEventListener(name, (event) => {
+  stick.addEventListener(name, (event) => {
     if (name === "lostpointercapture" && event.pointerType === "touch") return;
     if (touch.stickPointer === event.pointerId || (name === "lostpointercapture" && typeof touch.stickPointer !== "string")) {
       event.preventDefault();
@@ -387,12 +376,10 @@ for (const name of ["pointerup", "pointercancel", "lostpointercapture"]) {
     }
   });
 }
-
 function touchPointEvent(point) {
   return { clientX: point.clientX, clientY: point.clientY, pageX: point.pageX, pageY: point.pageY };
 }
-
-function eachChangedTouch(event, callback) {
+function eachChangedTouch(event, callback) {
   const touches = event.changedTouches;
   if (!touches) return false;
   for (let i = 0; i < touches.length; i += 1) {
@@ -401,7 +388,6 @@ function eachChangedTouch(event, callback) {
   }
   return false;
 }
-
 function beginStickTouch(event, point) {
   event.preventDefault();
   ensureAudio();
@@ -411,13 +397,11 @@ function beginStickTouch(event, point) {
   touch.originY = Number.isFinite(point.clientY) ? point.clientY : (point.pageY || 0) - (window.scrollY || window.pageYOffset || 0);
   updateStick(touchPointEvent(point));
 }
-
 stick.addEventListener("touchstart", (event) => {
   const point = event.changedTouches[0];
   if (!point) return;
   beginStickTouch(event, point);
 }, { passive: false });
-
 touchControls.addEventListener("touchstart", (event) => {
   eachChangedTouch(event, (point) => {
     if (!shouldStartFallbackStick(event.target, point.clientX, point.clientY)) return false;
@@ -433,7 +417,7 @@ for (const element of [gameWrap, canvas]) {
       return true;
     });
   }, { passive: false });
-}
+}
 for (const element of [document, window]) {
   element.addEventListener("touchstart", (event) => {
     if (typeof touch.stickPointer === "string" && touch.stickPointer.startsWith("touch:")) return;
@@ -444,7 +428,6 @@ for (const element of [document, window]) {
     });
   }, { passive: false, capture: true });
 }
-
 function moveStickTouch(event) {
   if (typeof touch.stickPointer !== "string" || !touch.stickPointer.startsWith("touch:")) return;
   const id = Number(touch.stickPointer.slice(6));
@@ -457,11 +440,9 @@ function moveStickTouch(event) {
     return false;
   });
 }
-
 for (const element of [stick, touchControls, gameWrap, canvas, document, window]) {
   element.addEventListener("touchmove", moveStickTouch, { passive: false, capture: true });
 }
-
 function endStickTouch(event) {
   if (typeof touch.stickPointer !== "string" || !touch.stickPointer.startsWith("touch:")) return;
   const id = Number(touch.stickPointer.slice(6));
@@ -474,18 +455,16 @@ function endStickTouch(event) {
     return false;
   });
 }
-
 for (const element of [stick, touchControls, gameWrap, canvas, document, window]) {
   element.addEventListener("touchend", endStickTouch, { passive: false, capture: true });
   element.addEventListener("touchcancel", endStickTouch, { passive: false, capture: true });
 }
-
 function inputBits() {
   let bits = 0;
   if (keys.has("ArrowUp") || keys.has("KeyW") || touch.axisY < 0) bits |= INPUT.UP;
   if (keys.has("ArrowDown") || keys.has("KeyS") || touch.axisY > 0) bits |= INPUT.DOWN;
   if (keys.has("ArrowLeft") || keys.has("KeyA") || touch.axisX < 0) bits |= INPUT.LEFT;
-  if (keys.has("ArrowRight") || keys.has("KeyD") || touch.axisX > 0) bits |= INPUT.RIGHT;
+  if (keys.has("ArrowRight") || keys.has("KeyD") || touch.axisX > 0) bits |= INPUT.RIGHT;
   if (keys.has("KeyJ") || keys.has("KeyZ") || touch.kick || touch.kickLatchTicks > 0) bits |= INPUT.KICK;
   if (keys.has("KeyK") || keys.has("KeyX") || touch.sprint || touch.sprintLatchTicks > 0) bits |= INPUT.SPRINT;
   if (keys.has("Enter") || keys.has("Space") || touch.start || touch.startLatchTicks > 0) bits |= INPUT.START;
@@ -495,9 +474,8 @@ function inputBits() {
   touch.lastBits = bits;
   return bits;
 }
-
 async function loadWasm() {
-  const primary = assetUrl("../game_core.0b6c27f2.wasm");
+  const primary = assetUrl("../game_core.6a92c4de.wasm");
   const fallback = rootAssetUrl("game_core.wasm");
   const response = await withFallback("game_core.wasm", primary, fallback, (url) => fetch(url).then((r) => {
     if (!r.ok) throw new Error(`failed to load ${url}: ${r.status}`);
@@ -507,11 +485,9 @@ async function loadWasm() {
   const result = await WebAssembly.instantiate(bytes, {});
   return result.instance.exports;
 }
-
 function clamp(value, min, max) {
   return Math.max(min, Math.min(max, value));
 }
-
 const ORIGINAL_CAMERA_VIEW_W = 0x100;
 const ORIGINAL_CAMERA_VIEW_H = 0xB0;
 const ORIGINAL_CAMERA_BASE_Y = 0x48;
@@ -718,7 +694,6 @@ function drawOriginalControlNumberMarker(view, playerPosition, screenPosition, s
 function drawCircle(x, y, r, fill, stroke = "rgba(0,0,0,.35)") {
   ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2); ctx.fillStyle = fill; ctx.fill(); ctx.lineWidth = 2; ctx.strokeStyle = stroke; ctx.stroke();
 }
-
 function drawOriginalTile(tileIndex, x, y, size = 16, alt = false) {
   const img = alt ? originalAssets.chrAlt : originalAssets.chr;
   if (!img) return false;
@@ -728,67 +703,131 @@ function drawOriginalTile(tileIndex, x, y, size = 16, alt = false) {
   ctx.drawImage(img, sx, sy, ts, ts, x, y, size, size);
   return true;
 }
-
-function drawMetaSprite(frame, x, y, team, flip = false, teamMirror = true, drawScale = 2) {
-  if (!frame) return false;
-  const img = team === 1 ? originalAssets.chrAlt : originalAssets.chr;
-  if (!img) return false;
-  const srcTileSize = originalAssets.tileSize;
-  const destTileSize = 8 * drawScale;
-
-  for (let i = 0; i < frame.count; i++) {
-    const tileIndex = frame.tile[i];
-    const sx = (tileIndex % originalAssets.columns) * srcTileSize;
-    const sy = Math.floor(tileIndex / originalAssets.columns) * srcTileSize;
-    const attr = frame.attr[i] || 0;
-    const hFlip = (attr & 0x40) !== 0;
-    const vFlip = (attr & 0x80) !== 0;
-    const rawX = frame.x[i] * drawScale;
-    const rawY = frame.y[i] * drawScale;
-    const mirror = flip || (teamMirror && team === 1);
-    const dx = mirror ? x - rawX - destTileSize : x + rawX;
-    const dy = y + rawY;
-
-    ctx.save();
-    ctx.translate(dx + destTileSize / 2, dy + destTileSize / 2);
-    ctx.scale((hFlip ? -1 : 1) * (mirror ? -1 : 1), vFlip ? -1 : 1);
-    ctx.drawImage(img, sx, sy, srcTileSize, srcTileSize, -destTileSize / 2, -destTileSize / 2, destTileSize, destTileSize);
-    ctx.restore();
+function initializeOriginalSpritePixels() {
+  const sprite = originalAssets.sprite;
+  if (!sprite.indexImage) return;
+  const canvas = document.createElement("canvas");
+  canvas.width = sprite.indexImage.naturalWidth;
+  canvas.height = sprite.indexImage.naturalHeight;
+  const context = canvas.getContext("2d", { willReadFrequently: true });
+  context.imageSmoothingEnabled = false;
+  context.drawImage(sprite.indexImage, 0, 0);
+  sprite.indexPixels = context.getImageData(0, 0, canvas.width, canvas.height).data;
+  sprite.indexWidth = canvas.width;
+  sprite.tileCache.clear();
+}
+function originalSignedByte(value) {
+  const byte = value & 0xFF;
+  return byte & 0x80 ? byte - 0x100 : byte;
+}
+function originalMirroredSpriteX(value) {
+  const byte = value & 0xFF;
+  return originalSignedByte(((byte ^ 0xFF) - 7) & 0xFF);
+}
+function originalSpriteTile(bankNumber, tileWithinBank, paletteNumber) {
+  const sprite = originalAssets.sprite;
+  const manifest = sprite.manifest;
+  const paletteData = sprite.palettes;
+  if (!manifest || !paletteData || !sprite.indexPixels) return null;
+  const key = `${bankNumber & 0xFF}:${tileWithinBank & 0x3F}:${paletteNumber & 0xFF}`;
+  const cached = sprite.tileCache.get(key);
+  if (cached) return cached;
+  const tileIndex = (bankNumber & 0xFF) * 64 + (tileWithinBank & 0x3F);
+  if (tileIndex >= manifest.chr.tileCount) return null;
+  const palette = paletteData.sprite[paletteNumber & 0xFF];
+  if (!palette || palette.length < 4) return null;
+  const nesRgb = paletteData.nes_rgb;
+  const sourceX = (tileIndex % manifest.chr.columns) * manifest.chr.tileSize;
+  const sourceY = Math.floor(tileIndex / manifest.chr.columns) * manifest.chr.tileSize;
+  const tileCanvas = document.createElement("canvas");
+  tileCanvas.width = 8;
+  tileCanvas.height = 8;
+  const tileContext = tileCanvas.getContext("2d");
+  const image = tileContext.createImageData(8, 8);
+  for (let y = 0; y < 8; y++) {
+    for (let x = 0; x < 8; x++) {
+      const sourceOffset = ((sourceY + y) * sprite.indexWidth + sourceX + x) * 4;
+      const colorIndex = Math.round(sprite.indexPixels[sourceOffset] / 85) & 3;
+      const destinationOffset = (y * 8 + x) * 4;
+      const color = nesRgb[(palette[colorIndex] || 0) & 0x3F];
+      image.data[destinationOffset] = color[0];
+      image.data[destinationOffset + 1] = color[1];
+      image.data[destinationOffset + 2] = color[2];
+      image.data[destinationOffset + 3] = colorIndex === 0 ? 0 : 255;
+    }
+  }
+  tileContext.putImageData(image, 0, 0);
+  sprite.tileCache.set(key, tileCanvas);
+  return tileCanvas;
+}
+function resolveOriginalPlayerFrame(api, objectIndex) {
+  const manifest = originalAssets.sprite.manifest;
+  if (!manifest || !api.original_player_animation || !api.original_object_work_0061) return null;
+  const animation = api.original_player_animation(objectIndex) & 0xFF;
+  const groupNumber = api.original_object_work_0061(objectIndex) & 0xFF;
+  if (groupNumber === 3) {
+    const index = animation & 0x7F;
+    const tile = manifest.specialGroup3Tiles[index];
+    return Number.isFinite(tile) ? { animation, groupNumber, specialTile: tile } : null;
+  }
+  const group = manifest.groups[groupNumber];
+  const animationIndex = animation & 0x7F;
+  if (!group || animationIndex >= group.length) return null;
+  const frameAddress = group[animationIndex];
+  const frame = manifest.frames[frameAddress.toString(16).toUpperCase().padStart(4, "0")];
+  return frame ? { animation, groupNumber, frameAddress, frame } : null;
+}
+function drawOriginalSpriteTile(tileCanvas, x, y, attr, drawScale) {
+  const size = 8 * drawScale;
+  ctx.save();
+  ctx.translate(x + size / 2, y + size / 2);
+  ctx.scale(attr & 0x40 ? -1 : 1, attr & 0x80 ? -1 : 1);
+  ctx.drawImage(tileCanvas, -size / 2, -size / 2, size, size);
+  ctx.restore();
+}
+function drawOriginalPlayer(api, objectIndex, x, y, displayScale = 2) {
+  const resolved = resolveOriginalPlayerFrame(api, objectIndex);
+  const manifest = originalAssets.sprite.manifest;
+  if (!resolved || !manifest) return false;
+  const animation = resolved.animation;
+  if (Number.isFinite(resolved.specialTile)) {
+    const paletteSlot = ((animation & 1) + 1) & 3;
+    const paletteNumber = api.original_sprite_palette_number(paletteSlot) & 0xFF;
+    const bankSlot = resolved.specialTile >> 6;
+    const bankNumber = api.original_sprite_bank(bankSlot) & 0xFF;
+    const tileCanvas = originalSpriteTile(bankNumber, resolved.specialTile & 0x3F, paletteNumber);
+    if (!tileCanvas) return false;
+    drawOriginalSpriteTile(tileCanvas, x - 4 * displayScale, y - 11 * displayScale, paletteSlot, displayScale);
+    return true;
+  }
+  const objectPaletteSlot = manifest.objectPaletteSlots[objectIndex] || 0;
+  const faceNumber = api.original_player_face ? api.original_player_face(objectIndex) & 0xFF : 0;
+  const mirror = (animation & 0x80) === 0;
+  for (let i = 0; i < resolved.frame.count; i++) {
+    let tile = resolved.frame.tile[i] & 0xFF;
+    if (tile < 6) {
+      const faceIndex = faceNumber * 6 + tile;
+      if (faceIndex < manifest.faceTiles.length) tile = manifest.faceTiles[faceIndex];
+    }
+    const attr = ((resolved.frame.attr[i] ^ (mirror ? 0x40 : 0)) | objectPaletteSlot) & 0xFF;
+    const paletteSlot = attr & 3;
+    const paletteNumber = api.original_sprite_palette_number(paletteSlot) & 0xFF;
+    const bankSlot = tile >> 6;
+    const bankNumber = api.original_sprite_bank(bankSlot) & 0xFF;
+    const tileCanvas = originalSpriteTile(bankNumber, tile & 0x3F, paletteNumber);
+    if (!tileCanvas) continue;
+    const offsetX = mirror ? originalMirroredSpriteX(resolved.frame.x[i]) : resolved.frame.x[i];
+    const offsetY = resolved.frame.y[i];
+    drawOriginalSpriteTile(
+      tileCanvas,
+      x + offsetX * displayScale,
+      y + offsetY * displayScale,
+      attr,
+      displayScale,
+    );
   }
   return true;
 }
-
-function drawOriginalPlayer(x, y, team, frameHint = 0, moving = false, facingX = 1, action = ACTION.STAND, originalAnimation = null, displayScale = 2) {
-  const frames = originalAssets.metasprites;
-  if (frames.length) {
-    if (Number.isFinite(originalAnimation)) {
-      const originalIdx = originalAnimation & 0x7F;
-      if (originalIdx < frames.length) {
-        const flip = (originalAnimation & 0x80) !== 0;
-        if (drawMetaSprite(frames[originalIdx], x, y, team, flip, false, displayScale)) return;
-      }
-    }
-    const runFrames = [0, 1, 2, 1];
-    let idx = moving ? runFrames[Math.abs(frameHint) % runFrames.length] : 0;
-    if (action === ACTION.KICK) idx = 3;
-    if (action === ACTION.TACKLE) idx = 8;
-    if (action === ACTION.FALL) idx = 4;
-    if (action === ACTION.KEEPER_SAVE) idx = 10;
-    if (action === ACTION.HEADER) idx = 6;
-    if (action === ACTION.CELEBRATE) idx = 2;
-    if (action === ACTION.DEJECT) idx = 4;
-    idx = Math.min(idx, frames.length - 1);
-    const flip = facingX < 0;
-    if (drawMetaSprite(frames[idx], x, y, team, flip, true, displayScale)) return;
-  }
-  const base = 0x120;
-  const size = 8 * displayScale;
-  const ox = Math.round(x - size);
-  const oy = Math.round(y - size * 1.8);
-  const tiles = [base, base + 1, base + 0x20, base + 0x21, base + 0x40, base + 0x41];
-  for (let i = 0; i < tiles.length; i++) drawOriginalTile(tiles[i], ox + (i % 2) * size, oy + Math.floor(i / 2) * size, size, team === 1);
-}
-
 function drawOriginalBall(x, y, z = 0, spin = 0, special = 0, originalAnimation = null, displayScale = 2) {
   const visualY = y - z * displayScale;
   const shadowScale = Math.max(0.35, 1 - z / 90);
@@ -797,7 +836,7 @@ function drawOriginalBall(x, y, z = 0, spin = 0, special = 0, originalAnimation 
   ctx.beginPath();
   ctx.ellipse(Math.round(x), Math.round(y + 2 * displayScale), 4.5 * displayScale * shadowScale, 2 * displayScale * shadowScale, 0, 0, Math.PI * 2);
   ctx.fill();
-  ctx.restore();
+  ctx.restore();
   const originalPhase = Number.isFinite(originalAnimation) ? (originalAnimation & 0x07) : (spin & 0x07);
   const tile = 0x1AEC;
   const size = 8 * displayScale + (special > 0 ? 2 * displayScale : 0);
@@ -825,7 +864,6 @@ function drawOriginalBall(x, y, z = 0, spin = 0, special = 0, originalAnimation 
     ctx.restore();
   }
 }
-
 function drawWeather(api, view, screenW, screenH) {
   if (view?.original) return;
   const weather = api.field_weather ? api.field_weather() : 0;
@@ -871,7 +909,6 @@ function drawWeather(api, view, screenW, screenH) {
     ctx.restore();
   }
 }
-
 function drawScore(api, w) {
   const leftScore = api.score_left();
   const rightScore = api.score_right();
@@ -894,7 +931,6 @@ function drawScore(api, w) {
   ctx.fillText(`F ${foulsL}-${foulsR}`, w / 2 + 104, 50);
   ctx.textAlign = "left";
 }
-
 function drawOverlay(title, lines = []) {
   ctx.fillStyle = "rgba(0,0,0,.68)";
   ctx.fillRect(0, 0, canvas.width, canvas.height);
@@ -905,7 +941,7 @@ function drawOverlay(title, lines = []) {
   ctx.font = "18px system-ui, sans-serif";
   lines.forEach((line, i) => ctx.fillText(line, canvas.width / 2, 230 + i * 32));
   ctx.textAlign = "left";
-}
+}
 function drawOriginalSplash(api) {
   ctx.fillStyle = "#000";
   ctx.fillRect(0, 0, canvas.width, canvas.height);
@@ -948,10 +984,7 @@ function drawOriginalMenuObjects(api, layout, subtype) {
     const p = originalPlayerPosition(api, index);
     const x = layout.x + p.x * layout.scale;
     const y = layout.y + (p.y - normalizeOriginalHeight(p.z)) * layout.scale;
-    const side = index === 1 ? 1 : 0;
-    const direction = api.original_player_direction ? api.original_player_direction(index) : 0;
-    drawOriginalPlayer(x, y, side, 0, false, direction & 0x80 ? -1 : 1,
-      ACTION.STAND, api.original_player_animation(index), layout.scale);
+    drawOriginalPlayer(api, index, x, y, layout.scale);
   }
   if (api.original_ball_x_lo) {
     const ball = originalBallPosition(api);
@@ -1003,7 +1036,6 @@ function drawOriginalMenuScreen(api) {
   drawOriginalMenuObjects(api, layout, subtype);
   drawOriginalMenuCursor(api, layout, subtype);
 }
-
 function playerLabel(api, index) {
   if (index == null || index >= 255) return "—";
   const role = api.original_player_role ? api.original_player_role(index) : index % 6;
@@ -1013,7 +1045,6 @@ function playerLabel(api, index) {
   const name = (PLAYER_NAMES[teamId] && PLAYER_NAMES[teamId][role]) || `P${index}`;
   return `${name} ${ROLE_NAMES[role] || ""}`.trim();
 }
-
 function drawMenuOverlay(api) {
   const selected = api.menu_opponent_id ? api.menu_opponent_id() : (api.cpu_team_id ? api.cpu_team_id() : 1);
   const wins = api.tournament_wins ? api.tournament_wins() : 0;
@@ -1026,7 +1057,6 @@ function drawMenuOverlay(api) {
   ctx.font = "15px ui-monospace, Consolas, monospace";
   ctx.fillStyle = "#d7f7ff";
   ctx.fillText(`熱血  VS  ${TEAM_NAMES[selected] || "CPU"}     WIN ${wins}`, canvas.width / 2, 134);
-
   const startY = 176;
   for (let team = 1; team < TEAM_NAMES.length; team++) {
     const y = startY + (team - 1) * 48;
@@ -1058,7 +1088,6 @@ function drawMenuOverlay(api) {
   ctx.fillText("方向键/摇杆选择对手；PC：J/Z/Enter 开赛；手机：点「踢球」开赛", canvas.width / 2, startY + 5 * 48 + 18);
   ctx.textAlign = "left";
 }
-
 function drawMatchIntroOverlay(api) {
   const cpuTeam = api.cpu_team_id ? api.cpu_team_id() : 1;
   const weather = api.field_weather ? api.field_weather() : 0;
@@ -1082,7 +1111,6 @@ function drawMatchIntroOverlay(api) {
   ctx.fillText("PC：按 J / Z / Enter 跳过；手机：点「踢球」跳过", canvas.width / 2, 326);
   ctx.textAlign = "left";
 }
-
 function render(api) {
   const worldW = api.game_field_w();
   const worldH = api.game_field_h();
@@ -1101,7 +1129,6 @@ function render(api) {
   const cpuTeam = api.cpu_team_id ? api.cpu_team_id() : 1;
   const menuTeam = api.menu_opponent_id ? api.menu_opponent_id() : cpuTeam;
   const wins = api.tournament_wins ? api.tournament_wins() : 0;
-
   const ballPosition = originalBallPosition(api);
   const bx = ballPosition.x;
   const by = ballPosition.y;
@@ -1152,7 +1179,6 @@ function render(api) {
     entities.push({ type: "player", index: i, groundY: originalPosition.y });
   }
   entities.sort((a, b) => a.groundY - b.groundY);
-
   for (const entity of entities) {
     if (entity.type === "ball") {
       const b = worldToScreen(view, bx, by);
@@ -1161,17 +1187,12 @@ function render(api) {
       continue;
     }
     const i = entity.index;
-    const vx = api.player_vx ? api.player_vx(i) : 0;
-    const vy = api.player_vy ? api.player_vy(i) : 0;
     const action = api.player_action ? api.player_action(i) : ACTION.STAND;
-    const moving = Math.abs(vx) + Math.abs(vy) > 1;
-    const facingX = api.player_facing_x ? api.player_facing_x(i) : (api.player_team && api.player_team(i) ? -1 : 1);
     const originalPosition = playerPositions[i] || originalPlayerPosition(api, i);
     const p = worldToScreen(view, originalPosition.x, originalPosition.y);
     const playerHeight = normalizeOriginalHeight(originalPosition.z);
     const visualY = p.y - playerHeight * (view.logicalScale || 1);
-    const originalAnimation = api.original_player_animation ? api.original_player_animation(i) : null;
-    drawOriginalPlayer(p.x, visualY, api.player_team ? api.player_team(i) : 0, Math.floor(api.game_tick_count() / 10) + i, moving, facingX, action, originalAnimation, view.logicalScale || 2);
+    drawOriginalPlayer(api, i, p.x, visualY, view.logicalScale || 2);
     if (action === ACTION.CELEBRATE) {
       ctx.save();
       ctx.strokeStyle = "rgba(255,230,70,.85)";
@@ -1212,7 +1233,6 @@ function render(api) {
     }
   }
   drawScore(api, screenW);
-
   const stamina = api.player_stamina(controlled);
   const controlledInjury = api.player_injury ? api.player_injury(controlled) : 0;
   ctx.fillStyle = "rgba(0,0,0,.45)";
@@ -1232,7 +1252,6 @@ function render(api) {
     const rk = api.player_role_keeper(controlled);
     ctx.fillText(`ROLE SPD ${rs} POW ${rp} TKL ${rt} GK ${rk}`, 20, 49);
   }
-
   if (phase === PHASE.MATCH_INTRO) drawMatchIntroOverlay(api);
   if (phase === PHASE.KICKOFF) drawOverlay("KICK OFF", ["PC：按 J / Z 开球", "手机：点「踢球」开球，然后摇杆移动"]);
   if (phase === PHASE.GOAL) {
@@ -1253,7 +1272,6 @@ function render(api) {
   if (phase === PHASE.FREE_KICK) drawOverlay("FREE KICK", [`犯规队 ${api.foul_team ? TEAM_NAMES[api.foul_team()] || api.foul_team() : "?"}`, "PC：按 J / Z 继续", "手机：点「踢球」继续"]);
   if (phase === PHASE.PENALTY_KICK) drawOverlay("PENALTY KICK", [`禁区犯规：${api.foul_team ? TEAM_NAMES[api.foul_team()] || api.foul_team() : "?"}`, "PC：按 J / Z 射门", "手机：点「踢球」射门"]);
   if (phase === PHASE.PAUSE) drawOverlay("PAUSE", ["Start / J / Z 继续", "Sprint + Start：比赛中切换控制球员"]);
-
   const restart = api.restart_team ? api.restart_team() : 0;
   const lastTouch = api.last_touch_team ? api.last_touch_team() : 0;
   const action = api.player_action ? api.player_action(controlled) : 0;
@@ -1311,19 +1329,20 @@ function render(api) {
     stats.textContent = `build=${BUILD_ID} phase=${phase} input=$${touch.lastBits.toString(16).padStart(2, "0")} stick=${touch.axisX}/${touch.axisY} btn=${btnHold}/${btnPress} script=$${script} pauseRet=${pauseReturn} period=${period} swap=${swapped} cpu=${cpuTeam} menu=${menuTeam} wins=${wins} weather=${weather} hazards=${hazards} wind=${wind} score=${api.score_left()}-${api.score_right()} goal=${goalInfo} fouls=${fouls} foulTeam=${foulTeam} injuries=${injuries} lastHurt=${lastHurt} spShots=${specialShots} lastSp=${lastSpecial} time=${api.match_seconds_left()} tick=${api.game_tick_count()} players=${count} role=${roleInfo} pOrig=${playerOrig}@${playerDispatch}/${playerMainDispatch}/${playerAnimDispatch} pRam=${playerRam} ballObj=$${ballObj}@${ballDispatch} ballRam=${ballRam} ballState=${ballState} ballAnim=${ballAnim} ballSpeed=${ballSpeedRam} owner=${originalOwner} camera=${cameraX.toString(16)}/${cameraY.toString(16)} ball=(${bx},${by},z=${bz}) curve=${curve} special=${special} act=${action} charge=${charge} keeper=${keeper}/${hold} touch=${lastTouch}/${lastTouchPlayer} restart=${restart}`;
   }
 }
-
 async function main() {
   const menuScreensPromise = Promise.all(ORIGINAL_MENU_SCREEN_IDS.map(async (id) => {
     const name = `screen_${id.toString(16).padStart(2, "0")}.png`;
     const image = await withFallback(name, originalAssetUrl(name), originalFallbackUrl(name), loadImage);
     return [id, image];
   })).then((entries) => Object.fromEntries(entries));
-  const [api, chr, chrAlt, field, metasprites, splashLogo, splashTitle, splashTitleBlink, splashStory, menuScreens] = await Promise.all([
+  const [api, chr, chrAlt, field, spriteManifest, spriteIndexImage, palettes, splashLogo, splashTitle, splashTitleBlink, splashStory, menuScreens] = await Promise.all([
     loadWasm(),
     withFallback("chr_sprite_pal_01.png", originalAssetUrl("chr_sprite_pal_01.png"), originalFallbackUrl("chr_sprite_pal_01.png"), loadImage),
     withFallback("chr_sprite_pal_08.png", originalAssetUrl("chr_sprite_pal_08.png"), originalFallbackUrl("chr_sprite_pal_08.png"), loadImage),
     loadOriginalFieldAssets(),
-    withFallback("metasprites.json", originalAssetUrl("metasprites.json"), originalFallbackUrl("metasprites.json"), loadJson),
+    withFallback("sprite_renderer.json", originalAssetUrl("sprite_renderer.json"), originalFallbackUrl("sprite_renderer.json"), loadJson),
+    withFallback("sprite_chr_indices.png", originalAssetUrl("sprite_chr_indices.png"), originalFallbackUrl("sprite_chr_indices.png"), loadImage),
+    withFallback("palettes.json", originalAssetUrl("palettes.json"), originalFallbackUrl("palettes.json"), loadJson),
     withFallback("splash_00_logo.png", originalAssetUrl("splash_00_logo.png"), originalFallbackUrl("splash_00_logo.png"), loadImage),
     withFallback("splash_01_title.png", originalAssetUrl("splash_01_title.png"), originalFallbackUrl("splash_01_title.png"), loadImage),
     withFallback("splash_01_title_blink.png", originalAssetUrl("splash_01_title_blink.png"), originalFallbackUrl("splash_01_title_blink.png"), loadImage),
@@ -1333,14 +1352,31 @@ async function main() {
   originalAssets.chr = chr;
   originalAssets.chrAlt = chrAlt;
   originalAssets.field = field;
-  originalAssets.metasprites = metasprites.frames || [];
+  originalAssets.sprite.manifest = spriteManifest;
+  originalAssets.sprite.indexImage = spriteIndexImage;
+  originalAssets.sprite.palettes = palettes;
+  initializeOriginalSpritePixels();
   originalAssets.splash = { 0: splashLogo, 1: splashTitle, 0x0e: splashStory, titleBlink: splashTitleBlink };
   originalAssets.menu = menuScreens;
   api.game_init();
-  if (DEBUG) window.__soccerApi = api;
+  if (DEBUG) {
+    window.__soccerApi = api;
+    window.__soccerRender = () => render(api);
+    window.__soccerInputBits = () => inputBits();
+    window.__soccerSpriteFrame = (index) => {
+      const frame = resolveOriginalPlayerFrame(api, index);
+      if (!frame) return null;
+      return {
+        animation: frame.animation,
+        group: frame.groupNumber,
+        address: frame.frameAddress ?? null,
+        count: frame.frame?.count ?? 1,
+        specialTile: frame.specialTile ?? null,
+      };
+    };
+  }
   sfx.lastScore = `${api.score_left()}-${api.score_right()}`;
   sfx.lastPhase = api.game_phase ? api.game_phase() : PHASE.TITLE;
-
   let last = performance.now();
   let acc = 0;
   const stepMs = 1000 / 60;
@@ -1355,5 +1391,4 @@ async function main() {
   }
   requestAnimationFrame(frame);
 }
-
 main().catch((err) => { console.error(err); stats.hidden = false; stats.textContent = `启动失败：${err.message}`; });
