@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
     <meta name="theme-color" content="#10141f" />
     <title>Web Soccer Local Prototype</title>
-    <link rel="stylesheet" href="assets/app.ee77502f.css" />
+    <link rel="stylesheet" href="assets/app.672d15ef.css" />
   </head>
   <body>
     <div id="app">
@@ -16,6 +16,7 @@
             <div id="knob" class="knob"></div>
           </div>
           <div class="buttons">
+            <button id="btnSelect" class="touch-btn start" type="button">SELECT</button>
             <button id="btnStart" class="touch-btn start" type="button">START</button>
             <button id="btnSprint" class="touch-btn secondary" type="button">B</button>
             <button id="btnKick" class="touch-btn primary" type="button">A</button>
@@ -24,12 +25,11 @@
       </div>
       <div class="hud">
         <div><b>热血足球联盟 WASM 移植</b></div>
-        <div>PC：方向键/WASD，J/Z＝A，K/X＝B，A+B＝跳，Enter＝START，R＝重置。</div>
-        <div>手机：左侧方向，右侧原版 A/B；持球与无球时动作按原版上下文自动切换。</div>
+        <div>PC：方向键/WASD，J/Z＝A，K/X＝B，A+B＝跳，Shift＝SELECT，Enter＝START，R＝重置。</div>
+        <div>手机：左侧方向，右侧原版 A/B/SELECT/START；持球与无球时动作按原版上下文自动切换。</div>
         <div id="stats"></div>
       </div>
     </div>
-    <script type="module" src="assets/app.6a93dff8.js"></script>
+    <script type="module" src="assets/app.caa6d00f.js"></script>
   </body>
 </html>
-
