@@ -601,7 +601,7 @@ function consumeTapLatchesAfterSoftwareFrame() {
   if (keyTapLatch.select > 0) keyTapLatch.select -= 1;
 }
 async function loadWasm() {
-  const primary = assetUrl("../game_core.22ac6afa.wasm");
+  const primary = assetUrl("../game_core.6d1a366f.wasm");
   const fallback = rootAssetUrl("game_core.wasm");
   const response = await withFallback("game_core.wasm", primary, fallback, (url) => fetch(url).then((r) => {
     if (!r.ok) throw new Error(`failed to load ${url}: ${r.status}`);
@@ -817,6 +817,19 @@ function originalBallPosition(api) {
   }
   return { x: api.ball_x(), y: api.ball_y(), z: api.ball_z ? api.ball_z() : 0 };
 }
+function originalFieldMarkerPosition(api, slot) {
+  if (!api.original_field_marker_x_lo || !api.original_field_marker_x_hi
+      || !api.original_field_marker_y_lo || !api.original_field_marker_y_hi) {
+    return null;
+  }
+  return {
+    x: (api.original_field_marker_x_hi(slot) << 8) | api.original_field_marker_x_lo(slot),
+    y: (api.original_field_marker_y_hi(slot) << 8) | api.original_field_marker_y_lo(slot),
+    z: api.original_field_marker_z_lo && api.original_field_marker_z_hi
+      ? ((api.original_field_marker_z_hi(slot) << 8) | api.original_field_marker_z_lo(slot))
+      : 0,
+  };
+}
 function normalizeOriginalHeight(value) {
   return value >= 0 && value < 0x8000 ? value : 0;
 }
@@ -974,36 +987,38 @@ function drawOriginalMatchStatusbar(api, view) {
     }
   }
   const markers = [];
-  const drawMarker = (animation, position, target) => {
-    const tileNumber = originalAssets.sprite.manifest?.specialGroup3Tiles?.[animation & 0x7F];
-    if (!Number.isFinite(tileNumber)) return;
-    const paletteSlot = ((animation & 1) + 1) & 3;
-    const spritePalette = api.original_sprite_palette_number(paletteSlot) & 0xFF;
-    const spriteBank = api.original_sprite_bank(tileNumber >> 6) & 0xFF;
-    const tile = originalSpriteTile(spriteBank, tileNumber & 0x3F, spritePalette);
-    if (!tile) return;
-    const logicalX = 0x60 + (position.x >> 4);
-    const logicalY = 0xCD + (position.y >> 4);
-    drawOriginalSpriteTile(
-      tile,
-      layout.x + (logicalX - 4) * scale,
-      layout.y + (logicalY - 11) * scale,
-      paletteSlot,
-      scale,
-    );
-    markers.push({ animation, target, logicalX, logicalY });
-  };
-  if ((api.original_game_script?.() & 0x0C) === 0) {
-    if ((api.original_screen_subtype?.() & 0x7F) !== 0x01) {
-      drawMarker(0x84, originalBallPosition(api), 0x0C);
+  const copyCameraX = api.original_copy_camera_x_lo && api.original_copy_camera_x_hi
+    ? (api.original_copy_camera_x_hi() << 8) | api.original_copy_camera_x_lo() : 0;
+  const copyCameraY = api.original_copy_camera_y_lo && api.original_copy_camera_y_hi
+    ? (api.original_copy_camera_y_hi() << 8) | api.original_copy_camera_y_lo() : 0;
+  const markerCount = api.original_field_marker_count ? api.original_field_marker_count() : 0;
+  for (let slot = 0; slot < markerCount; slot++) {
+    const animation = api.original_field_marker_animation(slot) & 0xFF;
+    const position = originalFieldMarkerPosition(api, slot);
+    const visible = !api.original_field_marker_visibility
+      || api.original_field_marker_visibility(slot) !== 0;
+    if (!position || !visible || (animation & 0x7F) === 0x7F) continue;
+    const logicalX = position.x - copyCameraX;
+    const logicalY = position.y - copyCameraY;
+    const surface = normalizeOriginalHeight(position.z) === 0 ? "statusbar" : "field";
+    if (surface === "statusbar") {
+      drawOriginalObject(
+        api,
+        0x0E + slot,
+        layout.x + logicalX * scale,
+        layout.y + logicalY * scale,
+        scale,
+      );
     }
-    const slots = Math.min(4, api.original_players_amount ? api.original_players_amount() : 1);
-    for (let slot = 0; slot < slots; slot++) {
-      const target = api.original_controlled_player(slot) & 0xFF;
-      if (target < 12 && (!api.player_active || api.player_active(target))) {
-        drawMarker(0x80 + slot, originalPlayerPosition(api, target), target);
-      }
-    }
+    markers.push({
+      object: 0x0E + slot,
+      animation,
+      motion: api.original_field_marker_motion ? api.original_field_marker_motion(slot) & 0xFF : 0,
+      logicalX,
+      logicalY,
+      z: position.z,
+      surface,
+    });
   }
   if (DEBUG) {
     window.__soccerMinimap = {
@@ -1141,6 +1156,10 @@ function originalSpriteBankForObject(api, objectIndex, bankSlot) {
 function originalObjectAnimation(api, objectIndex) {
   if (objectIndex === 0x0C) {
     return api.original_ball_animation ? api.original_ball_animation() & 0xFF : null;
+  }
+  if (objectIndex >= 0x0E && objectIndex <= 0x12) {
+    return api.original_field_marker_animation
+      ? api.original_field_marker_animation(objectIndex - 0x0E) & 0xFF : null;
   }
   return api.original_player_animation ? api.original_player_animation(objectIndex) & 0xFF : null;
 }
@@ -2932,6 +2951,7 @@ function render(api) {
     ? sourceControlled
     : (api.controlled_player ? api.controlled_player() : 0);
   const playerPositions = [];
+  const markerPositions = [];
   for (let i = 0; i < count; i++) {
     if (api.player_active && !api.player_active(i)) continue;
     const originalPosition = originalPlayerPosition(api, i);
@@ -2964,6 +2984,16 @@ function render(api) {
       if (object === 0x0C) {
         if (!api.original_ball_visibility_flag || api.original_ball_visibility_flag()) {
           entities.push({ type: "ball", groundY: by });
+          seen.add(object);
+        }
+      } else if (object >= 0x0E && object <= 0x12 && api.original_field_marker_animation) {
+        const markerSlot = object - 0x0E;
+        const originalPosition = originalFieldMarkerPosition(api, markerSlot);
+        const visible = !api.original_field_marker_visibility
+          || api.original_field_marker_visibility(markerSlot) !== 0;
+        markerPositions[markerSlot] = originalPosition;
+        if (originalPosition && visible && normalizeOriginalHeight(originalPosition.z) !== 0) {
+          entities.push({ type: "marker", index: markerSlot, object, groundY: originalPosition.y });
           seen.add(object);
         }
       } else if (object < count && (!api.player_active || api.player_active(object))) {
@@ -3006,6 +3036,21 @@ function render(api) {
       drawOriginalBall(api, b.x, b.y, bz, objectView.logicalScale || 2);
       continue;
     }
+    if (entity.type === "marker") {
+      const originalPosition = markerPositions[entity.index]
+        || originalFieldMarkerPosition(api, entity.index);
+      if (!originalPosition) continue;
+      const p = worldToScreen(objectView, originalPosition.x, originalPosition.y);
+      const height = normalizeOriginalHeight(originalPosition.z);
+      drawOriginalObject(
+        api,
+        entity.object,
+        p.x,
+        p.y - height * (objectView.logicalScale || 1),
+        objectView.logicalScale || 2,
+      );
+      continue;
+    }
     const i = entity.index;
     const originalPosition = playerPositions[i] || originalPlayerPosition(api, i);
     const p = worldToScreen(objectView, originalPosition.x, originalPosition.y);
@@ -3014,25 +3059,21 @@ function render(api) {
     drawOriginalObject(api, i, p.x, visualY, objectView.logicalScale || 2);
   }
   if (DEBUG) window.__soccerShadows = renderedShadows;
-  if (!isOriginalResultScreen && controlled < count && playerPositions[controlled]) {
-    const controlledScreenPosition = worldToScreen(objectView, playerPositions[controlled].x, playerPositions[controlled].y);
-    drawOriginalControlNumberMarker(
-      api,
-      objectView,
-      playerPositions[controlled],
-      controlledScreenPosition,
-      0,
-    );
-    if (DEBUG) {
-      window.__soccerControlledMarker = {
-        index: controlled,
-        worldX: playerPositions[controlled].x,
-        worldY: playerPositions[controlled].y,
-        screenX: controlledScreenPosition.x,
-        screenY: controlledScreenPosition.y,
-        fieldKey: originalAssets.field?.compositeKey || "",
-      };
-    }
+  if (DEBUG) {
+    const overhead = entities.find((entity) => entity.type === "marker" && entity.index > 0);
+    const position = overhead ? markerPositions[overhead.index] : null;
+    const screen = position ? worldToScreen(objectView, position.x, position.y) : null;
+    window.__soccerControlledMarker = overhead && position && screen ? {
+      object: overhead.object,
+      slot: overhead.index - 1,
+      index: api.original_controlled_player ? api.original_controlled_player(overhead.index - 1) & 0xFF : 0xFF,
+      worldX: position.x,
+      worldY: position.y,
+      worldZ: position.z,
+      screenX: screen.x,
+      screenY: screen.y,
+      fieldKey: originalAssets.field?.compositeKey || "",
+    } : null;
   }
   ctx.restore();
   const drewOriginalMinimap = !isOriginalResultScreen && drawOriginalMatchStatusbar(api, objectView);
