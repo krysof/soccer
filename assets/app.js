@@ -91,6 +91,7 @@ const touch = {
   startLatchTicks: 0,
   selectLatchTicks: 0,
   lastBits: 0,
+  lastPackedBits: 0,
 };
 const originalAssets = {
   chr: null,
@@ -588,6 +589,35 @@ function inputBits() {
   if (keys.has("Enter") || keys.has("Space") || keyTapLatch.start > 0 || touch.start || touch.startLatchTicks > 0) bits |= INPUT.START;
   if (keys.has("ShiftLeft") || keys.has("ShiftRight") || keyTapLatch.select > 0 || touch.select || touch.selectLatchTicks > 0) bits |= INPUT.SELECT;
   touch.lastBits = bits;
+  const pads = typeof navigator.getGamepads === "function" ? navigator.getGamepads() : [];
+  let packed = bits & 0xFF;
+  for (let slot = 0; slot < 4; slot += 1) {
+    const pad = pads?.[slot];
+    if (!pad || pad.connected === false) continue;
+    const padBits = standardGamepadInputBits(pad);
+    packed = (packed | ((padBits & 0xFF) << (slot * 8))) >>> 0;
+  }
+  touch.lastPackedBits = packed;
+  return packed;
+}
+function gamepadButtonPressed(gamepad, index) {
+  const button = gamepad?.buttons?.[index];
+  if (typeof button === "number") return button > 0.5;
+  return Boolean(button?.pressed || (button?.value ?? 0) > 0.5);
+}
+function standardGamepadInputBits(gamepad) {
+  const axisX = Number(gamepad?.axes?.[0] ?? 0);
+  const axisY = Number(gamepad?.axes?.[1] ?? 0);
+  const threshold = 0.45;
+  let bits = 0;
+  if (gamepadButtonPressed(gamepad, 12) || axisY < -threshold) bits |= INPUT.UP;
+  if (gamepadButtonPressed(gamepad, 13) || axisY > threshold) bits |= INPUT.DOWN;
+  if (gamepadButtonPressed(gamepad, 14) || axisX < -threshold) bits |= INPUT.LEFT;
+  if (gamepadButtonPressed(gamepad, 15) || axisX > threshold) bits |= INPUT.RIGHT;
+  if (gamepadButtonPressed(gamepad, 0)) bits |= INPUT.KICK;
+  if (gamepadButtonPressed(gamepad, 1)) bits |= INPUT.SPRINT;
+  if (gamepadButtonPressed(gamepad, 9)) bits |= INPUT.START;
+  if (gamepadButtonPressed(gamepad, 8)) bits |= INPUT.SELECT;
   return bits;
 }
 function consumeTapLatchesAfterSoftwareFrame() {
@@ -601,7 +631,7 @@ function consumeTapLatchesAfterSoftwareFrame() {
   if (keyTapLatch.select > 0) keyTapLatch.select -= 1;
 }
 async function loadWasm() {
-  const primary = assetUrl("../game_core.b6b068de.wasm");
+  const primary = assetUrl("../game_core.694d47bc.wasm");
   const fallback = rootAssetUrl("game_core.wasm");
   const response = await withFallback("game_core.wasm", primary, fallback, (url) => fetch(url).then((r) => {
     if (!r.ok) throw new Error(`failed to load ${url}: ${r.status}`);
