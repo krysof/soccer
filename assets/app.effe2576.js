@@ -66,7 +66,7 @@ const btnKick = document.querySelector("#btnKick");
 const btnSprint = document.querySelector("#btnSprint");
 const btnStart = document.querySelector("#btnStart");
 const DEBUG = new URLSearchParams(window.location.search).get("debug") === "1";
-const BUILD_ID = "original-live-action-input-20260711";
+const BUILD_ID = "original-opponent-attack-full-hud-20260711";
 document.body.classList.toggle("debug", DEBUG);
 stats.hidden = !DEBUG;
 const TOUCH_TAP_LATCH_SOFTWARE_FRAMES = 4;
@@ -108,6 +108,9 @@ const originalAssets = {
     context: null,
     key: "",
   },
+  statusbar: {
+    manifest: null,
+  },
   result: {
     manifest: null,
     scripts: null,
@@ -129,6 +132,7 @@ const originalAssets = {
     indexPixels: null,
     indexWidth: 0,
     tileCache: new Map(),
+    backgroundTileCache: new Map(),
   },
 };
 const sfx = { ctx: null, lastScore: "0-0", lastPhase: PHASE.TITLE, lastSpecial: 0, lastAction: ACTION.STAND, lastKeeper: 0 };
@@ -515,7 +519,7 @@ function consumeTapLatchesAfterSoftwareFrame() {
   if (keyTapLatch.start > 0) keyTapLatch.start -= 1;
 }
 async function loadWasm() {
-  const primary = assetUrl("../game_core.46023950.wasm");
+  const primary = assetUrl("../game_core.295085a8.wasm");
   const fallback = rootAssetUrl("game_core.wasm");
   const response = await withFallback("game_core.wasm", primary, fallback, (url) => fetch(url).then((r) => {
     if (!r.ok) throw new Error(`failed to load ${url}: ${r.status}`);
@@ -531,6 +535,7 @@ function clamp(value, min, max) {
 const ORIGINAL_CAMERA_VIEW_W = 0x100;
 const ORIGINAL_CAMERA_VIEW_H = 0xB0;
 const ORIGINAL_CAMERA_BASE_Y = 0x48;
+const ORIGINAL_STATUSBAR_SPLIT_Y = 0xB9;
 function composeOriginalField(api) {
   const field = originalAssets.field;
   if (!field?.manifest) return null;
@@ -587,6 +592,41 @@ function drawField(api, screenW, screenH, worldW = screenW, worldH = screenH, ca
     const sourceY = clampedCameraY * assetScale;
     const sourceW = viewWidth * assetScale;
     const sourceH = viewHeight * assetScale;
+    if (originalMinimapStatusbarActive(api)) {
+      const layout = originalFullScreenLayout();
+      const fieldHeight = ORIGINAL_STATUSBAR_SPLIT_Y;
+      const clampedStatusCameraY = clamp(cameraY == null ? 0 : cameraY, 0, logicalHeight - fieldHeight);
+      ctx.fillStyle = "#000";
+      ctx.fillRect(0, 0, screenW, screenH);
+      ctx.drawImage(
+        img,
+        sourceX, clampedStatusCameraY * assetScale, sourceW, fieldHeight * assetScale,
+        layout.x, layout.y, layout.w, fieldHeight * layout.scale,
+      );
+      ctx.imageSmoothingEnabled = true;
+      return {
+        sourceX: clampedCameraX,
+        sourceY: clampedStatusCameraY,
+        sourceW: viewWidth,
+        sourceH: fieldHeight,
+        fullW: logicalWidth,
+        fullH: logicalHeight,
+        screenW,
+        screenH,
+        worldW,
+        worldH,
+        cameraX: clampedCameraX,
+        cameraY: clampedStatusCameraY,
+        destX: layout.x,
+        destY: layout.y,
+        destW: layout.w,
+        destH: fieldHeight * layout.scale,
+        logicalScale: layout.scale,
+        verticalOffset: 0,
+        original: true,
+        statusbarLayout: layout,
+      };
+    }
     const targetAspect = viewWidth / viewHeight;
     let destW = screenW;
     let destH = destW / targetAspect;
@@ -723,6 +763,184 @@ function drawOriginalControlNumberMarker(api, view, playerPosition, screenPositi
     scale,
   );
 }
+function originalMinimapStatusbarActive(api) {
+  return (api.original_screen_number?.() & 0xFF) === 0x00
+    && (api.original_statusbar_view?.() & 0x7F) === 0x06;
+}
+function originalStatusbarPlayerRecord(manifest, team, playerNumber) {
+  const rawName = manifest.roster_name_tiles?.[team & 0x0F]?.[Math.min(playerNumber & 0xFF, 0x0B)]
+    || [0xFF, 0xFF, 0xFF, 0xFF, 0xFF];
+  const markers = new Array(5).fill(0xFA);
+  const glyphs = new Array(5).fill(0xFF);
+  for (let index = 0; index < 5; index++) {
+    const raw = rawName[index] & 0xFF;
+    if (raw < 0x50) {
+      markers[index] = 0xFB;
+      glyphs[index] = (raw + 0x80) & 0xFF;
+    } else if (raw < 0x80) {
+      markers[index] = 0xFC;
+      glyphs[index] = (raw + 0x50) & 0xFF;
+    } else {
+      glyphs[index] = raw;
+    }
+  }
+  const data = manifest.player_hud_data?.[team & 0x0F]?.[Math.min(playerNumber & 0xFF, 0x0B)]
+    || [0, 0];
+  return { markers, glyphs, data0: data[0] & 0xFF, data1: data[1] & 0xFF };
+}
+function composeOriginalMatchStatusbarTiles(api, manifest) {
+  const tiles = manifest.base_tiles.map((row) => row.slice());
+  if (api.original_hud_tile) {
+    for (let index = 0; index < 6; index++) {
+      tiles[1][13 + index] = api.original_hud_tile(5 - index) & 0xFF;
+    }
+  }
+  const difficulty = api.original_difficulty_mode ? api.original_difficulty_mode() & 0xFF : 0;
+  const substitution = api.original_substitution_counter ? api.original_substitution_counter() & 0xFF : 0;
+  for (let side = 0; side < 2; side++) {
+    const teamByte = api.original_team_number ? api.original_team_number(side) & 0xFF : side;
+    let playerNumber;
+    let controlObject;
+    if (difficulty & 0x20) {
+      if (((side ^ substitution) & 1) !== 0) {
+        playerNumber = api.original_player_number ? api.original_player_number(0x0A + side) & 0xFF : 0;
+        controlObject = 0x0A + side;
+      } else {
+        playerNumber = (substitution & 0x7F) >> 1;
+        controlObject = substitution & 0x7F;
+      }
+    } else {
+      playerNumber = api.original_player_number ? api.original_player_number(side) & 0xFF : 0;
+      controlObject = side;
+    }
+    const record = originalStatusbarPlayerRecord(manifest, teamByte, playerNumber);
+    const column = side === 0 ? 1 : 20;
+    for (let index = 0; index < 5; index++) {
+      tiles[0][column + index] = record.markers[index];
+      tiles[1][column + index] = record.glyphs[index];
+    }
+    tiles[2][column] = difficulty & 0x20
+      ? 0xFF
+      : (teamByte & 0x80 ? 0x4C : 0x3E + side);
+    tiles[2][column + 1] = record.data0;
+    tiles[2][column + 2] = (record.data0 + 1) & 0xFF;
+    const controlPosition = controlObject < 12 && api.original_player_control_position
+      ? api.original_player_control_position(controlObject) & 0xFF : 0;
+    const controlIndex = Math.min(6, (controlPosition & 0x30) >> 3);
+    tiles[2][column + 3] = manifest.control_tiles[controlIndex] & 0xFF;
+    tiles[2][column + 4] = manifest.control_tiles[controlIndex + 1] & 0xFF;
+    if ((difficulty & 0x20) === 0) tiles[2][column + 5] = 0xDC;
+    tiles[3][column + 1] = 0x0C;
+    tiles[3][column + 2] = 0x0D;
+    tiles[3][column + 3] = record.data1;
+  }
+  const copySideBuffer = (side, getter) => {
+    if (!getter) return;
+    const primaryColumn = side === 0 ? 1 : 20;
+    const secondaryColumn = side === 0 ? 7 : 26;
+    tiles[3][primaryColumn] = getter(0) & 0xFF;
+    for (let index = 0; index < 5; index++) {
+      tiles[4][primaryColumn + index] = getter(1 + index) & 0xFF;
+      tiles[0][secondaryColumn + index] = getter(6 + index) & 0xFF;
+      tiles[1][secondaryColumn + index] = getter(11 + index) & 0xFF;
+      tiles[2][secondaryColumn + index] = getter(16 + index) & 0xFF;
+      tiles[3][secondaryColumn + index] = getter(21 + index) & 0xFF;
+      tiles[4][secondaryColumn + index] = getter(26 + index) & 0xFF;
+    }
+  };
+  copySideBuffer(0, api.original_attribute_buffer
+    ? (index) => api.original_attribute_buffer(index) : null);
+  copySideBuffer(1, api.original_graphics_buffer
+    ? (index) => api.original_graphics_buffer(index) : null);
+  return tiles;
+}
+function originalStatusbarTilePalette(manifest, palettePair, row, column) {
+  const attributeRow = Math.min(1, Math.floor(row / 4));
+  const attribute = manifest.attribute_bytes[attributeRow * 8 + Math.floor(column / 4)] & 0xFF;
+  const shift = (Math.floor((row & 3) / 2) * 4) + (Math.floor((column & 3) / 2) * 2);
+  const paletteIndex = (attribute >> shift) & 3;
+  return palettePair[Math.max(0, Math.min(1, paletteIndex - 2))] || palettePair[0];
+}
+function drawOriginalMatchStatusbar(api, view) {
+  if (!view?.statusbarLayout || !originalMinimapStatusbarActive(api)) return false;
+  const layout = view.statusbarLayout;
+  const scale = layout.scale;
+  const manifest = originalAssets.statusbar.manifest;
+  if (!manifest?.base_tiles || !manifest?.attribute_bytes) return false;
+  const palettes = originalAssets.sprite.palettes;
+  const paletteNumber = api.original_background_palette_number
+    ? api.original_background_palette_number(1) & 0xFF : 0x29;
+  const palettePair = palettes?.background_pairs?.[paletteNumber];
+  if (!palettePair?.[0]) return false;
+  const teamByte = api.original_team_number ? api.original_team_number(1) & 0xFF : 0;
+  const bank0 = teamByte & 0x40 ? 0x06 : 0x04;
+  const bank1 = 0x02;
+  const tiles = composeOriginalMatchStatusbarTiles(api, manifest);
+  const panelLogicalY = ORIGINAL_STATUSBAR_SPLIT_Y;
+  for (let row = 0; row < tiles.length; row++) {
+    for (let column = 0; column < tiles[row].length; column++) {
+      const palette = originalStatusbarTilePalette(manifest, palettePair, row, column);
+      const tile = originalBackgroundTile(bank0, bank1, tiles[row][column], palette);
+      if (!tile) continue;
+      ctx.drawImage(
+        tile,
+        layout.x + column * 8 * scale,
+        layout.y + (panelLogicalY + row * 8) * scale,
+        8 * scale,
+        8 * scale,
+      );
+    }
+  }
+  const markers = [];
+  const drawMarker = (animation, position, target) => {
+    const tileNumber = originalAssets.sprite.manifest?.specialGroup3Tiles?.[animation & 0x7F];
+    if (!Number.isFinite(tileNumber)) return;
+    const paletteSlot = ((animation & 1) + 1) & 3;
+    const spritePalette = api.original_sprite_palette_number(paletteSlot) & 0xFF;
+    const spriteBank = api.original_sprite_bank(tileNumber >> 6) & 0xFF;
+    const tile = originalSpriteTile(spriteBank, tileNumber & 0x3F, spritePalette);
+    if (!tile) return;
+    const logicalX = 0x60 + (position.x >> 4);
+    const logicalY = 0xCD + (position.y >> 4);
+    drawOriginalSpriteTile(
+      tile,
+      layout.x + (logicalX - 4) * scale,
+      layout.y + (logicalY - 11) * scale,
+      paletteSlot,
+      scale,
+    );
+    markers.push({ animation, target, logicalX, logicalY });
+  };
+  if ((api.original_game_script?.() & 0x0C) === 0) {
+    if ((api.original_screen_subtype?.() & 0x7F) !== 0x01) {
+      drawMarker(0x84, originalBallPosition(api), 0x0C);
+    }
+    const slots = Math.min(4, api.original_players_amount ? api.original_players_amount() : 1);
+    for (let slot = 0; slot < slots; slot++) {
+      const target = api.original_controlled_player(slot) & 0xFF;
+      if (target < 12 && (!api.player_active || api.player_active(target))) {
+        drawMarker(0x80 + slot, originalPlayerPosition(api, target), target);
+      }
+    }
+  }
+  if (DEBUG) {
+    window.__soccerMinimap = {
+      visible: true,
+      view: api.original_statusbar_view() & 0xFF,
+      bank0,
+      bank1,
+      paletteNumber,
+      markers,
+      fullHud: true,
+      panel: { x: 0x60, y: panelLogicalY, width: 64, height: 48 },
+      buffers: {
+        left: Array.from({ length: 31 }, (_, index) => api.original_attribute_buffer(index) & 0xFF),
+        right: Array.from({ length: 31 }, (_, index) => api.original_graphics_buffer(index) & 0xFF),
+      },
+    };
+  }
+  return true;
+}
 function drawCircle(x, y, r, fill, stroke = "rgba(0,0,0,.35)") {
   ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2); ctx.fillStyle = fill; ctx.fill(); ctx.lineWidth = 2; ctx.strokeStyle = stroke; ctx.stroke();
 }
@@ -747,6 +965,7 @@ function initializeOriginalSpritePixels() {
   sprite.indexPixels = context.getImageData(0, 0, canvas.width, canvas.height).data;
   sprite.indexWidth = canvas.width;
   sprite.tileCache.clear();
+  sprite.backgroundTileCache.clear();
 }
 function originalSignedByte(value) {
   const byte = value & 0xFF;
@@ -790,6 +1009,42 @@ function originalSpriteTile(bankNumber, tileWithinBank, paletteNumber) {
   }
   tileContext.putImageData(image, 0, 0);
   sprite.tileCache.set(key, tileCanvas);
+  return tileCanvas;
+}
+function originalBackgroundTile(bank0, bank1, tileByte, palette) {
+  const sprite = originalAssets.sprite;
+  const manifest = sprite.manifest;
+  const paletteData = sprite.palettes;
+  if (!manifest || !paletteData || !sprite.indexPixels || !palette || palette.length < 4) return null;
+  const tile = tileByte & 0xFF;
+  const tileIndex = tile < 0x80
+    ? (bank0 & 0xFE) * 64 + tile
+    : (bank1 & 0xFE) * 64 + (tile - 0x80);
+  if (tileIndex >= manifest.chr.tileCount) return null;
+  const key = `${bank0 & 0xFE}:${bank1 & 0xFE}:${tile}:${palette.join("/")}`;
+  const cached = sprite.backgroundTileCache.get(key);
+  if (cached) return cached;
+  const sourceX = (tileIndex % manifest.chr.columns) * manifest.chr.tileSize;
+  const sourceY = Math.floor(tileIndex / manifest.chr.columns) * manifest.chr.tileSize;
+  const tileCanvas = document.createElement("canvas");
+  tileCanvas.width = 8;
+  tileCanvas.height = 8;
+  const tileContext = tileCanvas.getContext("2d");
+  const image = tileContext.createImageData(8, 8);
+  for (let y = 0; y < 8; y++) {
+    for (let x = 0; x < 8; x++) {
+      const sourceOffset = ((sourceY + y) * sprite.indexWidth + sourceX + x) * 4;
+      const colorIndex = Math.round(sprite.indexPixels[sourceOffset] / 85) & 3;
+      const destinationOffset = (y * 8 + x) * 4;
+      const color = paletteData.nes_rgb[(palette[colorIndex] || 0) & 0x3F];
+      image.data[destinationOffset] = color[0];
+      image.data[destinationOffset + 1] = color[1];
+      image.data[destinationOffset + 2] = color[2];
+      image.data[destinationOffset + 3] = 255;
+    }
+  }
+  tileContext.putImageData(image, 0, 0);
+  sprite.backgroundTileCache.set(key, tileCanvas);
   return tileCanvas;
 }
 function originalSpriteBankForObject(api, objectIndex, bankSlot) {
@@ -926,7 +1181,8 @@ function drawWeather(api, view, screenW, screenH) {
     ctx.restore();
   }
 }
-function drawScore(api, w) {
+function drawScore(api, w, originalStatusbarDrawn = false) {
+  if (originalStatusbarDrawn) return;
   const leftScore = api.score_left();
   const rightScore = api.score_right();
   const seconds = api.match_seconds_left ? api.match_seconds_left() : 0;
@@ -1569,9 +1825,11 @@ function render(api) {
   const screenH = canvas.height;
   const phase = api.game_phase ? api.game_phase() : PHASE.PLAYING;
   const originalScreen = api.original_screen_number ? api.original_screen_number() : 0;
+  const originalField4x3 = originalMinimapStatusbarActive(api);
   gameWrap.classList.toggle(
     "original-4x3-screen",
-    phase === PHASE.TITLE || originalScreen === 0x02 || originalScreen === 0x03,
+    phase === PHASE.TITLE || originalScreen === 0x02 || originalScreen === 0x03
+      || originalField4x3,
   );
   if (phase === PHASE.TITLE) {
     drawOriginalSplash(api);
@@ -1611,7 +1869,7 @@ function render(api) {
   const isOriginalResultScreen = originalScreen === 0x00
     && originalSubtype >= 0x04 && originalSubtype <= 0x0C;
   gameWrap.classList.toggle("original-result-screen", isOriginalResultScreen);
-  gameWrap.classList.toggle("original-4x3-screen", isOriginalResultScreen);
+  gameWrap.classList.toggle("original-4x3-screen", isOriginalResultScreen || originalField4x3);
   const resultBackgroundId = api.original_background_image_id
     ? api.original_background_image_id() & 0xFF : 0x10;
   const originalResultBaseBackground = isOriginalResultScreen
@@ -1700,6 +1958,10 @@ function render(api) {
     const originalPosition = originalPlayerPosition(api, i);
     playerPositions[i] = originalPosition;
   }
+  ctx.save();
+  ctx.beginPath();
+  ctx.rect(objectView.destX, objectView.destY, objectView.destW, objectView.destH);
+  ctx.clip();
   const entities = [{ type: "ball", groundY: by }];
   for (let i = 0; i < count; i++) {
     if (api.player_active && !api.player_active(i)) continue;
@@ -1741,7 +2003,10 @@ function render(api) {
       };
     }
   }
-  if (!isOriginalResultScreen) drawScore(api, screenW);
+  ctx.restore();
+  const drewOriginalMinimap = !isOriginalResultScreen && drawOriginalMatchStatusbar(api, objectView);
+  if (DEBUG && !drewOriginalMinimap) window.__soccerMinimap = { visible: false, markers: [] };
+  if (!isOriginalResultScreen) drawScore(api, screenW, drewOriginalMinimap);
   if (DEBUG && !isOriginalResultScreen) {
     const stamina = api.player_stamina(controlled);
     const controlledInjury = api.player_injury ? api.player_injury(controlled) : 0;
@@ -1854,7 +2119,7 @@ async function main() {
     const image = await withFallback(name, originalAssetUrl(name), originalFallbackUrl(name), loadImage);
     return [id, image];
   })).then((entries) => Object.fromEntries(entries));
-  const [api, chr, chrAlt, field, spriteManifest, spriteIndexImage, palettes, splashLogo, splashTitle, splashTitleBlink, splashStory, resultScreenManifest, resultRenderer, bracketScreenManifest, bracketRenderer, bracketTiles, creditsScreenManifest, creditsTiles, menuScreens] = await Promise.all([
+  const [api, chr, chrAlt, field, spriteManifest, spriteIndexImage, palettes, statusbarRenderer, splashLogo, splashTitle, splashTitleBlink, splashStory, resultScreenManifest, resultRenderer, bracketScreenManifest, bracketRenderer, bracketTiles, creditsScreenManifest, creditsTiles, menuScreens] = await Promise.all([
     loadWasm(),
     withFallback("chr_sprite_pal_01.png", originalAssetUrl("chr_sprite_pal_01.png"), originalFallbackUrl("chr_sprite_pal_01.png"), loadImage),
     withFallback("chr_sprite_pal_08.png", originalAssetUrl("chr_sprite_pal_08.png"), originalFallbackUrl("chr_sprite_pal_08.png"), loadImage),
@@ -1862,6 +2127,7 @@ async function main() {
     withFallback("sprite_renderer.json", originalAssetUrl("sprite_renderer.json"), originalFallbackUrl("sprite_renderer.json"), loadJson),
     withFallback("sprite_chr_indices.png", originalAssetUrl("sprite_chr_indices.png"), originalFallbackUrl("sprite_chr_indices.png"), loadImage),
     withFallback("palettes.json", originalAssetUrl("palettes.json"), originalFallbackUrl("palettes.json"), loadJson),
+    withFallback("statusbar_renderer.json", originalAssetUrl("statusbar_renderer.json"), originalFallbackUrl("statusbar_renderer.json"), loadJson),
     withFallback("splash_00_logo.png", originalAssetUrl("splash_00_logo.png"), originalFallbackUrl("splash_00_logo.png"), loadImage),
     withFallback("splash_01_title.png", originalAssetUrl("splash_01_title.png"), originalFallbackUrl("splash_01_title.png"), loadImage),
     withFallback("splash_01_title_blink.png", originalAssetUrl("splash_01_title_blink.png"), originalFallbackUrl("splash_01_title_blink.png"), loadImage),
@@ -1881,6 +2147,7 @@ async function main() {
   originalAssets.sprite.manifest = spriteManifest;
   originalAssets.sprite.indexImage = spriteIndexImage;
   originalAssets.sprite.palettes = palettes;
+  originalAssets.statusbar.manifest = statusbarRenderer;
   initializeOriginalSpritePixels();
   originalAssets.splash = { 0: splashLogo, 1: splashTitle, 0x0e: splashStory, titleBlink: splashTitleBlink };
   originalAssets.menu = menuScreens;
