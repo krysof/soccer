@@ -1,0 +1,9 @@
+{
+  "deployed_at": "2026-07-11",
+  "app": "assets/app.d30abc9b.js",
+  "css": "assets/app.672d15ef.css",
+  "wasm": "game_core.2fca1ede.wasm",
+  "feature": "original opponent tournament overlays and complete mode menu",
+  "note": "compiled artifacts only; no game source",
+  "tests": "248/270 Node pass (22 unchanged legacy shell failures); 15/15 browser pass"
+}
