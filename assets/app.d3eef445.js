@@ -66,7 +66,7 @@ const btnKick = document.querySelector("#btnKick");
 const btnSprint = document.querySelector("#btnSprint");
 const btnStart = document.querySelector("#btnStart");
 const DEBUG = new URLSearchParams(window.location.search).get("debug") === "1";
-const BUILD_ID = "original-match-settings-screen-9357-20260711";
+const BUILD_ID = "original-formation-control-screen-97f5-20260711";
 document.body.classList.toggle("debug", DEBUG);
 stats.hidden = !DEBUG;
 const TOUCH_TAP_LATCH_SOFTWARE_FRAMES = 4;
@@ -109,6 +109,14 @@ const originalAssets = {
     key: "",
   },
   matchSettings: {
+    manifest: null,
+    scripts: null,
+    tileImage: null,
+    canvas: null,
+    context: null,
+    key: "",
+  },
+  formationControl: {
     manifest: null,
     scripts: null,
     tileImage: null,
@@ -527,7 +535,7 @@ function consumeTapLatchesAfterSoftwareFrame() {
   if (keyTapLatch.start > 0) keyTapLatch.start -= 1;
 }
 async function loadWasm() {
-  const primary = assetUrl("../game_core.ab816241.wasm");
+  const primary = assetUrl("../game_core.cb0a05d7.wasm");
   const fallback = rootAssetUrl("game_core.wasm");
   const response = await withFallback("game_core.wasm", primary, fallback, (url) => fetch(url).then((r) => {
     if (!r.ok) throw new Error(`failed to load ${url}: ${r.status}`);
@@ -1506,6 +1514,7 @@ function drawOriginalMenuObjects(api, layout, subtype) {
     0x04: [0, 1, 3],
     0x05: [0, 1, 2, 3],
     0x06: [0],
+    0x07: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12],
   };
   const objectIds = objectIdsBySubtype[subtype];
   if (!objectIds) return;
@@ -1516,8 +1525,9 @@ function drawOriginalMenuObjects(api, layout, subtype) {
   const drawnObjectIds = [];
   for (const index of objectIds) {
     if (!api.original_player_x_lo || !api.original_player_animation) continue;
-    const p = originalPlayerPosition(api, index);
-    const cameraY = subtype === 0x06 && api.original_camera_y_lo && api.original_camera_y_hi
+    const p = index === 0x0C ? originalBallPosition(api) : originalPlayerPosition(api, index);
+    const cameraY = (subtype === 0x06 || subtype === 0x07)
+      && api.original_camera_y_lo && api.original_camera_y_hi
       ? ((api.original_camera_y_hi() << 8) | api.original_camera_y_lo())
       : 0;
     const x = layout.x + p.x * layout.scale;
@@ -1705,6 +1715,102 @@ function composeOriginalMatchSettingsScreen(api) {
   settings.key = key;
   return settings.canvas;
 }
+function writeOriginalFormationControlPatch(nametables, address, tiles) {
+  if (!Array.isArray(tiles) && !(tiles instanceof Uint8Array)) return;
+  const tableIndex = (address & 0x0800) !== 0 ? 1 : 0;
+  let offset = address & 0x03FF;
+  for (const tile of tiles) {
+    if (offset >= 0 && offset < nametables[tableIndex].length) {
+      nametables[tableIndex][offset] = tile & 0xFF;
+    }
+    offset++;
+  }
+}
+function originalFormationControlPpuAddress(rawX, rawY) {
+  const packedRow = (rawY & 0x1F) | (rawX & 0x20) | ((rawY & 0x20) << 1);
+  return (0x2000 + (packedRow << 5) + (rawX & 0x1F)) & 0x3FFF;
+}
+function composeOriginalFormationControlScreen(api) {
+  const formation = originalAssets.formationControl;
+  const manifest = formation.manifest;
+  const scripts = formation.scripts;
+  if (!manifest || !scripts || !formation.tileImage || !Array.isArray(manifest.nametables)) {
+    return null;
+  }
+  const side = api.original_substitution_counter
+    ? api.original_substitution_counter() & 1 : 0;
+  const team = api.original_team_number ? api.original_team_number(side) & 0x0F : 0;
+  const state = api.original_option_counter ? api.original_option_counter() & 0xFF : 0;
+  const selectedFormation = api.original_team_formation
+    ? api.original_team_formation(side) & 0x03 : 0;
+  const config = api.original_ram_05d3 ? api.original_ram_05d3(side) & 0xFF : 0;
+  const playerNumbers = Array.from({ length: 6 }, (_, slot) => api.original_player_number
+    ? api.original_player_number(slot * 2 + side) & 0xFF : slot);
+  const assignmentSlot = api.original_option_number_05cb
+    ? api.original_option_number_05cb() & 0xFF : 0xFF;
+  const key = `${side}:${team}:${state}:${selectedFormation}:${config}:${assignmentSlot}:${playerNumbers.join(",")}`;
+  if (formation.canvas && formation.key === key) return formation.canvas;
+  if (!formation.canvas) {
+    formation.canvas = document.createElement("canvas");
+    formation.canvas.width = 256;
+    formation.canvas.height = 480;
+    formation.context = formation.canvas.getContext("2d");
+  }
+  const nametables = manifest.nametables.map((source) => Uint8Array.from(source));
+  const overlay = manifest.teamOverlays?.[String(team)];
+  if (overlay) {
+    writeOriginalFormationControlPatch(nametables, overlay.address, overlay.tiles);
+  }
+  writeOriginalFormationControlPatch(
+    nametables,
+    scripts.yesNoMarkerAddress,
+    state < 3 ? scripts.yesNoTopTiles : scripts.yesNoBottomTiles,
+  );
+  for (const address of new Set(scripts.formationChoiceAddresses || [])) {
+    writeOriginalFormationControlPatch(nametables, address, [0x02, 0x02]);
+  }
+  const formationAddress = scripts.formationChoiceAddresses?.[
+    Math.min(selectedFormation, (scripts.formationChoiceAddresses?.length || 1) - 1)
+  ];
+  if (Number.isFinite(formationAddress)) {
+    writeOriginalFormationControlPatch(
+      nametables,
+      formationAddress,
+      [((scripts.formationChoiceGlyphs?.[side] ?? 0x1B) & 0xFF), 0x1F],
+    );
+  }
+  for (let group = 0; group < 4; group++) {
+    let selected = (config >> (group * 2)) & 3;
+    if (selected === 3) selected = 0;
+    const patch = scripts.configurationPatches?.[group * 3 + selected];
+    if (patch) writeOriginalFormationControlPatch(nametables, patch.address, patch.tiles);
+  }
+  const confirmedSlots = state > 4
+    ? 6
+    : state === 4 ? Math.min(6, assignmentSlot) : 0;
+  const order = scripts.playerOrder || [];
+  const glyphs = scripts.formationPlayerGlyphs?.[
+    Math.min(selectedFormation, (scripts.formationPlayerGlyphs?.length || 1) - 1)
+  ] || [];
+  const coordinates = scripts.playerGridCoordinates || [];
+  for (let slot = 0; slot < confirmedSlots; slot++) {
+    const option = Math.max(0, order.indexOf(playerNumbers[slot]));
+    const coordinate = coordinates[option];
+    if (!coordinate) continue;
+    const address = originalFormationControlPpuAddress(coordinate[0], coordinate[1]);
+    writeOriginalFormationControlPatch(
+      nametables,
+      address,
+      [0x02, glyphs[slot * 2 + 1] ?? 0x02, glyphs[slot * 2] ?? 0x02],
+    );
+  }
+  formation.context.clearRect(0, 0, 256, 480);
+  formation.context.imageSmoothingEnabled = false;
+  renderOriginalMatchSettingsNametable(formation.context, nametables[0], formation.tileImage, 0);
+  renderOriginalMatchSettingsNametable(formation.context, nametables[1], formation.tileImage, 240);
+  formation.key = key;
+  return formation.canvas;
+}
 function drawOriginalMenuScreen(api) {
   ctx.fillStyle = "#000";
   ctx.fillRect(0, 0, canvas.width, canvas.height);
@@ -1714,28 +1820,34 @@ function drawOriginalMenuScreen(api) {
     ? (composeOriginalBracketScreen(api) || originalAssets.menu[id])
     : subtype === 0x06
       ? (composeOriginalMatchSettingsScreen(api) || originalAssets.menu[id])
+      : subtype === 0x07
+        ? (composeOriginalFormationControlScreen(api) || originalAssets.menu[0x05])
       : originalAssets.menu[id];
   const layout = originalFullScreenLayout();
   const brightness = api.original_current_brightness ? api.original_current_brightness() : 0x40;
   if (img) {
     ctx.imageSmoothingEnabled = false;
     ctx.globalAlpha = Math.max(0, Math.min(1, brightness / 0x40));
-    if (subtype === 0x06 && (img.height || img.naturalHeight) >= 480) {
+    if ((subtype === 0x06 || subtype === 0x07) && (img.height || img.naturalHeight) >= 480) {
       const cameraY = api.original_camera_y_lo && api.original_camera_y_hi
         ? ((api.original_camera_y_hi() << 8) | api.original_camera_y_lo())
         : 0;
       const sourceY = cameraY >= 0x0100 ? 240 : Math.min(cameraY, 240);
       ctx.drawImage(img, 0, sourceY, 256, 240, layout.x, layout.y, layout.w, layout.h);
       if (DEBUG) {
-        window.__soccerMatchSettingsRenderer = {
+        const rendererState = {
           subtype,
           backgroundId: id,
           state: api.original_option_counter ? api.original_option_counter() & 0xff : 0,
           option: api.original_option_number ? api.original_option_number() & 0xff : 0,
           cameraY,
           sourceY,
-          key: originalAssets.matchSettings.key,
+          key: subtype === 0x06
+            ? originalAssets.matchSettings.key
+            : originalAssets.formationControl.key,
         };
+        if (subtype === 0x06) window.__soccerMatchSettingsRenderer = rendererState;
+        else window.__soccerFormationControlRenderer = rendererState;
       }
     } else {
       ctx.drawImage(img, layout.x, layout.y, layout.w, layout.h);
@@ -2228,7 +2340,7 @@ async function main() {
     const image = await withFallback(name, originalAssetUrl(name), originalFallbackUrl(name), loadImage);
     return [id, image];
   })).then((entries) => Object.fromEntries(entries));
-  const [api, chr, chrAlt, field, spriteManifest, spriteIndexImage, palettes, statusbarRenderer, splashLogo, splashTitle, splashTitleBlink, splashStory, resultScreenManifest, resultRenderer, bracketScreenManifest, bracketRenderer, bracketTiles, matchSettingsScreenManifest, matchSettingsRenderer, matchSettingsTiles, creditsScreenManifest, creditsTiles, menuScreens] = await Promise.all([
+  const [api, chr, chrAlt, field, spriteManifest, spriteIndexImage, palettes, statusbarRenderer, splashLogo, splashTitle, splashTitleBlink, splashStory, resultScreenManifest, resultRenderer, bracketScreenManifest, bracketRenderer, bracketTiles, matchSettingsScreenManifest, matchSettingsRenderer, matchSettingsTiles, formationControlScreenManifest, formationControlRenderer, formationControlTiles, creditsScreenManifest, creditsTiles, menuScreens] = await Promise.all([
     loadWasm(),
     withFallback("chr_sprite_pal_01.png", originalAssetUrl("chr_sprite_pal_01.png"), originalFallbackUrl("chr_sprite_pal_01.png"), loadImage),
     withFallback("chr_sprite_pal_08.png", originalAssetUrl("chr_sprite_pal_08.png"), originalFallbackUrl("chr_sprite_pal_08.png"), loadImage),
@@ -2249,6 +2361,9 @@ async function main() {
     withFallback("match_settings_screen_manifest.json", originalAssetUrl("match_settings_screen_manifest.json"), originalFallbackUrl("match_settings_screen_manifest.json"), loadJson),
     withFallback("match_settings_renderer.json", originalAssetUrl("match_settings_renderer.json"), originalFallbackUrl("match_settings_renderer.json"), loadJson),
     withFallback("match_settings_tiles.png", originalAssetUrl("match_settings_tiles.png"), originalFallbackUrl("match_settings_tiles.png"), loadImage),
+    withFallback("formation_control_screen_manifest.json", originalAssetUrl("formation_control_screen_manifest.json"), originalFallbackUrl("formation_control_screen_manifest.json"), loadJson),
+    withFallback("formation_control_renderer.json", originalAssetUrl("formation_control_renderer.json"), originalFallbackUrl("formation_control_renderer.json"), loadJson),
+    withFallback("formation_control_tiles.png", originalAssetUrl("formation_control_tiles.png"), originalFallbackUrl("formation_control_tiles.png"), loadImage),
     withFallback("credits_screen_manifest.json", originalAssetUrl("credits_screen_manifest.json"), originalFallbackUrl("credits_screen_manifest.json"), loadJson),
     creditsTilesPromise,
     menuScreensPromise,
@@ -2271,6 +2386,9 @@ async function main() {
   originalAssets.matchSettings.manifest = matchSettingsScreenManifest;
   originalAssets.matchSettings.scripts = matchSettingsRenderer;
   originalAssets.matchSettings.tileImage = matchSettingsTiles;
+  originalAssets.formationControl.manifest = formationControlScreenManifest;
+  originalAssets.formationControl.scripts = formationControlRenderer;
+  originalAssets.formationControl.tileImage = formationControlTiles;
   originalAssets.credits.manifest = creditsScreenManifest;
   originalAssets.credits.tileImages = creditsTiles;
   api.game_init();
