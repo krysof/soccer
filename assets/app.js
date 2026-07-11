@@ -585,7 +585,7 @@ function consumeTapLatchesAfterSoftwareFrame() {
   if (keyTapLatch.select > 0) keyTapLatch.select -= 1;
 }
 async function loadWasm() {
-  const primary = assetUrl("../game_core.192308d8.wasm");
+  const primary = assetUrl("../game_core.fab4554a.wasm");
   const fallback = rootAssetUrl("game_core.wasm");
   const response = await withFallback("game_core.wasm", primary, fallback, (url) => fetch(url).then((r) => {
     if (!r.ok) throw new Error(`failed to load ${url}: ${r.status}`);
@@ -2238,7 +2238,9 @@ function composeOriginalMeetingSecretScreen(api, backgroundId) {
   const blinkAddress = api.original_attribute_buffer_address
     ? api.original_attribute_buffer_address() & 0x3fff : 0;
   const blinkTile = api.original_attribute_buffer ? api.original_attribute_buffer(0) & 0xff : 0xff;
-  const key = `${backgroundId}:${state}:${option}:${selected}:${effectState}:${effectStatus}:${effectScriptId}:${effectCursor}:${blinkAddress}:${blinkTile}`;
+  const meetingPlayerData = Array.from({ length: 12 }, (_, index) =>
+    api.original_meeting_player_data ? api.original_meeting_player_data(index) & 0xff : 0);
+  const key = `${backgroundId}:${state}:${option}:${selected}:${effectState}:${effectStatus}:${effectScriptId}:${effectCursor}:${blinkAddress}:${blinkTile}:${meetingPlayerData.join(",")}`;
   if (meeting.canvas && meeting.key === key) return meeting.canvas;
   if (!meeting.canvas) {
     meeting.canvas = document.createElement("canvas");
@@ -2247,6 +2249,33 @@ function composeOriginalMeetingSecretScreen(api, backgroundId) {
     meeting.context = meeting.canvas.getContext("2d");
   }
   const nametable = Uint8Array.from(screen.nametable);
+  const parameterTiles = scripts.parameterTiles || [];
+  const parameterGroups = scripts.parameterGroups || [];
+  const parameterAddresses = scripts.parameterAddresses || [];
+  if (parameterTiles.length >= 12 * 8 && parameterGroups.length >= 8 * 6
+      && parameterAddresses.length >= 12) {
+    for (let player = 0; player < 12; player++) {
+      const value = meetingPlayerData[player];
+      const pair = (value >> 1) & 0x06;
+      const group = ((value & 0x0e) >> 1) * 6;
+      const playerTiles = player * 8;
+      const base = (parameterAddresses[player] & 0x3fff) - 0x2000;
+      const writes = [
+        [base, parameterGroups[group + 2]],
+        [base + 0x20, parameterGroups[group + 3]],
+        [base + 0x40, parameterGroups[group + 4]],
+        [base + 1, parameterTiles[playerTiles + pair]],
+        [base + 0x21, parameterGroups[group]],
+        [base + 0x41, parameterGroups[group + 5]],
+        [base + 2, parameterTiles[playerTiles + pair + 1]],
+        [base + 0x22, parameterGroups[group + 1]],
+        [base + 0x42, 0x1f],
+      ];
+      for (const [offset, tile] of writes) {
+        if (offset >= 0 && offset < nametable.length) nametable[offset] = tile & 0xff;
+      }
+    }
+  }
   for (const pair of scripts.stateNametablePatches?.[String(state)] || []) {
     const [offset, value] = pair;
     if (offset >= 0 && offset < nametable.length) nametable[offset] = value & 0xff;
@@ -2295,6 +2324,7 @@ function composeOriginalMeetingSecretScreen(api, backgroundId) {
       effectStatus,
       effectScriptId,
       effectCursor,
+      meetingPlayerData,
       key,
       nametable: Array.from(nametable),
     };

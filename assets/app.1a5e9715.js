@@ -6,6 +6,7 @@ const INPUT = {
   KICK: 1 << 4,
   SPRINT: 1 << 5,
   START: 1 << 6,
+  SELECT: 1 << 7,
 };
 const PHASE = {
   TITLE: 0,
@@ -54,7 +55,7 @@ const ORIGINAL_BACKGROUND_SCREEN_IDS = [
 ];
 const ORIGINAL_CREDITS_SCREEN_IDS = [0x1c, 0x1d, 0x1e, 0x1f, 0x20, 0x21, 0x22, 0x23, 0x24];
 const keys = new Set();
-const keyTapLatch = { kick: 0, sprint: 0, start: 0 };
+const keyTapLatch = { kick: 0, sprint: 0, start: 0, select: 0 };
 const canvas = document.querySelector("#game");
 const ctx = canvas.getContext("2d");
 const stats = document.querySelector("#stats");
@@ -65,8 +66,9 @@ const knob = document.querySelector("#knob");
 const btnKick = document.querySelector("#btnKick");
 const btnSprint = document.querySelector("#btnSprint");
 const btnStart = document.querySelector("#btnStart");
+const btnSelect = document.querySelector("#btnSelect");
 const DEBUG = new URLSearchParams(window.location.search).get("debug") === "1";
-const BUILD_ID = "original-player-profile-screen-a281-20260711";
+const BUILD_ID = "original-meeting-secret-screen-a778-20260711";
 document.body.classList.toggle("debug", DEBUG);
 stats.hidden = !DEBUG;
 const TOUCH_TAP_LATCH_SOFTWARE_FRAMES = 4;
@@ -75,6 +77,7 @@ const touch = {
   kickPointer: null,
   sprintPointer: null,
   startPointer: null,
+  selectPointer: null,
   axisX: 0,
   axisY: 0,
   originX: 0,
@@ -82,9 +85,11 @@ const touch = {
   kick: false,
   sprint: false,
   start: false,
+  select: false,
   kickLatchTicks: 0,
   sprintLatchTicks: 0,
   startLatchTicks: 0,
+  selectLatchTicks: 0,
   lastBits: 0,
 };
 const originalAssets = {
@@ -144,6 +149,22 @@ const originalAssets = {
     manifest: null,
     scripts: null,
     tileImage: null,
+    canvas: null,
+    context: null,
+    key: "",
+  },
+  musicSelection: {
+    manifest: null,
+    scripts: null,
+    tileImage: null,
+    canvas: null,
+    context: null,
+    key: "",
+  },
+  meetingSecret: {
+    manifest: null,
+    scripts: null,
+    tileImages: {},
     canvas: null,
     context: null,
     key: "",
@@ -220,6 +241,7 @@ window.addEventListener("keydown", (event) => {
   if (event.code === "KeyJ" || event.code === "KeyZ") keyTapLatch.kick = TOUCH_TAP_LATCH_SOFTWARE_FRAMES;
   if (event.code === "KeyK" || event.code === "KeyX") keyTapLatch.sprint = TOUCH_TAP_LATCH_SOFTWARE_FRAMES;
   if (event.code === "Enter" || event.code === "Space") keyTapLatch.start = TOUCH_TAP_LATCH_SOFTWARE_FRAMES;
+  if (event.code === "ShiftLeft" || event.code === "ShiftRight") keyTapLatch.select = TOUCH_TAP_LATCH_SOFTWARE_FRAMES;
   if (["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", "Space"].includes(event.code)) event.preventDefault();
 });
 window.addEventListener("keyup", (event) => keys.delete(event.code));
@@ -272,6 +294,7 @@ function setTouchButton(button, prop) {
 setTouchButton(btnKick, "kick");
 setTouchButton(btnSprint, "sprint");
 setTouchButton(btnStart, "start");
+setTouchButton(btnSelect, "select");
 function ensureAudio() {
   if (sfx.ctx) {
     if (sfx.ctx.state === "suspended") sfx.ctx.resume?.();
@@ -547,6 +570,7 @@ function inputBits() {
   if (keys.has("KeyJ") || keys.has("KeyZ") || keyTapLatch.kick > 0 || touch.kick || touch.kickLatchTicks > 0) bits |= INPUT.KICK;
   if (keys.has("KeyK") || keys.has("KeyX") || keyTapLatch.sprint > 0 || touch.sprint || touch.sprintLatchTicks > 0) bits |= INPUT.SPRINT;
   if (keys.has("Enter") || keys.has("Space") || keyTapLatch.start > 0 || touch.start || touch.startLatchTicks > 0) bits |= INPUT.START;
+  if (keys.has("ShiftLeft") || keys.has("ShiftRight") || keyTapLatch.select > 0 || touch.select || touch.selectLatchTicks > 0) bits |= INPUT.SELECT;
   touch.lastBits = bits;
   return bits;
 }
@@ -554,12 +578,14 @@ function consumeTapLatchesAfterSoftwareFrame() {
   if (touch.kickLatchTicks > 0) touch.kickLatchTicks -= 1;
   if (touch.sprintLatchTicks > 0) touch.sprintLatchTicks -= 1;
   if (touch.startLatchTicks > 0) touch.startLatchTicks -= 1;
+  if (touch.selectLatchTicks > 0) touch.selectLatchTicks -= 1;
   if (keyTapLatch.kick > 0) keyTapLatch.kick -= 1;
   if (keyTapLatch.sprint > 0) keyTapLatch.sprint -= 1;
   if (keyTapLatch.start > 0) keyTapLatch.start -= 1;
+  if (keyTapLatch.select > 0) keyTapLatch.select -= 1;
 }
 async function loadWasm() {
-  const primary = assetUrl("../game_core.5fa6b55b.wasm");
+  const primary = assetUrl("../game_core.fab4554a.wasm");
   const fallback = rootAssetUrl("game_core.wasm");
   const response = await withFallback("game_core.wasm", primary, fallback, (url) => fetch(url).then((r) => {
     if (!r.ok) throw new Error(`failed to load ${url}: ${r.status}`);
@@ -1541,6 +1567,9 @@ function drawOriginalMenuObjects(api, layout, subtype) {
     0x07: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12],
     0x08: [0],
     0x0a: [0],
+    0x0b: [0, 2],
+    0x0c: [0, 1, 2],
+    0x0d: [0, 1, 2],
   };
   const objectIds = objectIdsBySubtype[subtype];
   if (!objectIds) return;
@@ -2138,6 +2167,170 @@ function composeOriginalPlayerProfileScreen(api) {
   }
   return profile.canvas;
 }
+function composeOriginalMusicSelectionScreen(api) {
+  const music = originalAssets.musicSelection;
+  const manifest = music.manifest;
+  const scripts = music.scripts;
+  if (!manifest || !scripts || !music.tileImage) return null;
+  const option = api.original_option_number ? api.original_option_number() & 0xff : 0xff;
+  const hiddenNumber = api.original_option_number_05cb
+    ? api.original_option_number_05cb() & 0xff : 0;
+  const bufferAddress = api.original_graphics_buffer_address
+    ? api.original_graphics_buffer_address() & 0x3fff : 0;
+  const bufferCount = api.original_graphics_buffer_count
+    ? Math.min(0x20, api.original_graphics_buffer_count() & 0xff) : 0;
+  const buffer = [];
+  if (bufferAddress === (scripts.hiddenNumberAddress ?? 0x20e5)) {
+    for (let index = 0; index < bufferCount; index++) {
+      buffer.push(api.original_graphics_buffer(index) & 0xff);
+    }
+  }
+  const key = `${option}:${hiddenNumber}:${bufferAddress}:${buffer.join(",")}`;
+  if (music.canvas && music.key === key) return music.canvas;
+  if (!music.canvas) {
+    music.canvas = document.createElement("canvas");
+    music.canvas.width = 256;
+    music.canvas.height = 240;
+    music.context = music.canvas.getContext("2d");
+  }
+  const nametable = Uint8Array.from(manifest.nametable || []);
+  if (bufferAddress >= 0x2000 && bufferAddress < 0x2400) {
+    let address = bufferAddress;
+    for (const tile of buffer) {
+      nametable[address - 0x2000] = tile;
+      address++;
+      if (address >= 0x2400) break;
+    }
+  }
+  music.context.clearRect(0, 0, 256, 240);
+  music.context.imageSmoothingEnabled = false;
+  renderOriginalMatchSettingsNametable(music.context, nametable, music.tileImage, 0);
+  music.key = key;
+  if (DEBUG) {
+    window.__soccerMusicSelectionRenderer = {
+      subtype: 0x0b,
+      backgroundId: manifest.backgroundId,
+      option,
+      hiddenNumber,
+      bufferAddress,
+      buffer: [...buffer],
+      key,
+      nametable: Array.from(nametable),
+    };
+  }
+  return music.canvas;
+}
+function composeOriginalMeetingSecretScreen(api, backgroundId) {
+  const meeting = originalAssets.meetingSecret;
+  const screen = meeting.manifest?.screens?.[String(backgroundId)];
+  const scripts = meeting.scripts;
+  const tileImage = meeting.tileImages?.[String(backgroundId)];
+  if (!screen || !scripts || !tileImage || !Array.isArray(screen.nametable)) return null;
+  const state = api.original_option_counter ? api.original_option_counter() & 0xff : 0;
+  const option = api.original_option_number ? api.original_option_number() & 0xff : 0xff;
+  const selected = api.original_selected_player_number
+    ? api.original_selected_player_number() & 0xff : 0;
+  const effectState = api.original_text_effect_state ? api.original_text_effect_state() & 0xff : 0;
+  const effectStatus = api.original_text_effect_status ? api.original_text_effect_status() & 0xff : 0;
+  const effectScriptId = api.original_text_effect_script_id
+    ? api.original_text_effect_script_id() & 0xff : 0;
+  const effectCursor = api.original_text_effect_cursor ? api.original_text_effect_cursor() & 0xffff : 0;
+  const blinkAddress = api.original_attribute_buffer_address
+    ? api.original_attribute_buffer_address() & 0x3fff : 0;
+  const blinkTile = api.original_attribute_buffer ? api.original_attribute_buffer(0) & 0xff : 0xff;
+  const meetingPlayerData = Array.from({ length: 12 }, (_, index) =>
+    api.original_meeting_player_data ? api.original_meeting_player_data(index) & 0xff : 0);
+  const key = `${backgroundId}:${state}:${option}:${selected}:${effectState}:${effectStatus}:${effectScriptId}:${effectCursor}:${blinkAddress}:${blinkTile}:${meetingPlayerData.join(",")}`;
+  if (meeting.canvas && meeting.key === key) return meeting.canvas;
+  if (!meeting.canvas) {
+    meeting.canvas = document.createElement("canvas");
+    meeting.canvas.width = 256;
+    meeting.canvas.height = 240;
+    meeting.context = meeting.canvas.getContext("2d");
+  }
+  const nametable = Uint8Array.from(screen.nametable);
+  const parameterTiles = scripts.parameterTiles || [];
+  const parameterGroups = scripts.parameterGroups || [];
+  const parameterAddresses = scripts.parameterAddresses || [];
+  if (parameterTiles.length >= 12 * 8 && parameterGroups.length >= 8 * 6
+      && parameterAddresses.length >= 12) {
+    for (let player = 0; player < 12; player++) {
+      const value = meetingPlayerData[player];
+      const pair = (value >> 1) & 0x06;
+      const group = ((value & 0x0e) >> 1) * 6;
+      const playerTiles = player * 8;
+      const base = (parameterAddresses[player] & 0x3fff) - 0x2000;
+      const writes = [
+        [base, parameterGroups[group + 2]],
+        [base + 0x20, parameterGroups[group + 3]],
+        [base + 0x40, parameterGroups[group + 4]],
+        [base + 1, parameterTiles[playerTiles + pair]],
+        [base + 0x21, parameterGroups[group]],
+        [base + 0x41, parameterGroups[group + 5]],
+        [base + 2, parameterTiles[playerTiles + pair + 1]],
+        [base + 0x22, parameterGroups[group + 1]],
+        [base + 0x42, 0x1f],
+      ];
+      for (const [offset, tile] of writes) {
+        if (offset >= 0 && offset < nametable.length) nametable[offset] = tile & 0xff;
+      }
+    }
+  }
+  for (const pair of scripts.stateNametablePatches?.[String(state)] || []) {
+    const [offset, value] = pair;
+    if (offset >= 0 && offset < nametable.length) nametable[offset] = value & 0xff;
+  }
+  const scriptIndex = effectScriptId - (scripts.textScriptFirstId ?? 0x0d);
+  const textScript = scripts.textScripts?.[scriptIndex] || [];
+  const textHasStarted = state >= 7 && (effectState & 0x80) === 0
+    && (effectStatus !== 0 || effectCursor !== 0);
+  if (textHasStarted && textScript.length) {
+    const blankRow = new Array(0x1b).fill(0xff);
+    for (const address of [0x2302, 0x2322, 0x2342, 0x2362]) {
+      writeOriginalWeatherPreviewTiles(nametable, address, blankRow);
+    }
+    let lineAddress = scripts.textAddress ?? 0x2302;
+    let textAddress = lineAddress;
+    const last = Math.min(effectCursor, textScript.length - 1);
+    for (let index = 0; index <= last; index++) {
+      const value = textScript[index] & 0xff;
+      if (value === 0xf4) {
+        lineAddress = scripts.textAddress ?? 0x2302;
+        textAddress = lineAddress;
+      } else if (value === 0xf7) {
+        lineAddress += 0x40;
+        textAddress = lineAddress;
+      } else if (value < 0xf0) {
+        writeOriginalPlayerProfileDoubleHeightRow(nametable, textAddress, [value], true);
+        textAddress++;
+      }
+    }
+  }
+  if ((effectStatus & 0x20) !== 0 && blinkAddress === 0x2390) {
+    writeOriginalWeatherPreviewTiles(nametable, blinkAddress, [blinkTile]);
+  }
+  meeting.context.clearRect(0, 0, 256, 240);
+  meeting.context.imageSmoothingEnabled = false;
+  renderOriginalMatchSettingsNametable(meeting.context, nametable, tileImage, 0);
+  meeting.key = key;
+  if (DEBUG) {
+    window.__soccerMeetingSecretRenderer = {
+      subtype: api.original_screen_subtype ? api.original_screen_subtype() & 0x7f : 0,
+      backgroundId,
+      state,
+      option,
+      selected,
+      effectState,
+      effectStatus,
+      effectScriptId,
+      effectCursor,
+      meetingPlayerData,
+      key,
+      nametable: Array.from(nametable),
+    };
+  }
+  return meeting.canvas;
+}
 function drawOriginalMenuScreen(api) {
   ctx.fillStyle = "#000";
   ctx.fillRect(0, 0, canvas.width, canvas.height);
@@ -2155,6 +2348,10 @@ function drawOriginalMenuScreen(api) {
         ? (composeOriginalTournamentRecordScreen(api) || originalAssets.menu[id])
       : subtype === 0x0a
         ? (composeOriginalPlayerProfileScreen(api) || originalAssets.menu[id])
+      : subtype === 0x0b
+        ? (composeOriginalMusicSelectionScreen(api) || originalAssets.menu[id])
+      : subtype === 0x0c || subtype === 0x0d
+        ? (composeOriginalMeetingSecretScreen(api, id) || originalAssets.menu[id])
       : originalAssets.menu[id];
   const layout = originalFullScreenLayout();
   const brightness = api.original_current_brightness ? api.original_current_brightness() : 0x40;
@@ -2673,7 +2870,7 @@ async function main() {
     const image = await withFallback(name, originalAssetUrl(name), originalFallbackUrl(name), loadImage);
     return [id, image];
   })).then((entries) => Object.fromEntries(entries));
-  const [api, chr, chrAlt, field, spriteManifest, spriteIndexImage, palettes, statusbarRenderer, splashLogo, splashTitle, splashTitleBlink, splashStory, resultScreenManifest, resultRenderer, bracketScreenManifest, bracketRenderer, bracketTiles, matchSettingsScreenManifest, matchSettingsRenderer, matchSettingsTiles, formationControlScreenManifest, formationControlRenderer, formationControlTiles, weatherPreviewScreenManifest, weatherPreviewRenderer, weatherPreviewTiles, tournamentRecordScreenManifest, tournamentRecordRenderer, tournamentRecordTiles, playerProfileScreenManifest, playerProfileRenderer, playerProfileTiles, creditsScreenManifest, creditsTiles, menuScreens] = await Promise.all([
+  const [api, chr, chrAlt, field, spriteManifest, spriteIndexImage, palettes, statusbarRenderer, splashLogo, splashTitle, splashTitleBlink, splashStory, resultScreenManifest, resultRenderer, bracketScreenManifest, bracketRenderer, bracketTiles, matchSettingsScreenManifest, matchSettingsRenderer, matchSettingsTiles, formationControlScreenManifest, formationControlRenderer, formationControlTiles, weatherPreviewScreenManifest, weatherPreviewRenderer, weatherPreviewTiles, tournamentRecordScreenManifest, tournamentRecordRenderer, tournamentRecordTiles, playerProfileScreenManifest, playerProfileRenderer, playerProfileTiles, musicSelectionScreenManifest, musicSelectionRenderer, musicSelectionTiles, meetingSecretScreenManifest, meetingSecretRenderer, meetingSecretTiles0a, meetingSecretTiles0f, creditsScreenManifest, creditsTiles, menuScreens] = await Promise.all([
     loadWasm(),
     withFallback("chr_sprite_pal_01.png", originalAssetUrl("chr_sprite_pal_01.png"), originalFallbackUrl("chr_sprite_pal_01.png"), loadImage),
     withFallback("chr_sprite_pal_08.png", originalAssetUrl("chr_sprite_pal_08.png"), originalFallbackUrl("chr_sprite_pal_08.png"), loadImage),
@@ -2706,6 +2903,13 @@ async function main() {
     withFallback("player_profile_screen_manifest.json", originalAssetUrl("player_profile_screen_manifest.json"), originalFallbackUrl("player_profile_screen_manifest.json"), loadJson),
     withFallback("player_profile_renderer.json", originalAssetUrl("player_profile_renderer.json"), originalFallbackUrl("player_profile_renderer.json"), loadJson),
     withFallback("player_profile_tiles.png", originalAssetUrl("player_profile_tiles.png"), originalFallbackUrl("player_profile_tiles.png"), loadImage),
+    withFallback("music_selection_screen_manifest.json", originalAssetUrl("music_selection_screen_manifest.json"), originalFallbackUrl("music_selection_screen_manifest.json"), loadJson),
+    withFallback("music_selection_renderer.json", originalAssetUrl("music_selection_renderer.json"), originalFallbackUrl("music_selection_renderer.json"), loadJson),
+    withFallback("music_selection_tiles.png", originalAssetUrl("music_selection_tiles.png"), originalFallbackUrl("music_selection_tiles.png"), loadImage),
+    withFallback("meeting_secret_screen_manifest.json", originalAssetUrl("meeting_secret_screen_manifest.json"), originalFallbackUrl("meeting_secret_screen_manifest.json"), loadJson),
+    withFallback("meeting_secret_renderer.json", originalAssetUrl("meeting_secret_renderer.json"), originalFallbackUrl("meeting_secret_renderer.json"), loadJson),
+    withFallback("meeting_secret_tiles_0a.png", originalAssetUrl("meeting_secret_tiles_0a.png"), originalFallbackUrl("meeting_secret_tiles_0a.png"), loadImage),
+    withFallback("meeting_secret_tiles_0f.png", originalAssetUrl("meeting_secret_tiles_0f.png"), originalFallbackUrl("meeting_secret_tiles_0f.png"), loadImage),
     withFallback("credits_screen_manifest.json", originalAssetUrl("credits_screen_manifest.json"), originalFallbackUrl("credits_screen_manifest.json"), loadJson),
     creditsTilesPromise,
     menuScreensPromise,
@@ -2740,6 +2944,15 @@ async function main() {
   originalAssets.playerProfile.manifest = playerProfileScreenManifest;
   originalAssets.playerProfile.scripts = playerProfileRenderer;
   originalAssets.playerProfile.tileImage = playerProfileTiles;
+  originalAssets.musicSelection.manifest = musicSelectionScreenManifest;
+  originalAssets.musicSelection.scripts = musicSelectionRenderer;
+  originalAssets.musicSelection.tileImage = musicSelectionTiles;
+  originalAssets.meetingSecret.manifest = meetingSecretScreenManifest;
+  originalAssets.meetingSecret.scripts = meetingSecretRenderer;
+  originalAssets.meetingSecret.tileImages = {
+    "10": meetingSecretTiles0a,
+    "15": meetingSecretTiles0f,
+  };
   originalAssets.credits.manifest = creditsScreenManifest;
   originalAssets.credits.tileImages = creditsTiles;
   api.game_init();
