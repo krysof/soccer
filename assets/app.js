@@ -585,7 +585,7 @@ function consumeTapLatchesAfterSoftwareFrame() {
   if (keyTapLatch.select > 0) keyTapLatch.select -= 1;
 }
 async function loadWasm() {
-  const primary = assetUrl("../game_core.fab4554a.wasm");
+  const primary = assetUrl("../game_core.3db129fa.wasm");
   const fallback = rootAssetUrl("game_core.wasm");
   const response = await withFallback("game_core.wasm", primary, fallback, (url) => fetch(url).then((r) => {
     if (!r.ok) throw new Error(`failed to load ${url}: ${r.status}`);
@@ -2230,6 +2230,8 @@ function composeOriginalMeetingSecretScreen(api, backgroundId) {
   const option = api.original_option_number ? api.original_option_number() & 0xff : 0xff;
   const selected = api.original_selected_player_number
     ? api.original_selected_player_number() & 0xff : 0;
+  const firstRosterOption = api.original_meeting_first_roster_option
+    ? api.original_meeting_first_roster_option() & 0xff : 0;
   const effectState = api.original_text_effect_state ? api.original_text_effect_state() & 0xff : 0;
   const effectStatus = api.original_text_effect_status ? api.original_text_effect_status() & 0xff : 0;
   const effectScriptId = api.original_text_effect_script_id
@@ -2240,7 +2242,7 @@ function composeOriginalMeetingSecretScreen(api, backgroundId) {
   const blinkTile = api.original_attribute_buffer ? api.original_attribute_buffer(0) & 0xff : 0xff;
   const meetingPlayerData = Array.from({ length: 12 }, (_, index) =>
     api.original_meeting_player_data ? api.original_meeting_player_data(index) & 0xff : 0);
-  const key = `${backgroundId}:${state}:${option}:${selected}:${effectState}:${effectStatus}:${effectScriptId}:${effectCursor}:${blinkAddress}:${blinkTile}:${meetingPlayerData.join(",")}`;
+  const key = `${backgroundId}:${state}:${option}:${selected}:${firstRosterOption}:${effectState}:${effectStatus}:${effectScriptId}:${effectCursor}:${blinkAddress}:${blinkTile}:${meetingPlayerData.join(",")}`;
   if (meeting.canvas && meeting.key === key) return meeting.canvas;
   if (!meeting.canvas) {
     meeting.canvas = document.createElement("canvas");
@@ -2279,6 +2281,39 @@ function composeOriginalMeetingSecretScreen(api, backgroundId) {
   for (const pair of scripts.stateNametablePatches?.[String(state)] || []) {
     const [offset, value] = pair;
     if (offset >= 0 && offset < nametable.length) nametable[offset] = value & 0xff;
+  }
+  const transformMeetingRow = (values, lowAttribute, middleAttribute, highAttribute) => {
+    const graphics = [], attributes = [];
+    for (const raw of values) {
+      const value = raw & 0xff;
+      if ((value & 0x80) !== 0 || value < 0x10) {
+        graphics.push(value); attributes.push(lowAttribute);
+      } else if (value < 0x50) {
+        if (middleAttribute !== 0) {
+          graphics.push(value | 0x80); attributes.push(middleAttribute);
+        } else {
+          graphics.push(0x50); attributes.push(highAttribute || lowAttribute);
+        }
+      } else {
+        graphics.push((value + 0x50) & 0xff); attributes.push(highAttribute || lowAttribute);
+      }
+    }
+    return { graphics, attributes };
+  };
+  const playerNames = scripts.playerNames || [];
+  if (state >= 2 && playerNames.length >= 12 * 5) {
+    const offset = Math.min(selected, 11) * 5;
+    const name = transformMeetingRow(playerNames.slice(offset, offset + 5), 0x59, 0x5a, 0x5b);
+    writeOriginalWeatherPreviewTiles(nametable, 0x22af, name.attributes);
+    writeOriginalWeatherPreviewTiles(nametable, 0x22cf, name.graphics);
+  }
+  const individualRows = scripts.individualOptionRows || [];
+  if (state === 6 && individualRows.length >= 12 * 8) {
+    const rowIndex = Math.min(option, 11) * 8;
+    const row = transformMeetingRow(individualRows.slice(rowIndex, rowIndex + 8), 0x02, 0xda, 0xdb);
+    row.graphics[0] = (row.graphics[0] - firstRosterOption) & 0xff;
+    writeOriginalWeatherPreviewTiles(nametable, 0x2275, row.attributes);
+    writeOriginalWeatherPreviewTiles(nametable, 0x2295, row.graphics);
   }
   const scriptIndex = effectScriptId - (scripts.textScriptFirstId ?? 0x0d);
   const textScript = scripts.textScripts?.[scriptIndex] || [];
@@ -2320,6 +2355,7 @@ function composeOriginalMeetingSecretScreen(api, backgroundId) {
       state,
       option,
       selected,
+      firstRosterOption,
       effectState,
       effectStatus,
       effectScriptId,
