@@ -54,6 +54,7 @@ const ORIGINAL_BACKGROUND_SCREEN_IDS = [
 ];
 const ORIGINAL_CREDITS_SCREEN_IDS = [0x1c, 0x1d, 0x1e, 0x1f, 0x20, 0x21, 0x22, 0x23, 0x24];
 const keys = new Set();
+const keyTapLatch = { kick: 0, sprint: 0, start: 0 };
 const canvas = document.querySelector("#game");
 const ctx = canvas.getContext("2d");
 const stats = document.querySelector("#stats");
@@ -65,10 +66,10 @@ const btnKick = document.querySelector("#btnKick");
 const btnSprint = document.querySelector("#btnSprint");
 const btnStart = document.querySelector("#btnStart");
 const DEBUG = new URLSearchParams(window.location.search).get("debug") === "1";
-const BUILD_ID = "original-team-preview-menu-20260711";
+const BUILD_ID = "original-live-action-input-20260711";
 document.body.classList.toggle("debug", DEBUG);
 stats.hidden = !DEBUG;
-const TOUCH_TAP_LATCH_TICKS = 4;
+const TOUCH_TAP_LATCH_SOFTWARE_FRAMES = 4;
 const touch = {
   stickPointer: null,
   kickPointer: null,
@@ -172,6 +173,9 @@ function originalFallbackUrl(name) {
 window.addEventListener("keydown", (event) => {
   ensureAudio();
   keys.add(event.code);
+  if (event.code === "KeyJ" || event.code === "KeyZ") keyTapLatch.kick = TOUCH_TAP_LATCH_SOFTWARE_FRAMES;
+  if (event.code === "KeyK" || event.code === "KeyX") keyTapLatch.sprint = TOUCH_TAP_LATCH_SOFTWARE_FRAMES;
+  if (event.code === "Enter" || event.code === "Space") keyTapLatch.start = TOUCH_TAP_LATCH_SOFTWARE_FRAMES;
   if (["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", "Space"].includes(event.code)) event.preventDefault();
 });
 window.addEventListener("keyup", (event) => keys.delete(event.code));
@@ -187,7 +191,7 @@ function setTouchButton(button, prop) {
   const activate = () => {
     ensureAudio();
     touch[prop] = true;
-    touch[latchProp] = TOUCH_TAP_LATCH_TICKS;
+    touch[latchProp] = TOUCH_TAP_LATCH_SOFTWARE_FRAMES;
     button.classList.add("active");
   };
   const deactivate = () => {
@@ -496,14 +500,19 @@ function inputBits() {
   if (keys.has("ArrowDown") || keys.has("KeyS") || touch.axisY > 0) bits |= INPUT.DOWN;
   if (keys.has("ArrowLeft") || keys.has("KeyA") || touch.axisX < 0) bits |= INPUT.LEFT;
   if (keys.has("ArrowRight") || keys.has("KeyD") || touch.axisX > 0) bits |= INPUT.RIGHT;
-  if (keys.has("KeyJ") || keys.has("KeyZ") || touch.kick || touch.kickLatchTicks > 0) bits |= INPUT.KICK;
-  if (keys.has("KeyK") || keys.has("KeyX") || touch.sprint || touch.sprintLatchTicks > 0) bits |= INPUT.SPRINT;
-  if (keys.has("Enter") || keys.has("Space") || touch.start || touch.startLatchTicks > 0) bits |= INPUT.START;
+  if (keys.has("KeyJ") || keys.has("KeyZ") || keyTapLatch.kick > 0 || touch.kick || touch.kickLatchTicks > 0) bits |= INPUT.KICK;
+  if (keys.has("KeyK") || keys.has("KeyX") || keyTapLatch.sprint > 0 || touch.sprint || touch.sprintLatchTicks > 0) bits |= INPUT.SPRINT;
+  if (keys.has("Enter") || keys.has("Space") || keyTapLatch.start > 0 || touch.start || touch.startLatchTicks > 0) bits |= INPUT.START;
+  touch.lastBits = bits;
+  return bits;
+}
+function consumeTapLatchesAfterSoftwareFrame() {
   if (touch.kickLatchTicks > 0) touch.kickLatchTicks -= 1;
   if (touch.sprintLatchTicks > 0) touch.sprintLatchTicks -= 1;
   if (touch.startLatchTicks > 0) touch.startLatchTicks -= 1;
-  touch.lastBits = bits;
-  return bits;
+  if (keyTapLatch.kick > 0) keyTapLatch.kick -= 1;
+  if (keyTapLatch.sprint > 0) keyTapLatch.sprint -= 1;
+  if (keyTapLatch.start > 0) keyTapLatch.start -= 1;
 }
 async function loadWasm() {
   const primary = assetUrl("../game_core.46023950.wasm");
@@ -1887,6 +1896,7 @@ async function main() {
     window.__soccerApi = api;
     window.__soccerRender = () => render(api);
     window.__soccerInputBits = () => inputBits();
+    window.__soccerConsumeTouchTapLatchSoftwareFrame = () => consumeTapLatchesAfterSoftwareFrame();
     window.__soccerSpriteFrame = (index) => {
       const frame = resolveOriginalObjectFrame(api, index);
       if (!frame) return null;
@@ -1904,11 +1914,21 @@ async function main() {
   let last = performance.now();
   let acc = 0;
   const stepMs = 1000 / 60;
+  const usesOriginalVideoScheduler = Boolean(api.game_video_frame);
   const advanceVideoFrame = api.game_video_frame || api.game_tick;
+  const advanceInputVideoFrame = () => {
+    const bits = inputBits();
+    const ranSoftwareFrame = advanceVideoFrame(bits);
+    if (!usesOriginalVideoScheduler || ranSoftwareFrame) {
+      consumeTapLatchesAfterSoftwareFrame();
+    }
+    return { bits, ranSoftwareFrame: usesOriginalVideoScheduler ? ranSoftwareFrame : 1 };
+  };
+  if (DEBUG) window.__soccerAdvanceInputVideoFrame = advanceInputVideoFrame;
   function frame(now) {
     if (keys.has("KeyR")) api.game_init();
     acc += now - last; last = now; acc = Math.min(acc, stepMs * 8);
-    while (acc >= stepMs) { advanceVideoFrame(inputBits()); acc -= stepMs; }
+    while (acc >= stepMs) { advanceInputVideoFrame(); acc -= stepMs; }
     render(api);
     updateSfx(api);
     requestAnimationFrame(frame);
