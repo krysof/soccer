@@ -611,7 +611,7 @@ function consumeTapLatchesAfterSoftwareFrame() {
   if (keyTapLatch.select > 0) keyTapLatch.select -= 1;
 }
 async function loadWasm() {
-  const primary = assetUrl("../game_core.11a7d5f3.wasm");
+  const primary = assetUrl("../game_core.d3007bfb.wasm");
   const fallback = rootAssetUrl("game_core.wasm");
   const response = await withFallback("game_core.wasm", primary, fallback, (url) => fetch(url).then((r) => {
     if (!r.ok) throw new Error(`failed to load ${url}: ${r.status}`);
@@ -2336,13 +2336,32 @@ function composeOriginalOpponentSelectionScreen(api) {
     if (index === 2 || index === 5) packedTiles.push(0xff);
   }
   writeOriginalWeatherPreviewTiles(nametable, scripts.packedAddress ?? 0x236b, packedTiles);
+  let highlightAddress = 0;
+  let highlightBytes = [];
+  if ((option & 0x80) === 0) {
+    const attributePairs = [0xAA, 0xFA, 0xAF, 0xFA, 0xAF, 0xAA, 0xFF, 0xAA];
+    const row = option & 3;
+    highlightAddress = 0x23C8 + row * 8;
+    highlightBytes = [
+      ...Array(8).fill(attributePairs[row * 2]),
+      ...Array(8).fill(attributePairs[row * 2 + 1]),
+    ];
+    writeOriginalWeatherPreviewTiles(nametable, highlightAddress, highlightBytes);
+  }
   opponent.context.clearRect(0, 0, 256, 240);
   opponent.context.imageSmoothingEnabled = false;
   renderOriginalMatchSettingsNametable(opponent.context, nametable, opponent.tileImage, 0);
   opponent.key = key;
   if (DEBUG) {
     window.__soccerOpponentSelectionRenderer = {
-      option, statuses, values, packed, key, nametable: Array.from(nametable),
+      option,
+      statuses,
+      values,
+      packed,
+      highlightAddress,
+      highlightBytes: [...highlightBytes],
+      key,
+      nametable: Array.from(nametable),
     };
   }
   return opponent.canvas;
