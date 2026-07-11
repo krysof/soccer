@@ -68,7 +68,7 @@ const btnSprint = document.querySelector("#btnSprint");
 const btnStart = document.querySelector("#btnStart");
 const btnSelect = document.querySelector("#btnSelect");
 const DEBUG = new URLSearchParams(window.location.search).get("debug") === "1";
-const BUILD_ID = "original-meeting-secret-screen-a778-20260711";
+const BUILD_ID = "original-team-flags-source-tables-20260712";
 document.body.classList.toggle("debug", DEBUG);
 stats.hidden = !DEBUG;
 function enforceControllerOutsideGame() {
@@ -131,6 +131,13 @@ const originalAssets = {
   },
   teamPreview: {
     manifest: null,
+    canvas: null,
+    context: null,
+    key: "",
+  },
+  playerOrder: {
+    manifest: null,
+    tileImage: null,
     canvas: null,
     context: null,
     key: "",
@@ -264,11 +271,16 @@ function assetUrl(path) {
 function rootAssetUrl(path) {
   return new URL(path, document.baseURI).toString();
 }
+function cacheBustedOriginalAssetUrl(url) {
+  const resolved = new URL(url);
+  resolved.searchParams.set("v", BUILD_ID);
+  return resolved.toString();
+}
 function originalAssetUrl(name) {
-  return assetUrl(`../original/${name}`);
+  return cacheBustedOriginalAssetUrl(assetUrl(`../original/${name}`));
 }
 function originalFallbackUrl(name) {
-  return rootAssetUrl(`original/${name}`);
+  return cacheBustedOriginalAssetUrl(rootAssetUrl(`original/${name}`));
 }
 window.addEventListener("keydown", (event) => {
   ensureAudio();
@@ -611,7 +623,7 @@ function consumeTapLatchesAfterSoftwareFrame() {
   if (keyTapLatch.select > 0) keyTapLatch.select -= 1;
 }
 async function loadWasm() {
-  const primary = assetUrl("../game_core.d3007bfb.wasm");
+  const primary = assetUrl("../game_core.14297b57.wasm");
   const fallback = rootAssetUrl("game_core.wasm");
   const response = await withFallback("game_core.wasm", primary, fallback, (url) => fetch(url).then((r) => {
     if (!r.ok) throw new Error(`failed to load ${url}: ${r.status}`);
@@ -2366,6 +2378,55 @@ function composeOriginalOpponentSelectionScreen(api) {
   }
   return opponent.canvas;
 }
+function composeOriginalPlayerOrderScreen(api) {
+  const order = originalAssets.playerOrder;
+  const manifest = order.manifest;
+  const backgroundId = api.original_background_image_id
+    ? api.original_background_image_id() & 0xFF : 0;
+  if (backgroundId !== 0x13 || !manifest || !order.tileImage
+      || !Array.isArray(manifest.nametable)) {
+    return null;
+  }
+  const attributeCount = api.original_attribute_buffer_count
+    ? Math.min(0x20, api.original_attribute_buffer_count() & 0xFF) : 0;
+  const graphicsCount = api.original_graphics_buffer_count
+    ? Math.min(0x20, api.original_graphics_buffer_count() & 0xFF) : 0;
+  const attributeAddress = api.original_attribute_buffer_address
+    ? api.original_attribute_buffer_address() & 0x3FFF : 0;
+  const graphicsAddress = api.original_graphics_buffer_address
+    ? api.original_graphics_buffer_address() & 0x3FFF : 0;
+  const attributeBytes = Array.from({ length: attributeCount }, (_, index) =>
+    api.original_attribute_buffer(index) & 0xFF);
+  const graphicsBytes = Array.from({ length: graphicsCount }, (_, index) =>
+    api.original_graphics_buffer(index) & 0xFF);
+  const key = `${attributeAddress}:${attributeBytes.join(",")}:${graphicsAddress}:${graphicsBytes.join(",")}`;
+  if (order.canvas && order.key === key) return order.canvas;
+  if (!order.canvas) {
+    order.canvas = document.createElement("canvas");
+    order.canvas.width = 256;
+    order.canvas.height = 240;
+    order.context = order.canvas.getContext("2d");
+  }
+  const nametable = Uint8Array.from(manifest.nametable);
+  writeOriginalWeatherPreviewTiles(nametable, attributeAddress, attributeBytes);
+  writeOriginalWeatherPreviewTiles(nametable, graphicsAddress, graphicsBytes);
+  order.context.clearRect(0, 0, 256, 240);
+  order.context.imageSmoothingEnabled = false;
+  renderOriginalMatchSettingsNametable(order.context, nametable, order.tileImage, 0);
+  order.key = key;
+  if (DEBUG) {
+    window.__soccerPlayerOrderRenderer = {
+      backgroundId,
+      attributeAddress,
+      attributeBytes: [...attributeBytes],
+      graphicsAddress,
+      graphicsBytes: [...graphicsBytes],
+      key,
+      nametable: Array.from(nametable),
+    };
+  }
+  return order.canvas;
+}
 function writeOriginalNametableRectangle(nametable, destination, width, height, tiles) {
   const offset = (destination & 0x3FFF) - 0x2000;
   if (offset < 0 || !Array.isArray(tiles)) return;
@@ -2878,6 +2939,8 @@ function drawOriginalMenuScreen(api) {
       ? (composeOriginalOpponentSelectionScreen(api) || originalAssets.menu[id])
     : subtype === 0x03
       ? (composeOriginalTeamPreviewScreen(api) || originalAssets.menu[id])
+    : subtype === 0x04
+      ? (composeOriginalPlayerOrderScreen(api) || originalAssets.menu[id])
     : subtype === 0x06
       ? (composeOriginalMatchSettingsScreen(api) || originalAssets.menu[id])
       : subtype === 0x07
@@ -3462,7 +3525,7 @@ async function main() {
     const image = await withFallback(name, originalAssetUrl(name), originalFallbackUrl(name), loadImage);
     return [id, image];
   })).then((entries) => Object.fromEntries(entries));
-  const [api, chr, chrAlt, field, spriteManifest, spriteIndexImage, palettes, statusbarRenderer, splashLogo, splashTitle, splashTitleBlink, splashStory, resultScreenManifest, resultRenderer, modeSelectionScreenManifest, modeSelectionTiles, opponentSelectionScreenManifest, opponentSelectionTiles, teamPreviewScreenManifest, bracketScreenManifest, bracketRenderer, bracketTiles, matchSettingsScreenManifest, matchSettingsRenderer, matchSettingsTiles, formationControlScreenManifest, formationControlRenderer, formationControlTiles, weatherPreviewScreenManifest, weatherPreviewRenderer, weatherPreviewTiles, tournamentRecordScreenManifest, tournamentRecordRenderer, tournamentRecordTiles, playerProfileScreenManifest, playerProfileRenderer, playerProfileTiles, musicSelectionScreenManifest, musicSelectionRenderer, musicSelectionTiles, meetingSecretScreenManifest, meetingSecretRenderer, meetingSecretTiles0a, meetingSecretTiles0f, creditsScreenManifest, creditsTiles, menuScreens] = await Promise.all([
+  const [api, chr, chrAlt, field, spriteManifest, spriteIndexImage, palettes, statusbarRenderer, splashLogo, splashTitle, splashTitleBlink, splashStory, resultScreenManifest, resultRenderer, modeSelectionScreenManifest, modeSelectionTiles, opponentSelectionScreenManifest, opponentSelectionTiles, teamPreviewScreenManifest, playerOrderScreenManifest, playerOrderTiles, bracketScreenManifest, bracketRenderer, bracketTiles, matchSettingsScreenManifest, matchSettingsRenderer, matchSettingsTiles, formationControlScreenManifest, formationControlRenderer, formationControlTiles, weatherPreviewScreenManifest, weatherPreviewRenderer, weatherPreviewTiles, tournamentRecordScreenManifest, tournamentRecordRenderer, tournamentRecordTiles, playerProfileScreenManifest, playerProfileRenderer, playerProfileTiles, musicSelectionScreenManifest, musicSelectionRenderer, musicSelectionTiles, meetingSecretScreenManifest, meetingSecretRenderer, meetingSecretTiles0a, meetingSecretTiles0f, creditsScreenManifest, creditsTiles, menuScreens] = await Promise.all([
     loadWasm(),
     withFallback("chr_sprite_pal_01.png", originalAssetUrl("chr_sprite_pal_01.png"), originalFallbackUrl("chr_sprite_pal_01.png"), loadImage),
     withFallback("chr_sprite_pal_08.png", originalAssetUrl("chr_sprite_pal_08.png"), originalFallbackUrl("chr_sprite_pal_08.png"), loadImage),
@@ -3482,6 +3545,8 @@ async function main() {
     withFallback("opponent_selection_screen_manifest.json", originalAssetUrl("opponent_selection_screen_manifest.json"), originalFallbackUrl("opponent_selection_screen_manifest.json"), loadJson),
     withFallback("opponent_selection_tiles.png", originalAssetUrl("opponent_selection_tiles.png"), originalFallbackUrl("opponent_selection_tiles.png"), loadImage),
     withFallback("team_preview_screen_manifest.json", originalAssetUrl("team_preview_screen_manifest.json"), originalFallbackUrl("team_preview_screen_manifest.json"), loadJson),
+    withFallback("player_order_screen_manifest.json", originalAssetUrl("player_order_screen_manifest.json"), originalFallbackUrl("player_order_screen_manifest.json"), loadJson),
+    withFallback("player_order_tiles.png", originalAssetUrl("player_order_tiles.png"), originalFallbackUrl("player_order_tiles.png"), loadImage),
     withFallback("bracket_screen_manifest.json", originalAssetUrl("bracket_screen_manifest.json"), originalFallbackUrl("bracket_screen_manifest.json"), loadJson),
     withFallback("bracket_renderer.json", originalAssetUrl("bracket_renderer.json"), originalFallbackUrl("bracket_renderer.json"), loadJson),
     withFallback("bracket_tiles.png", originalAssetUrl("bracket_tiles.png"), originalFallbackUrl("bracket_tiles.png"), loadImage),
@@ -3528,6 +3593,8 @@ async function main() {
   originalAssets.opponentSelection.manifest = opponentSelectionScreenManifest;
   originalAssets.opponentSelection.tileImage = opponentSelectionTiles;
   originalAssets.teamPreview.manifest = teamPreviewScreenManifest;
+  originalAssets.playerOrder.manifest = playerOrderScreenManifest;
+  originalAssets.playerOrder.tileImage = playerOrderTiles;
   originalAssets.bracket.manifest = bracketScreenManifest;
   originalAssets.bracket.scripts = bracketRenderer;
   originalAssets.bracket.tileImage = bracketTiles;

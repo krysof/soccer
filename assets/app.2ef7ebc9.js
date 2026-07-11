@@ -68,7 +68,7 @@ const btnSprint = document.querySelector("#btnSprint");
 const btnStart = document.querySelector("#btnStart");
 const btnSelect = document.querySelector("#btnSelect");
 const DEBUG = new URLSearchParams(window.location.search).get("debug") === "1";
-const BUILD_ID = "original-meeting-secret-screen-a778-20260711";
+const BUILD_ID = "original-team-flags-source-tables-20260712";
 document.body.classList.toggle("debug", DEBUG);
 stats.hidden = !DEBUG;
 function enforceControllerOutsideGame() {
@@ -271,11 +271,16 @@ function assetUrl(path) {
 function rootAssetUrl(path) {
   return new URL(path, document.baseURI).toString();
 }
+function cacheBustedOriginalAssetUrl(url) {
+  const resolved = new URL(url);
+  resolved.searchParams.set("v", BUILD_ID);
+  return resolved.toString();
+}
 function originalAssetUrl(name) {
-  return assetUrl(`../original/${name}`);
+  return cacheBustedOriginalAssetUrl(assetUrl(`../original/${name}`));
 }
 function originalFallbackUrl(name) {
-  return rootAssetUrl(`original/${name}`);
+  return cacheBustedOriginalAssetUrl(rootAssetUrl(`original/${name}`));
 }
 window.addEventListener("keydown", (event) => {
   ensureAudio();
