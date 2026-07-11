@@ -100,6 +100,15 @@ const originalAssets = {
   columns: 128,
   splash: {},
   menu: {},
+  modeSelection: {
+    manifest: null,
+    tileImage: null,
+    canvas: null,
+    context: null,
+    nametable: null,
+    key: "",
+    previousState: 0xff,
+  },
   credits: {
     manifest: null,
     tileImages: {},
@@ -585,7 +594,7 @@ function consumeTapLatchesAfterSoftwareFrame() {
   if (keyTapLatch.select > 0) keyTapLatch.select -= 1;
 }
 async function loadWasm() {
-  const primary = assetUrl("../game_core.b22f59ec.wasm");
+  const primary = assetUrl("../game_core.e0e51220.wasm");
   const fallback = rootAssetUrl("game_core.wasm");
   const response = await withFallback("game_core.wasm", primary, fallback, (url) => fetch(url).then((r) => {
     if (!r.ok) throw new Error(`failed to load ${url}: ${r.status}`);
@@ -1716,6 +1725,54 @@ function renderOriginalMatchSettingsNametable(context, nametable, tileImage, des
     }
   }
 }
+function composeOriginalModeSelectionScreen(api) {
+  const mode = originalAssets.modeSelection;
+  if (!mode.manifest || !mode.tileImage || !Array.isArray(mode.manifest.nametable)) {
+    return null;
+  }
+  const state = api.original_option_counter ? api.original_option_counter() & 0xff : 0;
+  const option = api.original_option_number ? api.original_option_number() & 0xff : 0xff;
+  const count = api.original_attribute_buffer_count
+    ? Math.min(0x20, api.original_attribute_buffer_count() & 0xff) : 0;
+  const address = api.original_attribute_buffer_address
+    ? api.original_attribute_buffer_address() & 0x3fff : 0;
+  const patch = Array.from({ length: count }, (_, index) =>
+    api.original_attribute_buffer ? api.original_attribute_buffer(index) & 0xff : 0);
+  const packed = Array.from({ length: 10 }, (_, index) =>
+    api.original_ram_046e ? api.original_ram_046e(index) & 0xff : 0);
+  if (!mode.canvas) {
+    mode.canvas = document.createElement("canvas");
+    mode.canvas.width = 256;
+    mode.canvas.height = 240;
+    mode.context = mode.canvas.getContext("2d");
+  }
+  if (!mode.nametable || state === 0 || mode.previousState === 0xff) {
+    mode.nametable = Uint8Array.from(mode.manifest.nametable);
+    mode.key = "";
+  }
+  if (state !== 0 && address >= 0x2000 && address < 0x2400) {
+    let offset = address - 0x2000;
+    for (const tile of patch) {
+      if (offset >= 0 && offset < mode.nametable.length) mode.nametable[offset] = tile;
+      offset++;
+    }
+  }
+  const key = `${state}:${option}:${address}:${patch.join(",")}:${packed.join(",")}`;
+  if (key !== mode.key) {
+    mode.context.clearRect(0, 0, 256, 240);
+    mode.context.imageSmoothingEnabled = false;
+    renderOriginalMatchSettingsNametable(mode.context, mode.nametable, mode.tileImage, 0);
+    mode.key = key;
+  }
+  mode.previousState = state;
+  if (DEBUG) {
+    window.__soccerModeSelectionRenderer = {
+      state, option, address, patch, packed,
+      nametable: Array.from(mode.nametable),
+    };
+  }
+  return mode.canvas;
+}
 function composeOriginalMatchSettingsScreen(api) {
   const settings = originalAssets.matchSettings;
   const manifest = settings.manifest;
@@ -2400,6 +2457,8 @@ function drawOriginalMenuScreen(api) {
   const subtype = api.original_screen_subtype ? api.original_screen_subtype() & 0x7f : 0;
   const img = subtype === 0x0f
     ? (composeOriginalBracketScreen(api) || originalAssets.menu[id])
+    : subtype === 0x01
+      ? (composeOriginalModeSelectionScreen(api) || originalAssets.menu[id])
     : subtype === 0x06
       ? (composeOriginalMatchSettingsScreen(api) || originalAssets.menu[id])
       : subtype === 0x07
@@ -2932,7 +2991,7 @@ async function main() {
     const image = await withFallback(name, originalAssetUrl(name), originalFallbackUrl(name), loadImage);
     return [id, image];
   })).then((entries) => Object.fromEntries(entries));
-  const [api, chr, chrAlt, field, spriteManifest, spriteIndexImage, palettes, statusbarRenderer, splashLogo, splashTitle, splashTitleBlink, splashStory, resultScreenManifest, resultRenderer, bracketScreenManifest, bracketRenderer, bracketTiles, matchSettingsScreenManifest, matchSettingsRenderer, matchSettingsTiles, formationControlScreenManifest, formationControlRenderer, formationControlTiles, weatherPreviewScreenManifest, weatherPreviewRenderer, weatherPreviewTiles, tournamentRecordScreenManifest, tournamentRecordRenderer, tournamentRecordTiles, playerProfileScreenManifest, playerProfileRenderer, playerProfileTiles, musicSelectionScreenManifest, musicSelectionRenderer, musicSelectionTiles, meetingSecretScreenManifest, meetingSecretRenderer, meetingSecretTiles0a, meetingSecretTiles0f, creditsScreenManifest, creditsTiles, menuScreens] = await Promise.all([
+  const [api, chr, chrAlt, field, spriteManifest, spriteIndexImage, palettes, statusbarRenderer, splashLogo, splashTitle, splashTitleBlink, splashStory, resultScreenManifest, resultRenderer, modeSelectionScreenManifest, modeSelectionTiles, bracketScreenManifest, bracketRenderer, bracketTiles, matchSettingsScreenManifest, matchSettingsRenderer, matchSettingsTiles, formationControlScreenManifest, formationControlRenderer, formationControlTiles, weatherPreviewScreenManifest, weatherPreviewRenderer, weatherPreviewTiles, tournamentRecordScreenManifest, tournamentRecordRenderer, tournamentRecordTiles, playerProfileScreenManifest, playerProfileRenderer, playerProfileTiles, musicSelectionScreenManifest, musicSelectionRenderer, musicSelectionTiles, meetingSecretScreenManifest, meetingSecretRenderer, meetingSecretTiles0a, meetingSecretTiles0f, creditsScreenManifest, creditsTiles, menuScreens] = await Promise.all([
     loadWasm(),
     withFallback("chr_sprite_pal_01.png", originalAssetUrl("chr_sprite_pal_01.png"), originalFallbackUrl("chr_sprite_pal_01.png"), loadImage),
     withFallback("chr_sprite_pal_08.png", originalAssetUrl("chr_sprite_pal_08.png"), originalFallbackUrl("chr_sprite_pal_08.png"), loadImage),
@@ -2947,6 +3006,8 @@ async function main() {
     withFallback("splash_0e_story.png", originalAssetUrl("splash_0e_story.png"), originalFallbackUrl("splash_0e_story.png"), loadImage),
     withFallback("result_screen_manifest.json", originalAssetUrl("result_screen_manifest.json"), originalFallbackUrl("result_screen_manifest.json"), loadJson),
     withFallback("result_renderer.json", originalAssetUrl("result_renderer.json"), originalFallbackUrl("result_renderer.json"), loadJson),
+    withFallback("mode_selection_screen_manifest.json", originalAssetUrl("mode_selection_screen_manifest.json"), originalFallbackUrl("mode_selection_screen_manifest.json"), loadJson),
+    withFallback("mode_selection_tiles.png", originalAssetUrl("mode_selection_tiles.png"), originalFallbackUrl("mode_selection_tiles.png"), loadImage),
     withFallback("bracket_screen_manifest.json", originalAssetUrl("bracket_screen_manifest.json"), originalFallbackUrl("bracket_screen_manifest.json"), loadJson),
     withFallback("bracket_renderer.json", originalAssetUrl("bracket_renderer.json"), originalFallbackUrl("bracket_renderer.json"), loadJson),
     withFallback("bracket_tiles.png", originalAssetUrl("bracket_tiles.png"), originalFallbackUrl("bracket_tiles.png"), loadImage),
@@ -2988,6 +3049,8 @@ async function main() {
   originalAssets.menu = menuScreens;
   originalAssets.result.manifest = resultScreenManifest;
   originalAssets.result.scripts = resultRenderer;
+  originalAssets.modeSelection.manifest = modeSelectionScreenManifest;
+  originalAssets.modeSelection.tileImage = modeSelectionTiles;
   originalAssets.bracket.manifest = bracketScreenManifest;
   originalAssets.bracket.scripts = bracketRenderer;
   originalAssets.bracket.tileImage = bracketTiles;
