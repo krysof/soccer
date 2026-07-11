@@ -1218,6 +1218,40 @@ function drawOriginalBall(api, x, y, z = 0, displayScale = 2) {
   const visualY = y - z * displayScale;
   return drawOriginalObject(api, 0x0C, x, visualY, displayScale);
 }
+function drawOriginalObjectShadow(api, objectIndex, kind, x, y, displayScale = 2) {
+  const tileNumber = kind === "state" ? 0xA1 : 0xB7;
+  const paletteSlot = kind === "state" ? 1 : 0;
+  const paletteNumber = api.original_sprite_palette_number(paletteSlot) & 0xFF;
+  const bankSlot = tileNumber >> 6;
+  const bankNumber = originalSpriteBankForObject(api, objectIndex, bankSlot);
+  const tileCanvas = originalSpriteTile(bankNumber, tileNumber & 0x3F, paletteNumber);
+  if (!tileCanvas) return null;
+  if (kind === "state") {
+    drawOriginalSpriteTile(
+      tileCanvas,
+      x - 4 * displayScale,
+      y - 8 * displayScale,
+      0x01,
+      displayScale,
+    );
+  } else {
+    drawOriginalSpriteTile(
+      tileCanvas,
+      x - 8 * displayScale,
+      y - 7 * displayScale,
+      0x00,
+      displayScale,
+    );
+    drawOriginalSpriteTile(
+      tileCanvas,
+      x,
+      y - 7 * displayScale,
+      0x40,
+      displayScale,
+    );
+  }
+  return { object: objectIndex, kind, tileNumber, paletteSlot, bankSlot, bankNumber };
+}
 function drawWeather(api, view, screenW, screenH) {
   if (view?.original) return;
   const weather = api.field_weather ? api.field_weather() : 0;
@@ -2913,8 +2947,19 @@ function render(api) {
     const seen = new Set();
     for (let slot = priorityCount - 1; slot >= 0; slot--) {
       const entry = api.original_animation_priority(slot);
-      if ((entry & 0x60) !== 0) continue;
       const object = entry & 0x1F;
+      const variant = entry & 0xE0;
+      if (variant === 0x20 || variant === 0x40) {
+        if (object === 0x0C) {
+          if (!api.original_ball_visibility_flag || api.original_ball_visibility_flag()) {
+            entities.push({ type: "shadow", kind: variant === 0x20 ? "state" : "air", index: object });
+          }
+        } else if (object < count && (!api.player_active || api.player_active(object))) {
+          entities.push({ type: "shadow", kind: variant === 0x20 ? "state" : "air", index: object });
+        }
+        continue;
+      }
+      if ((entry & 0x60) !== 0) continue;
       if (seen.has(object)) continue;
       if (object === 0x0C) {
         if (!api.original_ball_visibility_flag || api.original_ball_visibility_flag()) {
@@ -2938,7 +2983,24 @@ function render(api) {
     }
     entities.sort((a, b) => a.groundY - b.groundY);
   }
+  const renderedShadows = [];
   for (const entity of entities) {
+    if (entity.type === "shadow") {
+      const position = entity.index === 0x0C
+        ? { x: bx, y: by }
+        : (playerPositions[entity.index] || originalPlayerPosition(api, entity.index));
+      const screenPosition = worldToScreen(objectView, position.x, position.y);
+      const rendered = drawOriginalObjectShadow(
+        api,
+        entity.index,
+        entity.kind,
+        screenPosition.x,
+        screenPosition.y,
+        objectView.logicalScale || 2,
+      );
+      if (rendered) renderedShadows.push(rendered);
+      continue;
+    }
     if (entity.type === "ball") {
       const b = worldToScreen(objectView, bx, by);
       drawOriginalBall(api, b.x, b.y, bz, objectView.logicalScale || 2);
@@ -2951,6 +3013,7 @@ function render(api) {
     const visualY = p.y - playerHeight * (objectView.logicalScale || 1);
     drawOriginalObject(api, i, p.x, visualY, objectView.logicalScale || 2);
   }
+  if (DEBUG) window.__soccerShadows = renderedShadows;
   if (!isOriginalResultScreen && controlled < count && playerPositions[controlled]) {
     const controlledScreenPosition = worldToScreen(objectView, playerPositions[controlled].x, playerPositions[controlled].y);
     drawOriginalControlNumberMarker(
