@@ -66,7 +66,7 @@ const btnKick = document.querySelector("#btnKick");
 const btnSprint = document.querySelector("#btnSprint");
 const btnStart = document.querySelector("#btnStart");
 const DEBUG = new URLSearchParams(window.location.search).get("debug") === "1";
-const BUILD_ID = "original-formation-control-screen-97f5-20260711";
+const BUILD_ID = "original-tournament-record-screen-8893-20260711";
 document.body.classList.toggle("debug", DEBUG);
 stats.hidden = !DEBUG;
 const TOUCH_TAP_LATCH_SOFTWARE_FRAMES = 4;
@@ -117,6 +117,22 @@ const originalAssets = {
     key: "",
   },
   formationControl: {
+    manifest: null,
+    scripts: null,
+    tileImage: null,
+    canvas: null,
+    context: null,
+    key: "",
+  },
+  weatherPreview: {
+    manifest: null,
+    scripts: null,
+    tileImage: null,
+    canvas: null,
+    context: null,
+    key: "",
+  },
+  tournamentRecord: {
     manifest: null,
     scripts: null,
     tileImage: null,
@@ -535,7 +551,7 @@ function consumeTapLatchesAfterSoftwareFrame() {
   if (keyTapLatch.start > 0) keyTapLatch.start -= 1;
 }
 async function loadWasm() {
-  const primary = assetUrl("../game_core.cb0a05d7.wasm");
+  const primary = assetUrl("../game_core.71469165.wasm");
   const fallback = rootAssetUrl("game_core.wasm");
   const response = await withFallback("game_core.wasm", primary, fallback, (url) => fetch(url).then((r) => {
     if (!r.ok) throw new Error(`failed to load ${url}: ${r.status}`);
@@ -1515,6 +1531,7 @@ function drawOriginalMenuObjects(api, layout, subtype) {
     0x05: [0, 1, 2, 3],
     0x06: [0],
     0x07: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12],
+    0x08: [0],
   };
   const objectIds = objectIdsBySubtype[subtype];
   if (!objectIds) return;
@@ -1811,6 +1828,185 @@ function composeOriginalFormationControlScreen(api) {
   formation.key = key;
   return formation.canvas;
 }
+function writeOriginalWeatherPreviewTiles(nametable, address, tiles) {
+  let offset = (address - 0x2000) & 0x03ff;
+  for (const tile of tiles || []) {
+    if (offset >= 0 && offset < nametable.length) nametable[offset] = tile & 0xff;
+    offset++;
+  }
+}
+function writeOriginalWeatherPreviewRows(nametable, patch) {
+  if (!patch || !Array.isArray(patch.rows)) return;
+  for (let row = 0; row < patch.rows.length; row++) {
+    writeOriginalWeatherPreviewTiles(nametable, patch.address + row * 0x20, patch.rows[row]);
+  }
+}
+function composeOriginalWeatherPreviewScreen(api) {
+  const weather = originalAssets.weatherPreview;
+  const manifest = weather.manifest;
+  const scripts = weather.scripts;
+  if (!manifest || !scripts || !weather.tileImage || !Array.isArray(manifest.nametable)) {
+    return null;
+  }
+  const difficulty = api.original_difficulty_mode ? api.original_difficulty_mode() & 0xff : 0;
+  const continent = api.original_continent_option ? api.original_continent_option() & 0xff : 0;
+  const rightTeam = api.original_team_number ? api.original_team_number(1) & 0xff : 0;
+  const tournamentRound = api.original_ram_054a ? api.original_ram_054a() & 0xff : 0xff;
+  const condition = api.original_ram_0603 ? api.original_ram_0603() & 0xff : 0;
+  const rainWind = api.original_rain_wind_option ? api.original_rain_wind_option() & 0xff : 0;
+  const storm = api.original_lightning_tornado_direction
+    ? api.original_lightning_tornado_direction() & 0xff : 0;
+  const key = `${difficulty}:${continent}:${rightTeam}:${tournamentRound}:${condition}:${rainWind}:${storm}`;
+  if (weather.canvas && weather.key === key) return weather.canvas;
+  if (!weather.canvas) {
+    weather.canvas = document.createElement("canvas");
+    weather.canvas.width = 256;
+    weather.canvas.height = 240;
+    weather.context = weather.canvas.getContext("2d");
+  }
+  const nametable = Uint8Array.from(manifest.nametable);
+  let continentPatchIndex;
+  if ((difficulty & 0x80) === 0) {
+    continentPatchIndex = continent;
+  } else if ((tournamentRound & 0x80) === 0) {
+    continentPatchIndex = 4;
+  } else {
+    continentPatchIndex = (rightTeam & 0x0f) + 4;
+  }
+  writeOriginalWeatherPreviewRows(
+    nametable,
+    scripts.continentPatches?.[Math.min(continentPatchIndex, (scripts.continentPatches?.length || 1) - 1)],
+  );
+  const conditionIndex = Math.min(7, (condition & 0xe0) >> 5);
+  writeOriginalWeatherPreviewRows(nametable, scripts.conditionPatches?.[conditionIndex]);
+  writeOriginalWeatherPreviewTiles(
+    nametable,
+    0x2219,
+    scripts.weatherIconTiles?.slice(conditionIndex * 2, conditionIndex * 2 + 2),
+  );
+  const direction = storm & 3;
+  writeOriginalWeatherPreviewTiles(
+    nametable,
+    0x225a,
+    scripts.directionTiles?.slice(direction * 2, direction * 2 + 2),
+  );
+  const windOffset = Math.min(32, (rainWind & 0x70) >> 1);
+  writeOriginalWeatherPreviewTiles(
+    nametable,
+    0x2278,
+    scripts.windTextTiles?.slice(windOffset, windOffset + 4),
+  );
+  writeOriginalWeatherPreviewTiles(
+    nametable,
+    0x2298,
+    scripts.windTextTiles?.slice(windOffset + 4, windOffset + 8),
+  );
+  let stormAddress = 0x22d8;
+  if (storm & 0x0c) {
+    writeOriginalWeatherPreviewTiles(nametable, stormAddress, scripts.stormTextTiles?.slice(0, 4));
+    stormAddress += 0x40;
+  }
+  if (storm & 0x30) {
+    writeOriginalWeatherPreviewTiles(nametable, stormAddress, scripts.stormTextTiles?.slice(4, 8));
+  }
+  weather.context.clearRect(0, 0, 256, 240);
+  weather.context.imageSmoothingEnabled = false;
+  renderOriginalMatchSettingsNametable(weather.context, nametable, weather.tileImage, 0);
+  weather.key = key;
+  if (DEBUG) {
+    window.__soccerWeatherPreviewRenderer = {
+      subtype: 0x08,
+      backgroundId: manifest.backgroundId,
+      continentPatchIndex,
+      conditionIndex,
+      windOffset,
+      storm,
+      key,
+      nametable: Array.from(nametable),
+    };
+  }
+  return weather.canvas;
+}
+function originalTournamentRecordDigits(value, blankTile) {
+  const digits = [Math.floor(value / 100), Math.floor(value / 10) % 10, value % 10];
+  let started = false;
+  return digits.map((digit) => {
+    if (digit !== 0 || started) {
+      started = true;
+      return 0x80 | digit;
+    }
+    return blankTile;
+  });
+}
+function composeOriginalTournamentRecordScreen(api) {
+  const record = originalAssets.tournamentRecord;
+  const manifest = record.manifest;
+  const scripts = record.scripts;
+  if (!manifest || !scripts || !record.tileImage || !Array.isArray(manifest.nametable)) {
+    return null;
+  }
+  const statuses = Array.from({ length: 12 }, (_, index) =>
+    api.original_team_status_053e ? api.original_team_status_053e(index) & 0xff : 0);
+  const values = [
+    api.original_ram_0558 ? api.original_ram_0558() & 0xff : 0,
+    api.original_ram_0557 ? api.original_ram_0557() & 0xff : 0,
+    api.original_ram_0555 ? api.original_ram_0555() & 0xff : 0,
+  ];
+  const packed = Array.from({ length: 10 }, (_, index) =>
+    api.original_ram_046e ? api.original_ram_046e(index) & 0xff : 0);
+  const key = `${statuses.join(",")}:${values.join(",")}:${packed.join(",")}`;
+  if (record.canvas && record.key === key) return record.canvas;
+  if (!record.canvas) {
+    record.canvas = document.createElement("canvas");
+    record.canvas.width = 256;
+    record.canvas.height = 240;
+    record.context = record.canvas.getContext("2d");
+  }
+  const nametable = Uint8Array.from(manifest.nametable);
+  const statusAddresses = scripts.statusAddresses || [];
+  const statusIndices = scripts.statusIndices || [];
+  for (let slot = 0; slot < 12; slot++) {
+    let status = statuses[statusIndices[slot] ?? slot] ?? 0;
+    const count = status & 0x03;
+    for (let mark = 0; mark < count; mark++) {
+      writeOriginalWeatherPreviewTiles(
+        nametable,
+        (statusAddresses[slot] ?? 0x2000) + mark,
+        [status & 0x80 ? scripts.winTile : scripts.lossTile],
+      );
+      status = (status << 1) & 0xff;
+    }
+  }
+  for (let index = 0; index < 3; index++) {
+    writeOriginalWeatherPreviewTiles(
+      nametable,
+      scripts.numberAddresses?.[index] ?? 0x2000,
+      originalTournamentRecordDigits(values[index], scripts.blankTile ?? 0x02),
+    );
+  }
+  const packedTiles = [];
+  for (let index = 0; index < packed.length; index++) {
+    packedTiles.push(packed[index] | 0x80);
+    if (index === 2 || index === 5) packedTiles.push(0xff);
+  }
+  writeOriginalWeatherPreviewTiles(nametable, scripts.packedAddress ?? 0x236b, packedTiles);
+  record.context.clearRect(0, 0, 256, 240);
+  record.context.imageSmoothingEnabled = false;
+  renderOriginalMatchSettingsNametable(record.context, nametable, record.tileImage, 0);
+  record.key = key;
+  if (DEBUG) {
+    window.__soccerTournamentRecordRenderer = {
+      subtype: 0x09,
+      backgroundId: manifest.backgroundId,
+      statuses,
+      values,
+      packed,
+      key,
+      nametable: Array.from(nametable),
+    };
+  }
+  return record.canvas;
+}
 function drawOriginalMenuScreen(api) {
   ctx.fillStyle = "#000";
   ctx.fillRect(0, 0, canvas.width, canvas.height);
@@ -1822,6 +2018,10 @@ function drawOriginalMenuScreen(api) {
       ? (composeOriginalMatchSettingsScreen(api) || originalAssets.menu[id])
       : subtype === 0x07
         ? (composeOriginalFormationControlScreen(api) || originalAssets.menu[0x05])
+      : subtype === 0x08
+        ? (composeOriginalWeatherPreviewScreen(api) || originalAssets.menu[id])
+      : subtype === 0x09
+        ? (composeOriginalTournamentRecordScreen(api) || originalAssets.menu[id])
       : originalAssets.menu[id];
   const layout = originalFullScreenLayout();
   const brightness = api.original_current_brightness ? api.original_current_brightness() : 0x40;
@@ -2340,7 +2540,7 @@ async function main() {
     const image = await withFallback(name, originalAssetUrl(name), originalFallbackUrl(name), loadImage);
     return [id, image];
   })).then((entries) => Object.fromEntries(entries));
-  const [api, chr, chrAlt, field, spriteManifest, spriteIndexImage, palettes, statusbarRenderer, splashLogo, splashTitle, splashTitleBlink, splashStory, resultScreenManifest, resultRenderer, bracketScreenManifest, bracketRenderer, bracketTiles, matchSettingsScreenManifest, matchSettingsRenderer, matchSettingsTiles, formationControlScreenManifest, formationControlRenderer, formationControlTiles, creditsScreenManifest, creditsTiles, menuScreens] = await Promise.all([
+  const [api, chr, chrAlt, field, spriteManifest, spriteIndexImage, palettes, statusbarRenderer, splashLogo, splashTitle, splashTitleBlink, splashStory, resultScreenManifest, resultRenderer, bracketScreenManifest, bracketRenderer, bracketTiles, matchSettingsScreenManifest, matchSettingsRenderer, matchSettingsTiles, formationControlScreenManifest, formationControlRenderer, formationControlTiles, weatherPreviewScreenManifest, weatherPreviewRenderer, weatherPreviewTiles, tournamentRecordScreenManifest, tournamentRecordRenderer, tournamentRecordTiles, creditsScreenManifest, creditsTiles, menuScreens] = await Promise.all([
     loadWasm(),
     withFallback("chr_sprite_pal_01.png", originalAssetUrl("chr_sprite_pal_01.png"), originalFallbackUrl("chr_sprite_pal_01.png"), loadImage),
     withFallback("chr_sprite_pal_08.png", originalAssetUrl("chr_sprite_pal_08.png"), originalFallbackUrl("chr_sprite_pal_08.png"), loadImage),
@@ -2364,6 +2564,12 @@ async function main() {
     withFallback("formation_control_screen_manifest.json", originalAssetUrl("formation_control_screen_manifest.json"), originalFallbackUrl("formation_control_screen_manifest.json"), loadJson),
     withFallback("formation_control_renderer.json", originalAssetUrl("formation_control_renderer.json"), originalFallbackUrl("formation_control_renderer.json"), loadJson),
     withFallback("formation_control_tiles.png", originalAssetUrl("formation_control_tiles.png"), originalFallbackUrl("formation_control_tiles.png"), loadImage),
+    withFallback("weather_preview_screen_manifest.json", originalAssetUrl("weather_preview_screen_manifest.json"), originalFallbackUrl("weather_preview_screen_manifest.json"), loadJson),
+    withFallback("weather_preview_renderer.json", originalAssetUrl("weather_preview_renderer.json"), originalFallbackUrl("weather_preview_renderer.json"), loadJson),
+    withFallback("weather_preview_tiles.png", originalAssetUrl("weather_preview_tiles.png"), originalFallbackUrl("weather_preview_tiles.png"), loadImage),
+    withFallback("tournament_record_screen_manifest.json", originalAssetUrl("tournament_record_screen_manifest.json"), originalFallbackUrl("tournament_record_screen_manifest.json"), loadJson),
+    withFallback("tournament_record_renderer.json", originalAssetUrl("tournament_record_renderer.json"), originalFallbackUrl("tournament_record_renderer.json"), loadJson),
+    withFallback("tournament_record_tiles.png", originalAssetUrl("tournament_record_tiles.png"), originalFallbackUrl("tournament_record_tiles.png"), loadImage),
     withFallback("credits_screen_manifest.json", originalAssetUrl("credits_screen_manifest.json"), originalFallbackUrl("credits_screen_manifest.json"), loadJson),
     creditsTilesPromise,
     menuScreensPromise,
@@ -2389,6 +2595,12 @@ async function main() {
   originalAssets.formationControl.manifest = formationControlScreenManifest;
   originalAssets.formationControl.scripts = formationControlRenderer;
   originalAssets.formationControl.tileImage = formationControlTiles;
+  originalAssets.weatherPreview.manifest = weatherPreviewScreenManifest;
+  originalAssets.weatherPreview.scripts = weatherPreviewRenderer;
+  originalAssets.weatherPreview.tileImage = weatherPreviewTiles;
+  originalAssets.tournamentRecord.manifest = tournamentRecordScreenManifest;
+  originalAssets.tournamentRecord.scripts = tournamentRecordRenderer;
+  originalAssets.tournamentRecord.tileImage = tournamentRecordTiles;
   originalAssets.credits.manifest = creditsScreenManifest;
   originalAssets.credits.tileImages = creditsTiles;
   api.game_init();
