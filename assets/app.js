@@ -601,7 +601,7 @@ function consumeTapLatchesAfterSoftwareFrame() {
   if (keyTapLatch.select > 0) keyTapLatch.select -= 1;
 }
 async function loadWasm() {
-  const primary = assetUrl("../game_core.dafef049.wasm");
+  const primary = assetUrl("../game_core.b6b068de.wasm");
   const fallback = rootAssetUrl("game_core.wasm");
   const response = await withFallback("game_core.wasm", primary, fallback, (url) => fetch(url).then((r) => {
     if (!r.ok) throw new Error(`failed to load ${url}: ${r.status}`);
@@ -618,6 +618,82 @@ const ORIGINAL_CAMERA_VIEW_W = 0x100;
 const ORIGINAL_CAMERA_VIEW_H = 0xB0;
 const ORIGINAL_CAMERA_BASE_Y = 0x48;
 const ORIGINAL_STATUSBAR_SPLIT_Y = 0xB9;
+function synchronizeOriginalFieldFootprints(api, originalScreen) {
+  const field = originalAssets.field;
+  if (!field?.manifest || !api.original_footprint_commit_serial) return;
+  if (originalScreen !== 0) {
+    if (field.footprintActive) {
+      field.footprintActive = false;
+      field.footprints.clear();
+      field.compositeKey = "";
+      field.footprintBaseKey = "";
+    }
+    return;
+  }
+  if (!field.footprintActive) {
+    field.footprintActive = true;
+    field.footprints.clear();
+    field.compositeKey = "";
+    field.footprintBaseKey = "";
+  }
+  const serial = api.original_footprint_commit_serial() >>> 0;
+  if (field.footprintSerial === serial) return;
+  field.footprintSerial = serial;
+  const count = Math.min(api.original_committed_footprint_count?.() || 0, 4);
+  for (let index = 0; index < count; index++) {
+    const x = api.original_committed_footprint_world_x(index) & 0xFFFF;
+    const y = api.original_committed_footprint_world_y(index) & 0xFFFF;
+    field.footprints.set(`${x >> 3}/${y >> 3}`, { x, y });
+  }
+  if (count) field.compositeKey = "";
+}
+function originalFieldSubpalettes(fieldColor) {
+  const paletteData = originalAssets.sprite.palettes;
+  const base = paletteData?.background_pairs?.[fieldColor & 0xFF];
+  const fixed = paletteData?.background_pairs?.[0x0F];
+  if (!base || !fixed) return null;
+  const palettes = [base[0].slice(), base[1].slice(), fixed[0].slice(), fixed[1].slice()];
+  const universal = palettes[0][0];
+  for (const palette of palettes) palette[0] = universal;
+  return palettes;
+}
+function drawOriginalFieldFootprints(api, fieldContext, coverage, fieldColor, puddleSet) {
+  const field = originalAssets.field;
+  if (!field?.footprints?.size) return;
+  const manifest = field.manifest;
+  const assetScale = manifest.scale || 1;
+  const mapTileWidth = manifest.logical_width >> 3;
+  const palettes = originalFieldSubpalettes(fieldColor);
+  if (!palettes) return;
+  const fieldBank = api.original_field_bg_bank
+    ? api.original_field_bg_bank() & 0xFF
+    : manifest.field_bank & 0xFF;
+  for (const footprint of field.footprints.values()) {
+    const tileX = footprint.x >> 3;
+    const tileY = footprint.y >> 3;
+    if (tileX < 0 || tileX >= mapTileWidth || tileY < 0 || tileY >= (manifest.logical_height >> 3)) continue;
+    const sector = (footprint.y < manifest.top_height ? 0 : 4)
+      + Math.min(3, Math.max(0, Math.floor(footprint.x / manifest.sector_width)));
+    const variant = Math.min(coverage + (((puddleSet >> sector) & 1) ? 1 : 0), 2);
+    const slots = manifest.variants?.[String(variant)]?.palette_slots;
+    const paletteSlot = slots?.[tileY * mapTileWidth + tileX] ?? 0;
+    const highBankOffset = footprint.x < manifest.sector_width * 2 ? 0x04 : 0x02;
+    const tile = originalBackgroundTile(
+      fieldBank,
+      (fieldBank + highBankOffset) & 0xFF,
+      0xFF,
+      palettes[paletteSlot & 3],
+    );
+    if (!tile) continue;
+    fieldContext.drawImage(
+      tile,
+      footprint.x * assetScale,
+      footprint.y * assetScale,
+      8 * assetScale,
+      8 * assetScale,
+    );
+  }
+}
 function composeOriginalField(api) {
   const field = originalAssets.field;
   if (!field?.manifest) return null;
@@ -625,6 +701,10 @@ function composeOriginalField(api) {
   const fieldColor = clamp(api.original_field_color ? api.original_field_color() : 0, 0, 4);
   const puddleSet = api.original_puddle_set ? api.original_puddle_set() & 0xFF : 0;
   const key = `${coverage}/${fieldColor}/${puddleSet}`;
+  if (field.footprintBaseKey && field.footprintBaseKey !== key) {
+    field.footprints.clear();
+  }
+  field.footprintBaseKey = key;
   if (field.compositeKey === key && field.composite) return field.composite;
   const base = field.images[String(coverage)]?.[String(fieldColor)];
   if (!base) return null;
@@ -654,6 +734,7 @@ function composeOriginalField(api) {
       fieldContext.drawImage(wet, sourceX, sourceY, sectorWidth, height, sourceX, sourceY, sectorWidth, height);
     }
   }
+  drawOriginalFieldFootprints(api, fieldContext, coverage, fieldColor, puddleSet);
   field.compositeKey = key;
   return field.composite;
 }
@@ -782,7 +863,17 @@ async function loadOriginalFieldAssets() {
     }
   }
   await Promise.all(requests);
-  return { manifest, images, composite: null, compositeContext: null, compositeKey: "" };
+  return {
+    manifest,
+    images,
+    composite: null,
+    compositeContext: null,
+    compositeKey: "",
+    footprintBaseKey: "",
+    footprintSerial: null,
+    footprintActive: false,
+    footprints: new Map(),
+  };
 }
 function worldToScreen(view, x, y) {
   if (!view || !view.original) {
@@ -2866,6 +2957,7 @@ function render(api) {
   const screenH = canvas.height;
   const phase = api.game_phase ? api.game_phase() : PHASE.PLAYING;
   const originalScreen = api.original_screen_number ? api.original_screen_number() : 0;
+  synchronizeOriginalFieldFootprints(api, originalScreen);
   const originalField4x3 = originalMinimapStatusbarActive(api);
   gameWrap.classList.toggle(
     "original-4x3-screen",
@@ -3333,6 +3425,10 @@ async function main() {
     window.__soccerApi = api;
     window.__soccerRender = () => render(api);
     window.__soccerInputBits = () => inputBits();
+    window.__soccerFootprints = () => ({
+      serial: originalAssets.field?.footprintSerial ?? null,
+      marks: Array.from(originalAssets.field?.footprints?.values?.() || []),
+    });
     window.__soccerConsumeTouchTapLatchSoftwareFrame = () => consumeTapLatchesAfterSoftwareFrame();
     window.__soccerSpriteFrame = (index) => {
       const frame = resolveOriginalObjectFrame(api, index);
