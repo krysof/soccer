@@ -3011,11 +3011,10 @@ function render(api) {
     ? ((api.original_camera_x_hi() << 8) | api.original_camera_x_lo()) : 0;
   const rawCameraY = exposesOriginalCamera
     ? ((api.original_camera_y_hi() << 8) | api.original_camera_y_lo()) : 0;
-  const hasOriginalCamera = exposesOriginalCamera && (rawCameraX !== 0 || rawCameraY !== 0);
-  const cameraX = hasOriginalCamera
+  const cameraX = exposesOriginalCamera
     ? rawCameraX
     : clamp(bx - ORIGINAL_CAMERA_VIEW_W / 2, 0, 1024 - ORIGINAL_CAMERA_VIEW_W);
-  const cameraY = hasOriginalCamera
+  const cameraY = exposesOriginalCamera
     ? rawCameraY
     : ORIGINAL_CAMERA_BASE_Y;
   const isOriginalResultScreen = originalScreen === 0x00
