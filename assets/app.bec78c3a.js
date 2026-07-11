@@ -601,7 +601,7 @@ function consumeTapLatchesAfterSoftwareFrame() {
   if (keyTapLatch.select > 0) keyTapLatch.select -= 1;
 }
 async function loadWasm() {
-  const primary = assetUrl("../game_core.60d9c33f.wasm");
+  const primary = assetUrl("../game_core.40658d77.wasm");
   const fallback = rootAssetUrl("game_core.wasm");
   const response = await withFallback("game_core.wasm", primary, fallback, (url) => fetch(url).then((r) => {
     if (!r.ok) throw new Error(`failed to load ${url}: ${r.status}`);
@@ -2907,14 +2907,37 @@ function render(api) {
   ctx.beginPath();
   ctx.rect(objectView.destX, objectView.destY, objectView.destW, objectView.destH);
   ctx.clip();
-  const entities = [{ type: "ball", groundY: by }];
-  for (let i = 0; i < count; i++) {
-    if (api.player_active && !api.player_active(i)) continue;
-    const originalPosition = playerPositions[i] || originalPlayerPosition(api, i);
-    playerPositions[i] = originalPosition;
-    entities.push({ type: "player", index: i, groundY: originalPosition.y });
+  let entities = [];
+  if (!isOriginalResultScreen && api.original_animation_priority_count && api.original_animation_priority) {
+    const priorityCount = Math.min(api.original_animation_priority_count(), 0x20);
+    const seen = new Set();
+    for (let slot = priorityCount - 1; slot >= 0; slot--) {
+      const entry = api.original_animation_priority(slot);
+      if ((entry & 0x60) !== 0) continue;
+      const object = entry & 0x1F;
+      if (seen.has(object)) continue;
+      if (object === 0x0C) {
+        if (!api.original_ball_visibility_flag || api.original_ball_visibility_flag()) {
+          entities.push({ type: "ball", groundY: by });
+          seen.add(object);
+        }
+      } else if (object < count && (!api.player_active || api.player_active(object))) {
+        const originalPosition = playerPositions[object] || originalPlayerPosition(api, object);
+        playerPositions[object] = originalPosition;
+        entities.push({ type: "player", index: object, groundY: originalPosition.y });
+        seen.add(object);
+      }
+    }
+  } else {
+    entities = [{ type: "ball", groundY: by }];
+    for (let i = 0; i < count; i++) {
+      if (api.player_active && !api.player_active(i)) continue;
+      const originalPosition = playerPositions[i] || originalPlayerPosition(api, i);
+      playerPositions[i] = originalPosition;
+      entities.push({ type: "player", index: i, groundY: originalPosition.y });
+    }
+    entities.sort((a, b) => a.groundY - b.groundY);
   }
-  entities.sort((a, b) => a.groundY - b.groundY);
   for (const entity of entities) {
     if (entity.type === "ball") {
       const b = worldToScreen(objectView, bx, by);
