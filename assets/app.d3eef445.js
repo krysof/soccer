@@ -666,8 +666,11 @@ function drawOriginalFieldFootprints(api, fieldContext, coverage, fieldColor, pu
   const palettes = originalFieldSubpalettes(fieldColor);
   if (!palettes) return;
   const fieldBank = api.original_field_bg_bank
-    ? api.original_field_bg_bank() & 0xFF
-    : manifest.field_bank & 0xFF;
+    ? (api.original_field_bg_bank() & 0xFF) || (manifest.default_field_bank & 0xFF)
+    : manifest.default_field_bank & 0xFF;
+  const fieldPrgBank = api.original_field_prg_bank
+    ? (api.original_field_prg_bank() & 0xFF) || (manifest.default_prg_bank & 0xFF)
+    : manifest.default_prg_bank & 0xFF;
   for (const footprint of field.footprints.values()) {
     const tileX = footprint.x >> 3;
     const tileY = footprint.y >> 3;
@@ -675,7 +678,8 @@ function drawOriginalFieldFootprints(api, fieldContext, coverage, fieldColor, pu
     const sector = (footprint.y < manifest.top_height ? 0 : 4)
       + Math.min(3, Math.max(0, Math.floor(footprint.x / manifest.sector_width)));
     const variant = Math.min(coverage + (((puddleSet >> sector) & 1) ? 1 : 0), 2);
-    const slots = manifest.variants?.[String(variant)]?.palette_slots;
+    const slots = manifest.prg_variants?.[String(fieldPrgBank)]?.[String(variant)]?.palette_slots
+      || manifest.variants?.[String(variant)]?.palette_slots;
     const paletteSlot = slots?.[tileY * mapTileWidth + tileX] ?? 0;
     const highBankOffset = footprint.x < manifest.sector_width * 2 ? 0x04 : 0x02;
     const tile = originalBackgroundTile(
@@ -700,13 +704,20 @@ function composeOriginalField(api) {
   const coverage = clamp(api.original_field_puddle_coverage ? api.original_field_puddle_coverage() : 0, 0, 2);
   const fieldColor = clamp(api.original_field_color ? api.original_field_color() : 0, 0, 4);
   const puddleSet = api.original_puddle_set ? api.original_puddle_set() & 0xFF : 0;
-  const key = `${coverage}/${fieldColor}/${puddleSet}`;
+  const fieldPrgBank = api.original_field_prg_bank
+    ? (api.original_field_prg_bank() & 0xFF) || (field.manifest.default_prg_bank & 0xFF)
+    : field.manifest.default_prg_bank & 0xFF;
+  const fieldBank = api.original_field_bg_bank
+    ? (api.original_field_bg_bank() & 0xFF) || (field.manifest.default_field_bank & 0xFF)
+    : field.manifest.default_field_bank & 0xFF;
+  const key = `${fieldPrgBank}/${fieldBank}/${coverage}/${fieldColor}/${puddleSet}`;
   if (field.footprintBaseKey && field.footprintBaseKey !== key) {
     field.footprints.clear();
   }
   field.footprintBaseKey = key;
   if (field.compositeKey === key && field.composite) return field.composite;
-  const base = field.images[String(coverage)]?.[String(fieldColor)];
+  const base = field.images[`${fieldPrgBank}/${fieldBank}/${coverage}/${fieldColor}`]
+    || field.images[String(coverage)]?.[String(fieldColor)];
   if (!base) return null;
   if (!field.composite) {
     field.composite = document.createElement("canvas");
@@ -719,7 +730,8 @@ function composeOriginalField(api) {
   fieldContext.clearRect(0, 0, field.composite.width, field.composite.height);
   fieldContext.drawImage(base, 0, 0);
   const wetVariant = Math.min(coverage + 1, 2);
-  const wet = field.images[String(wetVariant)]?.[String(fieldColor)];
+  const wet = field.images[`${fieldPrgBank}/${fieldBank}/${wetVariant}/${fieldColor}`]
+    || field.images[String(wetVariant)]?.[String(fieldColor)];
   if (wet && wetVariant !== coverage && puddleSet) {
     const assetScale = field.manifest.scale || 1;
     const sectorWidth = field.manifest.sector_width * assetScale;
@@ -853,13 +865,20 @@ async function loadOriginalFieldAssets() {
   );
   const images = {};
   const requests = [];
-  for (const [coverage, paletteFiles] of Object.entries(manifest.images || {})) {
-    images[coverage] = {};
-    for (const [palette, fileName] of Object.entries(paletteFiles)) {
+  for (const [key, fileOrPaletteFiles] of Object.entries(manifest.images || {})) {
+    if (typeof fileOrPaletteFiles === "string") {
       requests.push(
-        withFallback(fileName, originalAssetUrl(fileName), originalFallbackUrl(fileName), loadImage)
-          .then((image) => { images[coverage][palette] = image; }),
+        withFallback(fileOrPaletteFiles, originalAssetUrl(fileOrPaletteFiles), originalFallbackUrl(fileOrPaletteFiles), loadImage)
+          .then((image) => { images[key] = image; }),
       );
+    } else {
+      images[key] = {};
+      for (const [palette, fileName] of Object.entries(fileOrPaletteFiles)) {
+        requests.push(
+          withFallback(fileName, originalAssetUrl(fileName), originalFallbackUrl(fileName), loadImage)
+            .then((image) => { images[key][palette] = image; }),
+        );
+      }
     }
   }
   await Promise.all(requests);
@@ -3428,6 +3447,11 @@ async function main() {
     window.__soccerFootprints = () => ({
       serial: originalAssets.field?.footprintSerial ?? null,
       marks: Array.from(originalAssets.field?.footprints?.values?.() || []),
+    });
+    window.__soccerField = () => ({
+      key: originalAssets.field?.compositeKey || "",
+      loadedKeys: Object.keys(originalAssets.field?.images || {}),
+      source: originalAssets.field?.manifest?.source || "",
     });
     window.__soccerConsumeTouchTapLatchSoftwareFrame = () => consumeTapLatchesAfterSoftwareFrame();
     window.__soccerSpriteFrame = (index) => {
