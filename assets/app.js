@@ -605,7 +605,7 @@ function consumeTapLatchesAfterSoftwareFrame() {
   if (keyTapLatch.select > 0) keyTapLatch.select -= 1;
 }
 async function loadWasm() {
-  const primary = assetUrl("../game_core.a64056dc.wasm");
+  const primary = assetUrl("../game_core.0fce1abb.wasm");
   const fallback = rootAssetUrl("game_core.wasm");
   const response = await withFallback("game_core.wasm", primary, fallback, (url) => fetch(url).then((r) => {
     if (!r.ok) throw new Error(`failed to load ${url}: ${r.status}`);
@@ -2999,7 +2999,8 @@ function render(api) {
     ? rawCameraY
     : ORIGINAL_CAMERA_BASE_Y;
   const isOriginalResultScreen = originalScreen === 0x00
-    && originalSubtype >= 0x04 && originalSubtype <= 0x0C;
+    && originalSubtype >= 0x04 && originalSubtype <= 0x0C
+    && originalSubtype !== 0x06;
   gameWrap.classList.toggle("original-result-screen", isOriginalResultScreen);
   gameWrap.classList.toggle("original-4x3-screen", isOriginalResultScreen || originalField4x3);
   const resultBackgroundId = api.original_background_image_id
