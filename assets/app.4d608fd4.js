@@ -601,7 +601,7 @@ function consumeTapLatchesAfterSoftwareFrame() {
   if (keyTapLatch.select > 0) keyTapLatch.select -= 1;
 }
 async function loadWasm() {
-  const primary = assetUrl("../game_core.6d1a366f.wasm");
+  const primary = assetUrl("../game_core.2458a60d.wasm");
   const fallback = rootAssetUrl("game_core.wasm");
   const response = await withFallback("game_core.wasm", primary, fallback, (url) => fetch(url).then((r) => {
     if (!r.ok) throw new Error(`failed to load ${url}: ${r.status}`);
@@ -1315,6 +1315,47 @@ function drawWeather(api, view, screenW, screenH) {
     }
     ctx.restore();
   }
+}
+function drawOriginalWeatherSprites(api, view) {
+  if (!view?.original || !api.original_weather_effect
+      || !api.original_weather_sprite_count) {
+    if (DEBUG) window.__soccerWeatherSprites = [];
+    return [];
+  }
+  const effect = api.original_weather_effect() & 0x7F;
+  if (effect !== 0x01 && effect !== 0x03) {
+    if (DEBUG) window.__soccerWeatherSprites = [];
+    return [];
+  }
+  const scale = view.logicalScale || 2;
+  const count = Math.min(12, api.original_weather_sprite_count() & 0xFF);
+  const rendered = [];
+  for (let index = count - 1; index >= 0; index--) {
+    const y = api.original_weather_sprite_y(index) & 0xFF;
+    if (y >= 0xF0) continue;
+    const x = api.original_weather_sprite_x(index) & 0xFF;
+    const tileNumber = api.original_weather_sprite_tile(index) & 0xFF;
+    const attribute = api.original_weather_sprite_attribute(index) & 0xFF;
+    const bankSlot = tileNumber >> 6;
+    const bankNumber = api.original_sprite_bank(bankSlot) & 0xFF;
+    const paletteSlot = attribute & 0x03;
+    const paletteNumber = api.original_sprite_palette_number(paletteSlot) & 0xFF;
+    const tileCanvas = originalSpriteTile(bankNumber, tileNumber & 0x3F, paletteNumber);
+    if (!tileCanvas) continue;
+    drawOriginalSpriteTile(
+      tileCanvas,
+      view.destX + x * scale,
+      view.destY + (y + 1) * scale,
+      attribute,
+      scale,
+    );
+    rendered.push({
+      index, effect, x, y, tileNumber, attribute,
+      bankSlot, bankNumber, paletteSlot, paletteNumber,
+    });
+  }
+  if (DEBUG) window.__soccerWeatherSprites = rendered;
+  return rendered;
 }
 function drawScore(api, w, originalStatusbarDrawn = false) {
   if (originalStatusbarDrawn) return;
@@ -3075,6 +3116,7 @@ function render(api) {
       fieldKey: originalAssets.field?.compositeKey || "",
     } : null;
   }
+  if (!isOriginalResultScreen) drawOriginalWeatherSprites(api, objectView);
   ctx.restore();
   const drewOriginalMinimap = !isOriginalResultScreen && drawOriginalMatchStatusbar(api, objectView);
   if (DEBUG && !drewOriginalMinimap) window.__soccerMinimap = { visible: false, markers: [] };
