@@ -601,7 +601,7 @@ function consumeTapLatchesAfterSoftwareFrame() {
   if (keyTapLatch.select > 0) keyTapLatch.select -= 1;
 }
 async function loadWasm() {
-  const primary = assetUrl("../game_core.2458a60d.wasm");
+  const primary = assetUrl("../game_core.482982f1.wasm");
   const fallback = rootAssetUrl("game_core.wasm");
   const response = await withFallback("game_core.wasm", primary, fallback, (url) => fetch(url).then((r) => {
     if (!r.ok) throw new Error(`failed to load ${url}: ${r.status}`);
@@ -1323,7 +1323,7 @@ function drawOriginalWeatherSprites(api, view) {
     return [];
   }
   const effect = api.original_weather_effect() & 0x7F;
-  if (effect !== 0x01 && effect !== 0x03) {
+  if (![0x01, 0x02, 0x03, 0x04].includes(effect)) {
     if (DEBUG) window.__soccerWeatherSprites = [];
     return [];
   }
