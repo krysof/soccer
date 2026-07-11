@@ -22,7 +22,6 @@ const PHASE = {
   FREE_KICK: 10,
   PENALTY_KICK: 11,
   PAUSE: 12,
-  MATCH_INTRO: 13,
   CREDITS: 14,
 };
 const ACTION = {
@@ -631,7 +630,7 @@ function consumeTapLatchesAfterSoftwareFrame() {
   if (keyTapLatch.select > 0) keyTapLatch.select -= 1;
 }
 async function loadWasm() {
-  const primary = assetUrl("../game_core.72506f36.wasm");
+  const primary = assetUrl("../game_core.93a3707e.wasm");
   const fallback = rootAssetUrl("game_core.wasm");
   const response = await withFallback("game_core.wasm", primary, fallback, (url) => fetch(url).then((r) => {
     if (!r.ok) throw new Error(`failed to load ${url}: ${r.status}`);
@@ -2975,29 +2974,6 @@ function drawMenuOverlay(api) {
   ctx.fillText("方向键/摇杆选择对手；PC：J/Z/Enter 开赛；手机：点 A开赛", canvas.width / 2, startY + 5 * 48 + 18);
   ctx.textAlign = "left";
 }
-function drawMatchIntroOverlay(api) {
-  const cpuTeam = api.cpu_team_id ? api.cpu_team_id() : 1;
-  const weather = api.field_weather ? api.field_weather() : 0;
-  const timer = api.phase_timer ? api.phase_timer() : 0;
-  ctx.fillStyle = "rgba(0,0,0,.66)";
-  ctx.fillRect(0, 0, canvas.width, canvas.height);
-  ctx.textAlign = "center";
-  ctx.fillStyle = "#ffffff";
-  ctx.font = "bold 34px system-ui, sans-serif";
-  ctx.fillText("MATCH START", canvas.width / 2, 112);
-  ctx.font = "bold 46px ui-monospace, Consolas, monospace";
-  ctx.fillStyle = "#ffe64a";
-  ctx.fillText(`${TEAM_NAMES[0]}  VS  ${TEAM_NAMES[cpuTeam] || "CPU"}`, canvas.width / 2, 184);
-  ctx.font = "17px ui-monospace, Consolas, monospace";
-  ctx.fillStyle = "#d7f7ff";
-  ctx.fillText(`FIELD ${WEATHER_NAMES[weather] || "?"}   SPD ${api.team_speed ? api.team_speed(1) : "?"}  POW ${api.team_power ? api.team_power(1) : "?"}  GK ${api.team_keeper ? api.team_keeper(1) : "?"}`, canvas.width / 2, 230);
-  ctx.fillText(`CAPTAIN ${PLAYER_NAMES[0][3]}  /  ${PLAYER_NAMES[cpuTeam]?.[3] || "CPU"}    SPECIAL ${api.team_special_curve ? api.team_special_curve(1) : "?"}`, canvas.width / 2, 260);
-  ctx.fillText(`READY ${Math.ceil(timer / 60)}`, canvas.width / 2, 290);
-  ctx.font = "16px system-ui, sans-serif";
-  ctx.fillStyle = "#fff";
-  ctx.fillText("PC：按 J / Z / Enter 跳过；手机：点 A跳过", canvas.width / 2, 326);
-  ctx.textAlign = "left";
-}
 function render(api) {
   gameWrap.classList.remove("original-result-screen");
   const worldW = api.game_field_w();
@@ -3285,7 +3261,6 @@ function render(api) {
     }
   }
   if (originalScreen !== 0x00) {
-    if (phase === PHASE.MATCH_INTRO) drawMatchIntroOverlay(api);
     if (phase === PHASE.KICKOFF) drawOverlay("KICK OFF", ["PC：按 J / Z 开球", "手机：点 A开球，然后摇杆移动"]);
     if (phase === PHASE.GOAL) {
       const scorer = api.last_goal_player ? api.last_goal_player() : 255;
