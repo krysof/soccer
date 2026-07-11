@@ -66,7 +66,7 @@ const btnKick = document.querySelector("#btnKick");
 const btnSprint = document.querySelector("#btnSprint");
 const btnStart = document.querySelector("#btnStart");
 const DEBUG = new URLSearchParams(window.location.search).get("debug") === "1";
-const BUILD_ID = "original-opponent-attack-full-hud-20260711";
+const BUILD_ID = "original-match-settings-screen-9357-20260711";
 document.body.classList.toggle("debug", DEBUG);
 stats.hidden = !DEBUG;
 const TOUCH_TAP_LATCH_SOFTWARE_FRAMES = 4;
@@ -101,6 +101,14 @@ const originalAssets = {
     states: new Map(),
   },
   bracket: {
+    manifest: null,
+    scripts: null,
+    tileImage: null,
+    canvas: null,
+    context: null,
+    key: "",
+  },
+  matchSettings: {
     manifest: null,
     scripts: null,
     tileImage: null,
@@ -519,7 +527,7 @@ function consumeTapLatchesAfterSoftwareFrame() {
   if (keyTapLatch.start > 0) keyTapLatch.start -= 1;
 }
 async function loadWasm() {
-  const primary = assetUrl("../game_core.295085a8.wasm");
+  const primary = assetUrl("../game_core.ab816241.wasm");
   const fallback = rootAssetUrl("game_core.wasm");
   const response = await withFallback("game_core.wasm", primary, fallback, (url) => fetch(url).then((r) => {
     if (!r.ok) throw new Error(`failed to load ${url}: ${r.status}`);
@@ -1497,6 +1505,7 @@ function drawOriginalMenuObjects(api, layout, subtype) {
     0x03: [0, 1, 3],
     0x04: [0, 1, 3],
     0x05: [0, 1, 2, 3],
+    0x06: [0],
   };
   const objectIds = objectIdsBySubtype[subtype];
   if (!objectIds) return;
@@ -1508,8 +1517,11 @@ function drawOriginalMenuObjects(api, layout, subtype) {
   for (const index of objectIds) {
     if (!api.original_player_x_lo || !api.original_player_animation) continue;
     const p = originalPlayerPosition(api, index);
+    const cameraY = subtype === 0x06 && api.original_camera_y_lo && api.original_camera_y_hi
+      ? ((api.original_camera_y_hi() << 8) | api.original_camera_y_lo())
+      : 0;
     const x = layout.x + p.x * layout.scale;
-    const y = layout.y + (p.y - normalizeOriginalHeight(p.z)) * layout.scale;
+    const y = layout.y + (p.y - cameraY - normalizeOriginalHeight(p.z)) * layout.scale;
     if (drawOriginalObject(api, index, x, y, layout.scale)) drawnObjectIds.push(index);
   }
   if ((subtype === 0x01 || subtype === 0x03 || subtype === 0x05 || subtype === 0x0f)
@@ -1617,6 +1629,82 @@ function composeOriginalBracketScreen(api) {
   }
   return bracket.canvas;
 }
+function renderOriginalMatchSettingsNametable(context, nametable, tileImage, destinationY) {
+  const attributes = nametable.subarray(0x3c0, 0x400);
+  for (let row = 0; row < 30; row++) {
+    for (let col = 0; col < 32; col++) {
+      const tile = nametable[row * 32 + col];
+      const attribute = attributes[Math.floor(row / 4) * 8 + Math.floor(col / 4)];
+      const shift = ((row & 2) << 1) | (col & 2);
+      const palette = (attribute >> shift) & 3;
+      context.drawImage(
+        tileImage,
+        (tile & 0x0f) * 8,
+        palette * 128 + (tile >> 4) * 8,
+        8,
+        8,
+        col * 8,
+        destinationY + row * 8,
+        8,
+        8,
+      );
+    }
+  }
+}
+function composeOriginalMatchSettingsScreen(api) {
+  const settings = originalAssets.matchSettings;
+  const manifest = settings.manifest;
+  const scripts = settings.scripts;
+  if (!manifest || !scripts || !settings.tileImage || !Array.isArray(manifest.nametables)) {
+    return null;
+  }
+  const continent = api.original_continent_option ? api.original_continent_option() & 0xff : 0;
+  const surfaceWetness = api.original_surface_wetness ? api.original_surface_wetness() & 0xff : 0;
+  const rainWind = api.original_rain_wind_option ? api.original_rain_wind_option() & 0xff : 0;
+  const storm = api.original_lightning_tornado_direction
+    ? api.original_lightning_tornado_direction() & 0xff : 0;
+  const key = `${continent}:${surfaceWetness}:${rainWind}:${storm}`;
+  if (settings.canvas && settings.key === key) return settings.canvas;
+  if (!settings.canvas) {
+    settings.canvas = document.createElement("canvas");
+    settings.canvas.width = 256;
+    settings.canvas.height = 480;
+    settings.context = settings.canvas.getContext("2d");
+  }
+  const nametables = manifest.nametables.map((source) => Uint8Array.from(source));
+  const wetnessToOption = [0, 1, 1, 2, 2, 3];
+  const options = {
+    2: continent & 0x03,
+    3: surfaceWetness & 0x0f,
+    4: wetnessToOption[Math.min(surfaceWetness >> 4, wetnessToOption.length - 1)],
+    5: rainWind & 0x0f,
+    6: (rainWind >> 4) & 0x0f,
+    7: storm & 0x03,
+    8: (storm >> 2) & 0x03,
+    9: (storm >> 4) & 0x03,
+  };
+  for (let state = 2; state <= 9; state++) {
+    const patterns = scripts.highlightPatterns?.[state];
+    const address = scripts.highlightAddresses?.[state];
+    if (!patterns || !Number.isFinite(address)) continue;
+    const option = Math.min(options[state] ?? 0, patterns.length - 1);
+    const pattern = patterns[option];
+    const tableIndex = address >= 0x2800 ? 1 : 0;
+    const baseAddress = tableIndex ? 0x2800 : 0x2000;
+    for (let offset = 0; offset < pattern.length; offset++) {
+      const target = address - baseAddress + offset;
+      if (target >= 0 && target < nametables[tableIndex].length) {
+        nametables[tableIndex][target] = pattern[offset] & 0xff;
+      }
+    }
+  }
+  settings.context.clearRect(0, 0, 256, 480);
+  settings.context.imageSmoothingEnabled = false;
+  renderOriginalMatchSettingsNametable(settings.context, nametables[0], settings.tileImage, 0);
+  renderOriginalMatchSettingsNametable(settings.context, nametables[1], settings.tileImage, 240);
+  settings.key = key;
+  return settings.canvas;
+}
 function drawOriginalMenuScreen(api) {
   ctx.fillStyle = "#000";
   ctx.fillRect(0, 0, canvas.width, canvas.height);
@@ -1624,13 +1712,34 @@ function drawOriginalMenuScreen(api) {
   const subtype = api.original_screen_subtype ? api.original_screen_subtype() & 0x7f : 0;
   const img = subtype === 0x0f
     ? (composeOriginalBracketScreen(api) || originalAssets.menu[id])
-    : originalAssets.menu[id];
+    : subtype === 0x06
+      ? (composeOriginalMatchSettingsScreen(api) || originalAssets.menu[id])
+      : originalAssets.menu[id];
   const layout = originalFullScreenLayout();
   const brightness = api.original_current_brightness ? api.original_current_brightness() : 0x40;
   if (img) {
     ctx.imageSmoothingEnabled = false;
     ctx.globalAlpha = Math.max(0, Math.min(1, brightness / 0x40));
-    ctx.drawImage(img, layout.x, layout.y, layout.w, layout.h);
+    if (subtype === 0x06 && (img.height || img.naturalHeight) >= 480) {
+      const cameraY = api.original_camera_y_lo && api.original_camera_y_hi
+        ? ((api.original_camera_y_hi() << 8) | api.original_camera_y_lo())
+        : 0;
+      const sourceY = cameraY >= 0x0100 ? 240 : Math.min(cameraY, 240);
+      ctx.drawImage(img, 0, sourceY, 256, 240, layout.x, layout.y, layout.w, layout.h);
+      if (DEBUG) {
+        window.__soccerMatchSettingsRenderer = {
+          subtype,
+          backgroundId: id,
+          state: api.original_option_counter ? api.original_option_counter() & 0xff : 0,
+          option: api.original_option_number ? api.original_option_number() & 0xff : 0,
+          cameraY,
+          sourceY,
+          key: originalAssets.matchSettings.key,
+        };
+      }
+    } else {
+      ctx.drawImage(img, layout.x, layout.y, layout.w, layout.h);
+    }
     ctx.globalAlpha = 1;
   }
   drawOriginalMenuObjects(api, layout, subtype);
@@ -2119,7 +2228,7 @@ async function main() {
     const image = await withFallback(name, originalAssetUrl(name), originalFallbackUrl(name), loadImage);
     return [id, image];
   })).then((entries) => Object.fromEntries(entries));
-  const [api, chr, chrAlt, field, spriteManifest, spriteIndexImage, palettes, statusbarRenderer, splashLogo, splashTitle, splashTitleBlink, splashStory, resultScreenManifest, resultRenderer, bracketScreenManifest, bracketRenderer, bracketTiles, creditsScreenManifest, creditsTiles, menuScreens] = await Promise.all([
+  const [api, chr, chrAlt, field, spriteManifest, spriteIndexImage, palettes, statusbarRenderer, splashLogo, splashTitle, splashTitleBlink, splashStory, resultScreenManifest, resultRenderer, bracketScreenManifest, bracketRenderer, bracketTiles, matchSettingsScreenManifest, matchSettingsRenderer, matchSettingsTiles, creditsScreenManifest, creditsTiles, menuScreens] = await Promise.all([
     loadWasm(),
     withFallback("chr_sprite_pal_01.png", originalAssetUrl("chr_sprite_pal_01.png"), originalFallbackUrl("chr_sprite_pal_01.png"), loadImage),
     withFallback("chr_sprite_pal_08.png", originalAssetUrl("chr_sprite_pal_08.png"), originalFallbackUrl("chr_sprite_pal_08.png"), loadImage),
@@ -2137,6 +2246,9 @@ async function main() {
     withFallback("bracket_screen_manifest.json", originalAssetUrl("bracket_screen_manifest.json"), originalFallbackUrl("bracket_screen_manifest.json"), loadJson),
     withFallback("bracket_renderer.json", originalAssetUrl("bracket_renderer.json"), originalFallbackUrl("bracket_renderer.json"), loadJson),
     withFallback("bracket_tiles.png", originalAssetUrl("bracket_tiles.png"), originalFallbackUrl("bracket_tiles.png"), loadImage),
+    withFallback("match_settings_screen_manifest.json", originalAssetUrl("match_settings_screen_manifest.json"), originalFallbackUrl("match_settings_screen_manifest.json"), loadJson),
+    withFallback("match_settings_renderer.json", originalAssetUrl("match_settings_renderer.json"), originalFallbackUrl("match_settings_renderer.json"), loadJson),
+    withFallback("match_settings_tiles.png", originalAssetUrl("match_settings_tiles.png"), originalFallbackUrl("match_settings_tiles.png"), loadImage),
     withFallback("credits_screen_manifest.json", originalAssetUrl("credits_screen_manifest.json"), originalFallbackUrl("credits_screen_manifest.json"), loadJson),
     creditsTilesPromise,
     menuScreensPromise,
@@ -2156,6 +2268,9 @@ async function main() {
   originalAssets.bracket.manifest = bracketScreenManifest;
   originalAssets.bracket.scripts = bracketRenderer;
   originalAssets.bracket.tileImage = bracketTiles;
+  originalAssets.matchSettings.manifest = matchSettingsScreenManifest;
+  originalAssets.matchSettings.scripts = matchSettingsRenderer;
+  originalAssets.matchSettings.tileImage = matchSettingsTiles;
   originalAssets.credits.manifest = creditsScreenManifest;
   originalAssets.credits.tileImages = creditsTiles;
   api.game_init();
