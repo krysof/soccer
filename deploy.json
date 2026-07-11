@@ -1,0 +1,9 @@
+{
+  "deployed_at": "2026-07-11",
+  "app": "assets/app.fc090666.js",
+  "css": "assets/app.672d15ef.css",
+  "wasm": "game_core.e0e51220.wasm",
+  "feature": "original complete five-level mode selection menu",
+  "note": "compiled artifacts only; no game source",
+  "tests": "248/270 Node pass (22 unchanged legacy shell failures); 14/14 browser pass"
+}
