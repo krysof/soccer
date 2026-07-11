@@ -3,16 +3,19 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+    <meta http-equiv="Pragma" content="no-cache" />
+    <meta http-equiv="Expires" content="0" />
     <meta name="theme-color" content="#10141f" />
     <title>热血足球联盟 · WASM 高保真移植</title>
-    <link rel="stylesheet" href="assets/app.266d57ef.css" />
+    <link rel="stylesheet" href="assets/app.39fe59fe.css" />
   </head>
   <body>
     <div id="app">
       <div class="game-wrap" aria-label="游戏画面">
         <canvas id="game" width="960" height="540"></canvas>
       </div>
-      <div id="touchControls" class="controller-panel" aria-label="手机触控操作区">
+      <div id="touchControls" class="controller-panel controller-dock" data-surface="outside-game" role="group" aria-label="手机触控操作区（游戏画面外）">
         <div id="stick" class="stick" aria-label="移动摇杆">
           <div id="knob" class="knob"></div>
         </div>
@@ -30,6 +33,6 @@
         <div id="stats"></div>
       </div>
     </div>
-    <script type="module" src="assets/app.a0252e02.js"></script>
+    <script type="module" src="assets/app.853373ff.js"></script>
   </body>
 </html>

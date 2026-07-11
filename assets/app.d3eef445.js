@@ -58,6 +58,7 @@ const keyTapLatch = { kick: 0, sprint: 0, start: 0, select: 0 };
 const canvas = document.querySelector("#game");
 const ctx = canvas.getContext("2d");
 const stats = document.querySelector("#stats");
+const app = document.querySelector("#app");
 const gameWrap = document.querySelector(".game-wrap");
 const touchControls = document.querySelector("#touchControls");
 const stick = document.querySelector("#stick");
@@ -70,6 +71,18 @@ const DEBUG = new URLSearchParams(window.location.search).get("debug") === "1";
 const BUILD_ID = "original-meeting-secret-screen-a778-20260711";
 document.body.classList.toggle("debug", DEBUG);
 stats.hidden = !DEBUG;
+function enforceControllerOutsideGame() {
+  if (touchControls.parentElement !== app || touchControls.previousElementSibling !== gameWrap) {
+    gameWrap.insertAdjacentElement("afterend", touchControls);
+  }
+  touchControls.dataset.surface = "outside-game";
+  touchControls.style.setProperty("position", "static", "important");
+  touchControls.style.setProperty("inset", "auto", "important");
+  touchControls.style.setProperty("transform", "none", "important");
+}
+enforceControllerOutsideGame();
+window.addEventListener("resize", enforceControllerOutsideGame, { passive: true });
+window.addEventListener("orientationchange", enforceControllerOutsideGame, { passive: true });
 const TOUCH_TAP_LATCH_SOFTWARE_FRAMES = 4;
 const touch = {
   stickPointer: null,
@@ -416,23 +429,20 @@ function updateStick(event) {
   touch.axisY = useRelativeDrag ? relAxisY : fixedAxisY;
   knob.style.transform = `translate(calc(-50% + ${dx}px), calc(-50% + ${dy}px))`;
 }
-function pointInGame(clientX, clientY) {
-  const rect = canvas.getBoundingClientRect();
-  return clientX >= rect.left && clientX <= rect.right && clientY >= rect.top && clientY <= rect.bottom;
-}
 function shouldStartFallbackStick(target, clientX, clientY) {
   if (target?.closest?.(".touch-btn")) return false;
   if (target?.closest?.("#stick")) return true;
-  const inGame = pointInGame(clientX, clientY);
-  const rect = canvas.getBoundingClientRect();
+  const panelRect = touchControls.getBoundingClientRect();
   const stickRect = stick.getBoundingClientRect();
   const pad = Math.max(24, stickRect.width * 0.20);
+  const inControllerPanel =
+    clientX >= panelRect.left && clientX <= panelRect.right &&
+    clientY >= panelRect.top && clientY <= panelRect.bottom;
   const inExpandedStick =
     clientX >= stickRect.left - pad && clientX <= stickRect.right + pad &&
     clientY >= stickRect.top - pad && clientY <= stickRect.bottom + pad;
-  const inLeftPlayArea = inGame && clientX <= rect.left + rect.width * 0.55 && clientY >= rect.top + rect.height * 0.25;
-  const inLeftViewport = clientX <= window.innerWidth * 0.52 && clientY >= Math.max(0, rect.top - stickRect.height * 0.4);
-  return inExpandedStick || inLeftPlayArea || inLeftViewport;
+  const inLeftControllerArea = clientX <= panelRect.left + panelRect.width * 0.48;
+  return inControllerPanel && (inExpandedStick || inLeftControllerArea);
 }
 function beginStickPointer(event, captureElement = stick) {
   event.preventDefault();
@@ -458,25 +468,9 @@ touchControls.addEventListener("pointerdown", (event) => {
 touchControls.addEventListener("pointermove", (event) => {
   if (touch.stickPointer === event.pointerId) { event.preventDefault(); updateStick(event); }
 });
-for (const element of [gameWrap, canvas]) {
-  element.addEventListener("pointerdown", (event) => {
-    if (!shouldStartFallbackStick(event.target, event.clientX, event.clientY)) return;
-    beginStickPointer(event, element);
-  });
-  element.addEventListener("pointermove", (event) => {
-    if (touch.stickPointer === event.pointerId) { event.preventDefault(); updateStick(event); }
-  });
-}
 window.addEventListener("pointermove", (event) => {
   if (touch.stickPointer === event.pointerId) { event.preventDefault(); updateStick(event); }
 });
-for (const element of [document, window]) {
-  element.addEventListener("pointerdown", (event) => {
-    if (touch.stickPointer === event.pointerId) return;
-    if (!shouldStartFallbackStick(event.target, event.clientX, event.clientY)) return;
-    beginStickPointer(event, canvas);
-  }, { capture: true });
-}
 for (const name of ["pointerup", "pointercancel"]) {
   window.addEventListener(name, (event) => {
     if (touch.stickPointer === event.pointerId) {
@@ -527,25 +521,6 @@ touchControls.addEventListener("touchstart", (event) => {
     return true;
   });
 }, { passive: false });
-for (const element of [gameWrap, canvas]) {
-  element.addEventListener("touchstart", (event) => {
-    eachChangedTouch(event, (point) => {
-      if (!shouldStartFallbackStick(event.target, point.clientX, point.clientY)) return false;
-      beginStickTouch(event, point);
-      return true;
-    });
-  }, { passive: false });
-}
-for (const element of [document, window]) {
-  element.addEventListener("touchstart", (event) => {
-    if (typeof touch.stickPointer === "string" && touch.stickPointer.startsWith("touch:")) return;
-    eachChangedTouch(event, (point) => {
-      if (!shouldStartFallbackStick(event.target, point.clientX, point.clientY)) return false;
-      beginStickTouch(event, point);
-      return true;
-    });
-  }, { passive: false, capture: true });
-}
 function moveStickTouch(event) {
   if (typeof touch.stickPointer !== "string" || !touch.stickPointer.startsWith("touch:")) return;
   const id = Number(touch.stickPointer.slice(6));
@@ -558,7 +533,7 @@ function moveStickTouch(event) {
     return false;
   });
 }
-for (const element of [stick, touchControls, gameWrap, canvas, document, window]) {
+for (const element of [stick, touchControls, document, window]) {
   element.addEventListener("touchmove", moveStickTouch, { passive: false, capture: true });
 }
 function endStickTouch(event) {
@@ -573,7 +548,7 @@ function endStickTouch(event) {
     return false;
   });
 }
-for (const element of [stick, touchControls, gameWrap, canvas, document, window]) {
+for (const element of [stick, touchControls, document, window]) {
   element.addEventListener("touchend", endStickTouch, { passive: false, capture: true });
   element.addEventListener("touchcancel", endStickTouch, { passive: false, capture: true });
 }
