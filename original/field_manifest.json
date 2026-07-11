@@ -1,0 +1,49 @@
+{
+  "source": "bank_FF:E3D9-E5A1; bank_FF:E15B-E16F; bank_01:8014-8074",
+  "field_bank": 64,
+  "scale": 2,
+  "logical_width": 1024,
+  "logical_height": 368,
+  "camera_width": 256,
+  "camera_height": 176,
+  "sector_width": 256,
+  "top_height": 240,
+  "bottom_height": 128,
+  "variants": {
+    "0": {
+      "tile_table": 32804,
+      "attribute_table": 32852
+    },
+    "1": {
+      "tile_table": 32820,
+      "attribute_table": 32868
+    },
+    "2": {
+      "tile_table": 32836,
+      "attribute_table": 32884
+    }
+  },
+  "images": {
+    "0": {
+      "0": "field_cov0_pal0.png",
+      "1": "field_cov0_pal1.png",
+      "2": "field_cov0_pal2.png",
+      "3": "field_cov0_pal3.png",
+      "4": "field_cov0_pal4.png"
+    },
+    "1": {
+      "0": "field_cov1_pal0.png",
+      "1": "field_cov1_pal1.png",
+      "2": "field_cov1_pal2.png",
+      "3": "field_cov1_pal3.png",
+      "4": "field_cov1_pal4.png"
+    },
+    "2": {
+      "0": "field_cov2_pal0.png",
+      "1": "field_cov2_pal1.png",
+      "2": "field_cov2_pal2.png",
+      "3": "field_cov2_pal3.png",
+      "4": "field_cov2_pal4.png"
+    }
+  }
+}
