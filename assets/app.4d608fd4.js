@@ -109,6 +109,13 @@ const originalAssets = {
     key: "",
     previousState: 0xff,
   },
+  opponentSelection: {
+    manifest: null,
+    tileImage: null,
+    canvas: null,
+    context: null,
+    key: "",
+  },
   credits: {
     manifest: null,
     tileImages: {},
@@ -594,7 +601,7 @@ function consumeTapLatchesAfterSoftwareFrame() {
   if (keyTapLatch.select > 0) keyTapLatch.select -= 1;
 }
 async function loadWasm() {
-  const primary = assetUrl("../game_core.e0e51220.wasm");
+  const primary = assetUrl("../game_core.2fca1ede.wasm");
   const fallback = rootAssetUrl("game_core.wasm");
   const response = await withFallback("game_core.wasm", primary, fallback, (url) => fetch(url).then((r) => {
     if (!r.ok) throw new Error(`failed to load ${url}: ${r.status}`);
@@ -2025,13 +2032,77 @@ function composeOriginalWeatherPreviewScreen(api) {
 function originalTournamentRecordDigits(value, blankTile) {
   const digits = [Math.floor(value / 100), Math.floor(value / 10) % 10, value % 10];
   let started = false;
-  return digits.map((digit) => {
-    if (digit !== 0 || started) {
+  return digits.map((digit, index) => {
+    if (digit !== 0 || started || index === 2) {
       started = true;
       return 0x80 | digit;
     }
     return blankTile;
   });
+}
+function composeOriginalOpponentSelectionScreen(api) {
+  const opponent = originalAssets.opponentSelection;
+  const manifest = opponent.manifest;
+  const scripts = originalAssets.tournamentRecord.scripts;
+  if (!manifest || !scripts || !opponent.tileImage || !Array.isArray(manifest.nametable)) {
+    return null;
+  }
+  const statuses = Array.from({ length: 12 }, (_, index) =>
+    api.original_team_status_053e ? api.original_team_status_053e(index) & 0xff : 0);
+  const values = [
+    api.original_ram_0558 ? api.original_ram_0558() & 0xff : 0,
+    api.original_ram_0557 ? api.original_ram_0557() & 0xff : 0,
+    api.original_ram_0555 ? api.original_ram_0555() & 0xff : 0,
+  ];
+  const packed = Array.from({ length: 10 }, (_, index) =>
+    api.original_ram_046e ? api.original_ram_046e(index) & 0xff : 0);
+  const option = api.original_option_number ? api.original_option_number() & 0xff : 0xff;
+  const key = `${statuses.join(",")}:${values.join(",")}:${packed.join(",")}:${option}`;
+  if (opponent.canvas && opponent.key === key) return opponent.canvas;
+  if (!opponent.canvas) {
+    opponent.canvas = document.createElement("canvas");
+    opponent.canvas.width = 256;
+    opponent.canvas.height = 240;
+    opponent.context = opponent.canvas.getContext("2d");
+  }
+  const nametable = Uint8Array.from(manifest.nametable);
+  const statusAddresses = scripts.statusAddresses || [];
+  const statusIndices = scripts.statusIndices || [];
+  for (let slot = 0; slot < 12; slot++) {
+    let status = statuses[statusIndices[slot] ?? slot] ?? 0;
+    const count = status & 3;
+    for (let mark = 0; mark < count; mark++) {
+      writeOriginalWeatherPreviewTiles(
+        nametable,
+        (statusAddresses[slot] ?? 0x2000) + mark,
+        [status & 0x80 ? scripts.winTile : scripts.lossTile],
+      );
+      status = (status << 1) & 0xff;
+    }
+  }
+  for (let index = 0; index < 3; index++) {
+    writeOriginalWeatherPreviewTiles(
+      nametable,
+      scripts.numberAddresses?.[index] ?? 0x2000,
+      originalTournamentRecordDigits(values[index], scripts.blankTile ?? 0x02),
+    );
+  }
+  const packedTiles = [];
+  for (let index = 0; index < packed.length; index++) {
+    packedTiles.push(packed[index] | 0x80);
+    if (index === 2 || index === 5) packedTiles.push(0xff);
+  }
+  writeOriginalWeatherPreviewTiles(nametable, scripts.packedAddress ?? 0x236b, packedTiles);
+  opponent.context.clearRect(0, 0, 256, 240);
+  opponent.context.imageSmoothingEnabled = false;
+  renderOriginalMatchSettingsNametable(opponent.context, nametable, opponent.tileImage, 0);
+  opponent.key = key;
+  if (DEBUG) {
+    window.__soccerOpponentSelectionRenderer = {
+      option, statuses, values, packed, key, nametable: Array.from(nametable),
+    };
+  }
+  return opponent.canvas;
 }
 function composeOriginalTournamentRecordScreen(api) {
   const record = originalAssets.tournamentRecord;
@@ -2459,6 +2530,8 @@ function drawOriginalMenuScreen(api) {
     ? (composeOriginalBracketScreen(api) || originalAssets.menu[id])
     : subtype === 0x01
       ? (composeOriginalModeSelectionScreen(api) || originalAssets.menu[id])
+    : subtype === 0x02
+      ? (composeOriginalOpponentSelectionScreen(api) || originalAssets.menu[id])
     : subtype === 0x06
       ? (composeOriginalMatchSettingsScreen(api) || originalAssets.menu[id])
       : subtype === 0x07
@@ -2991,7 +3064,7 @@ async function main() {
     const image = await withFallback(name, originalAssetUrl(name), originalFallbackUrl(name), loadImage);
     return [id, image];
   })).then((entries) => Object.fromEntries(entries));
-  const [api, chr, chrAlt, field, spriteManifest, spriteIndexImage, palettes, statusbarRenderer, splashLogo, splashTitle, splashTitleBlink, splashStory, resultScreenManifest, resultRenderer, modeSelectionScreenManifest, modeSelectionTiles, bracketScreenManifest, bracketRenderer, bracketTiles, matchSettingsScreenManifest, matchSettingsRenderer, matchSettingsTiles, formationControlScreenManifest, formationControlRenderer, formationControlTiles, weatherPreviewScreenManifest, weatherPreviewRenderer, weatherPreviewTiles, tournamentRecordScreenManifest, tournamentRecordRenderer, tournamentRecordTiles, playerProfileScreenManifest, playerProfileRenderer, playerProfileTiles, musicSelectionScreenManifest, musicSelectionRenderer, musicSelectionTiles, meetingSecretScreenManifest, meetingSecretRenderer, meetingSecretTiles0a, meetingSecretTiles0f, creditsScreenManifest, creditsTiles, menuScreens] = await Promise.all([
+  const [api, chr, chrAlt, field, spriteManifest, spriteIndexImage, palettes, statusbarRenderer, splashLogo, splashTitle, splashTitleBlink, splashStory, resultScreenManifest, resultRenderer, modeSelectionScreenManifest, modeSelectionTiles, opponentSelectionScreenManifest, opponentSelectionTiles, bracketScreenManifest, bracketRenderer, bracketTiles, matchSettingsScreenManifest, matchSettingsRenderer, matchSettingsTiles, formationControlScreenManifest, formationControlRenderer, formationControlTiles, weatherPreviewScreenManifest, weatherPreviewRenderer, weatherPreviewTiles, tournamentRecordScreenManifest, tournamentRecordRenderer, tournamentRecordTiles, playerProfileScreenManifest, playerProfileRenderer, playerProfileTiles, musicSelectionScreenManifest, musicSelectionRenderer, musicSelectionTiles, meetingSecretScreenManifest, meetingSecretRenderer, meetingSecretTiles0a, meetingSecretTiles0f, creditsScreenManifest, creditsTiles, menuScreens] = await Promise.all([
     loadWasm(),
     withFallback("chr_sprite_pal_01.png", originalAssetUrl("chr_sprite_pal_01.png"), originalFallbackUrl("chr_sprite_pal_01.png"), loadImage),
     withFallback("chr_sprite_pal_08.png", originalAssetUrl("chr_sprite_pal_08.png"), originalFallbackUrl("chr_sprite_pal_08.png"), loadImage),
@@ -3008,6 +3081,8 @@ async function main() {
     withFallback("result_renderer.json", originalAssetUrl("result_renderer.json"), originalFallbackUrl("result_renderer.json"), loadJson),
     withFallback("mode_selection_screen_manifest.json", originalAssetUrl("mode_selection_screen_manifest.json"), originalFallbackUrl("mode_selection_screen_manifest.json"), loadJson),
     withFallback("mode_selection_tiles.png", originalAssetUrl("mode_selection_tiles.png"), originalFallbackUrl("mode_selection_tiles.png"), loadImage),
+    withFallback("opponent_selection_screen_manifest.json", originalAssetUrl("opponent_selection_screen_manifest.json"), originalFallbackUrl("opponent_selection_screen_manifest.json"), loadJson),
+    withFallback("opponent_selection_tiles.png", originalAssetUrl("opponent_selection_tiles.png"), originalFallbackUrl("opponent_selection_tiles.png"), loadImage),
     withFallback("bracket_screen_manifest.json", originalAssetUrl("bracket_screen_manifest.json"), originalFallbackUrl("bracket_screen_manifest.json"), loadJson),
     withFallback("bracket_renderer.json", originalAssetUrl("bracket_renderer.json"), originalFallbackUrl("bracket_renderer.json"), loadJson),
     withFallback("bracket_tiles.png", originalAssetUrl("bracket_tiles.png"), originalFallbackUrl("bracket_tiles.png"), loadImage),
@@ -3051,6 +3126,8 @@ async function main() {
   originalAssets.result.scripts = resultRenderer;
   originalAssets.modeSelection.manifest = modeSelectionScreenManifest;
   originalAssets.modeSelection.tileImage = modeSelectionTiles;
+  originalAssets.opponentSelection.manifest = opponentSelectionScreenManifest;
+  originalAssets.opponentSelection.tileImage = opponentSelectionTiles;
   originalAssets.bracket.manifest = bracketScreenManifest;
   originalAssets.bracket.scripts = bracketRenderer;
   originalAssets.bracket.tileImage = bracketTiles;
