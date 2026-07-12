@@ -68,7 +68,7 @@ const btnSprint = document.querySelector("#btnSprint");
 const btnStart = document.querySelector("#btnStart");
 const btnSelect = document.querySelector("#btnSelect");
 const DEBUG = new URLSearchParams(window.location.search).get("debug") === "1";
-const BUILD_ID = "original-team-flags-source-tables-20260712";
+const BUILD_ID = "original-live-tackle-tap-window-20260712";
 document.body.classList.toggle("debug", DEBUG);
 stats.hidden = !DEBUG;
 function enforceControllerOutsideGame() {
@@ -83,7 +83,7 @@ function enforceControllerOutsideGame() {
 enforceControllerOutsideGame();
 window.addEventListener("resize", enforceControllerOutsideGame, { passive: true });
 window.addEventListener("orientationchange", enforceControllerOutsideGame, { passive: true });
-const TOUCH_TAP_LATCH_SOFTWARE_FRAMES = 4;
+const TOUCH_TAP_LATCH_SOFTWARE_FRAMES = 7;
 const touch = {
   stickPointer: null,
   kickPointer: null,
@@ -293,8 +293,14 @@ function originalFallbackUrl(name) {
 window.addEventListener("keydown", (event) => {
   ensureAudio();
   keys.add(event.code);
-  if (event.code === "KeyJ" || event.code === "KeyZ") keyTapLatch.kick = TOUCH_TAP_LATCH_SOFTWARE_FRAMES;
-  if (event.code === "KeyK" || event.code === "KeyX") keyTapLatch.sprint = TOUCH_TAP_LATCH_SOFTWARE_FRAMES;
+  if (event.code === "KeyJ" || event.code === "KeyZ") {
+    if (!keys.has("KeyK") && !keys.has("KeyX")) keyTapLatch.sprint = 0;
+    keyTapLatch.kick = TOUCH_TAP_LATCH_SOFTWARE_FRAMES;
+  }
+  if (event.code === "KeyK" || event.code === "KeyX") {
+    if (!keys.has("KeyJ") && !keys.has("KeyZ")) keyTapLatch.kick = 0;
+    keyTapLatch.sprint = TOUCH_TAP_LATCH_SOFTWARE_FRAMES;
+  }
   if (event.code === "Enter" || event.code === "Space") keyTapLatch.start = TOUCH_TAP_LATCH_SOFTWARE_FRAMES;
   if (event.code === "ShiftLeft" || event.code === "ShiftRight") keyTapLatch.select = TOUCH_TAP_LATCH_SOFTWARE_FRAMES;
   if (["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", "Space"].includes(event.code)) event.preventDefault();
@@ -311,6 +317,8 @@ function setTouchButton(button, prop) {
   const pointerProp = `${prop}Pointer`;
   const activate = () => {
     ensureAudio();
+    if (prop === "kick" && !touch.sprint) touch.sprintLatchTicks = 0;
+    if (prop === "sprint" && !touch.kick) touch.kickLatchTicks = 0;
     touch[prop] = true;
     touch[latchProp] = TOUCH_TAP_LATCH_SOFTWARE_FRAMES;
     button.classList.add("active");
