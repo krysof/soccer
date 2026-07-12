@@ -238,7 +238,15 @@ const originalAssets = {
     backgroundTileCache: new Map(),
   },
 };
-const sfx = { ctx: null, lastScore: "0-0", lastPhase: PHASE.TITLE, lastSpecial: 0, lastAction: ACTION.STAND, lastKeeper: 0 };
+const sfx = {
+  ctx: null,
+  lastEventSerial: 0,
+  lastScore: "0-0",
+  lastPhase: PHASE.TITLE,
+  lastSpecial: 0,
+  lastAction: ACTION.STAND,
+  lastKeeper: 0,
+};
 function loadImage(src) {
   return new Promise((resolve, reject) => {
     const img = new Image();
@@ -389,9 +397,46 @@ function playSfx(name) {
   if (name === "keeper") { tone(150, 0.06, "triangle", 0.04); noise(0.05, 0.025, 0.02); }
   if (name === "whistle") { tone(1350, 0.12, "square", 0.028); tone(1750, 0.08, "square", 0.022, 0.10); }
   if (name === "goal") { tone(523, 0.10, "square", 0.045); tone(659, 0.10, "square", 0.045, 0.10); tone(784, 0.18, "square", 0.05, 0.20); noise(0.22, 0.025, 0.06); }
+  if (name === "jump") { tone(260, 0.055, "square", 0.025); tone(390, 0.05, "square", 0.022, 0.035); }
+  if (name === "land") { noise(0.045, 0.022); tone(80, 0.045, "triangle", 0.025); }
+  if (name === "cursor") { tone(720, 0.025, "square", 0.018); }
+  if (name === "confirm") { tone(520, 0.045, "square", 0.022); tone(780, 0.055, "square", 0.022, 0.035); }
+  if (name === "reject") { tone(190, 0.06, "sawtooth", 0.025); tone(140, 0.08, "sawtooth", 0.02, 0.045); }
+  if (name === "text") { tone(880, 0.018, "square", 0.012); }
+  if (name === "wind") { noise(0.16, 0.018); tone(110, 0.13, "triangle", 0.012); }
+  if (name === "phone") { tone(440, 0.08, "square", 0.018); tone(660, 0.08, "square", 0.016, 0.09); }
+}
+function playOriginalSoundEvent(soundId) {
+  if ([0x20, 0x22, 0x29].includes(soundId)) return playSfx("kick");
+  if ([0x23, 0x26, 0x27].includes(soundId)) return playSfx("keeper");
+  if (soundId === 0x24) return playSfx("kick");
+  if ([0x28, 0x2A, 0x37, 0x38, 0x39, 0x3C, 0x3E, 0x43, 0x45, 0x46].includes(soundId)) return playSfx("special");
+  if (soundId === 0x2B) return playSfx("jump");
+  if ([0x2C, 0x3D].includes(soundId)) return playSfx("land");
+  if ([0x2D, 0x31, 0x40].includes(soundId)) return playSfx("whistle");
+  if (soundId === 0x2E) return playSfx("goal");
+  if (soundId === 0x32) return playSfx("cursor");
+  if (soundId === 0x33) return playSfx("confirm");
+  if (soundId === 0x34) return playSfx("reject");
+  if (soundId === 0x35) return playSfx("text");
+  if ([0x36, 0x3B].includes(soundId)) return playSfx("tackle");
+  if (soundId === 0x41) return playSfx("wind");
+  if ([0x44, 0x47, 0x48, 0x49, 0x4A, 0x4B, 0x4C, 0x4D, 0x4E].includes(soundId)) return playSfx("phone");
 }
 function updateSfx(api) {
   if (!sfx.ctx || sfx.ctx.state === "suspended") return;
+  if (api.original_sound_event_serial && api.original_sound_event) {
+    const current = api.original_sound_event_serial() >>> 0;
+    let previous = sfx.lastEventSerial >>> 0;
+    if (current < previous) previous = 0;
+    if (current - previous > 16) previous = current - 16;
+    for (let serial = previous + 1; serial <= current; serial++) {
+      const soundId = api.original_sound_event(serial >>> 0) & 0xFF;
+      if (soundId !== 0xFF) playOriginalSoundEvent(soundId);
+    }
+    sfx.lastEventSerial = current;
+    return;
+  }
   const score = `${api.score_left()}-${api.score_right()}`;
   const phase = api.game_phase ? api.game_phase() : PHASE.PLAYING;
   const action = api.player_action ? api.player_action(api.controlled_player ? api.controlled_player() : 0) : ACTION.STAND;
@@ -623,7 +668,7 @@ function consumeTapLatchesAfterSoftwareFrame() {
   if (keyTapLatch.select > 0) keyTapLatch.select -= 1;
 }
 async function loadWasm() {
-  const primary = assetUrl("../game_core.8df43e72.wasm");
+  const primary = assetUrl("../game_core.523b2726.wasm");
   const fallback = rootAssetUrl("game_core.wasm");
   const response = await withFallback("game_core.wasm", primary, fallback, (url) => fetch(url).then((r) => {
     if (!r.ok) throw new Error(`failed to load ${url}: ${r.status}`);
