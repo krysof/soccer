@@ -834,7 +834,7 @@ function drawField(api, screenW, screenH, worldW = screenW, worldH = screenH, ca
     const sourceY = clampedCameraY * assetScale;
     const sourceW = viewWidth * assetScale;
     const sourceH = viewHeight * assetScale;
-    if (originalMinimapStatusbarActive(api)) {
+    if (originalFieldFullScreenActive(api)) {
       const layout = originalFullScreenLayout();
       const fieldHeight = ORIGINAL_STATUSBAR_SPLIT_Y;
       const clampedStatusCameraY = clamp(cameraY == null ? 0 : cameraY, 0, logicalHeight - fieldHeight);
@@ -1038,6 +1038,9 @@ function drawOriginalControlNumberMarker(api, view, playerPosition, screenPositi
 function originalMinimapStatusbarActive(api) {
   return (api.original_screen_number?.() & 0xFF) === 0x00
     && (api.original_statusbar_view?.() & 0x7F) === 0x06;
+}
+function originalFieldFullScreenActive(api) {
+  return (api.original_screen_number?.() & 0xFF) === 0x00;
 }
 function originalStatusbarPlayerRecord(manifest, team, playerNumber) {
   const rawName = manifest.roster_name_tiles?.[team & 0x0F]?.[Math.min(playerNumber & 0xFF, 0x0B)]
@@ -3202,7 +3205,7 @@ function render(api) {
   const phase = api.game_phase ? api.game_phase() : PHASE.PLAYING;
   const originalScreen = api.original_screen_number ? api.original_screen_number() : 0;
   synchronizeOriginalFieldFootprints(api, originalScreen);
-  const originalField4x3 = originalMinimapStatusbarActive(api);
+  const originalField4x3 = originalFieldFullScreenActive(api);
   gameWrap.classList.toggle(
     "original-4x3-screen",
     phase === PHASE.TITLE || originalScreen === 0x02 || originalScreen === 0x03
