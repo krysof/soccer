@@ -68,7 +68,7 @@ const btnSprint = document.querySelector("#btnSprint");
 const btnStart = document.querySelector("#btnStart");
 const btnSelect = document.querySelector("#btnSelect");
 const DEBUG = new URLSearchParams(window.location.search).get("debug") === "1";
-const BUILD_ID = "original-live-tackle-tap-window-20260712";
+const BUILD_ID = "original-committed-sprite-frame-20260712";
 document.body.classList.toggle("debug", DEBUG);
 stats.hidden = !DEBUG;
 function enforceControllerOutsideGame() {
@@ -676,7 +676,7 @@ function consumeTapLatchesAfterSoftwareFrame() {
   if (keyTapLatch.select > 0) keyTapLatch.select -= 1;
 }
 async function loadWasm() {
-  const primary = assetUrl("../game_core.4b134a41.wasm");
+  const primary = assetUrl("../game_core.e908cb3c.wasm");
   const fallback = rootAssetUrl("game_core.wasm");
   const response = await withFallback("game_core.wasm", primary, fallback, (url) => fetch(url).then((r) => {
     if (!r.ok) throw new Error(`failed to load ${url}: ${r.status}`);
@@ -1369,6 +1369,11 @@ function originalSpriteBankForObject(api, objectIndex, bankSlot) {
   return api.original_sprite_bank(bankSlot) & 0xFF;
 }
 function originalObjectAnimation(api, objectIndex) {
+  if (objectIndex <= 0x0C && api.original_committed_sprite_animation
+      && api.original_committed_sprite_serial
+      && api.original_committed_sprite_serial() !== 0) {
+    return api.original_committed_sprite_animation(objectIndex) & 0xFF;
+  }
   if (objectIndex === 0x0C) {
     return api.original_ball_animation ? api.original_ball_animation() & 0xFF : null;
   }
@@ -1383,7 +1388,11 @@ function resolveOriginalObjectFrame(api, objectIndex) {
   if (!manifest || !api.original_object_work_0061) return null;
   const animation = originalObjectAnimation(api, objectIndex);
   if (!Number.isFinite(animation)) return null;
-  const groupNumber = api.original_object_work_0061(objectIndex) & 0xFF;
+  const groupNumber = objectIndex <= 0x0C && api.original_committed_sprite_group
+      && api.original_committed_sprite_serial
+      && api.original_committed_sprite_serial() !== 0
+    ? api.original_committed_sprite_group(objectIndex) & 0xFF
+    : api.original_object_work_0061(objectIndex) & 0xFF;
   if (groupNumber === 3) {
     const index = animation & 0x7F;
     const tile = manifest.specialGroup3Tiles[index];
