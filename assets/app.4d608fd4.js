@@ -668,7 +668,7 @@ function consumeTapLatchesAfterSoftwareFrame() {
   if (keyTapLatch.select > 0) keyTapLatch.select -= 1;
 }
 async function loadWasm() {
-  const primary = assetUrl("../game_core.6fb595c5.wasm");
+  const primary = assetUrl("../game_core.1945cd95.wasm");
   const fallback = rootAssetUrl("game_core.wasm");
   const response = await withFallback("game_core.wasm", primary, fallback, (url) => fetch(url).then((r) => {
     if (!r.ok) throw new Error(`failed to load ${url}: ${r.status}`);
@@ -1604,25 +1604,80 @@ function drawOriginalSplash(api) {
   ctx.fillStyle = "#000";
   ctx.fillRect(0, 0, canvas.width, canvas.height);
   const id = api.original_background_image_id ? api.original_background_image_id() : 0;
+  const subtype = api.original_screen_subtype ? api.original_screen_subtype() & 0x7F : 0;
   let img = originalAssets.splash[id];
   if (id === 1 && api.original_frame_counter && (api.original_frame_counter() & 4) !== 0) {
     img = originalAssets.splash.titleBlink || img;
   }
   const brightness = api.original_current_brightness ? api.original_current_brightness() : 0x40;
+  const alpha = Math.max(0, Math.min(1, brightness / 0x40));
+  let layout = originalFullScreenLayout();
   if (img) {
-    const scale = Math.min(canvas.width / 256, canvas.height / 240);
-    const w = Math.round(256 * scale);
-    const h = Math.round(240 * scale);
     ctx.imageSmoothingEnabled = false;
-    ctx.globalAlpha = Math.max(0, Math.min(1, brightness / 0x40));
-    ctx.drawImage(img, (canvas.width - w) / 2, (canvas.height - h) / 2, w, h);
+    ctx.globalAlpha = alpha;
+    ctx.drawImage(img, layout.x, layout.y, layout.w, layout.h);
     ctx.globalAlpha = 1;
   }
+  drawOriginalSplashObjects(api, layout, id, subtype, alpha);
   ctx.textAlign = "center";
   ctx.fillStyle = "rgba(255,255,255,.75)";
   ctx.font = "15px system-ui, sans-serif";
   ctx.fillText("Start：PC Enter / Space，手机 START 键", canvas.width / 2, canvas.height - 12);
   ctx.textAlign = "left";
+}
+function originalSplashSignedCoordinate(value) {
+  const word = value & 0xFFFF;
+  return word & 0x8000 ? word - 0x10000 : word;
+}
+function drawOriginalSplashObjects(api, layout, backgroundId, subtype, alpha) {
+  const ballOnly = subtype === 0x01 || subtype === 0x03 || subtype === 0x0B;
+  const kunioScene = backgroundId === 0x01 && subtype >= 0x06 && subtype <= 0x0A;
+  if (!ballOnly && !kunioScene) {
+    if (DEBUG) window.__soccerSplashRenderer = { backgroundId, subtype, drawnObjectIds: [] };
+    return;
+  }
+  const drawnObjectIds = [];
+  let playerPosition = null;
+  let ballPosition = null;
+  ctx.save();
+  ctx.beginPath();
+  ctx.rect(layout.x, layout.y, layout.w, layout.h);
+  ctx.clip();
+  ctx.globalAlpha = alpha;
+  if (kunioScene && api.original_player_x_lo && api.original_player_animation) {
+    const raw = originalPlayerPosition(api, 0);
+    playerPosition = {
+      x: originalSplashSignedCoordinate(raw.x),
+      y: originalSplashSignedCoordinate(raw.y),
+      z: normalizeOriginalHeight(raw.z),
+    };
+    const screenX = layout.x + playerPosition.x * layout.scale;
+    const screenY = layout.y + (playerPosition.y - playerPosition.z) * layout.scale;
+    if (drawOriginalObject(api, 0, screenX, screenY, layout.scale)) drawnObjectIds.push(0);
+  }
+  if (api.original_ball_x_lo && api.original_ball_animation) {
+    const raw = originalBallPosition(api);
+    ballPosition = {
+      x: originalSplashSignedCoordinate(raw.x),
+      y: originalSplashSignedCoordinate(raw.y),
+      z: normalizeOriginalHeight(raw.z),
+    };
+    const screenX = layout.x + ballPosition.x * layout.scale;
+    const screenY = layout.y + ballPosition.y * layout.scale;
+    if (drawOriginalBall(api, screenX, screenY, ballPosition.z, layout.scale)) {
+      drawnObjectIds.push(0x0C);
+    }
+  }
+  ctx.restore();
+  if (DEBUG) {
+    window.__soccerSplashRenderer = {
+      backgroundId,
+      subtype,
+      drawnObjectIds,
+      playerPosition,
+      ballPosition,
+    };
+  }
 }
 function originalFullScreenLayout() {
   const scale = Math.min(canvas.width / 256, canvas.height / 240);
