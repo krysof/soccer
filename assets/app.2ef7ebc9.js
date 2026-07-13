@@ -699,7 +699,7 @@ function consumeTapLatchesAfterSoftwareFrame() {
   if (keyTapLatch.select > 0) keyTapLatch.select -= 1;
 }
 async function loadWasm() {
-  const primary = assetUrl("../game_core.2710cc25.wasm");
+  const primary = assetUrl("../game_core.56fb5ba0.wasm");
   const fallback = rootAssetUrl("game_core.wasm");
   const response = await withFallback("game_core.wasm", primary, fallback, (url) => fetch(url).then((r) => {
     if (!r.ok) throw new Error(`failed to load ${url}: ${r.status}`);
@@ -1382,6 +1382,10 @@ function renderOriginalDynamicBackgroundNametable(context, nametable, bank0, ban
   }
   return true;
 }
+function originalCommittedSpriteFrameActive(api) {
+  return Boolean(api.original_committed_sprite_serial
+    && api.original_committed_sprite_serial() !== 0);
+}
 function originalSpriteBankForObject(api, objectIndex, bankSlot) {
   const screen = api.original_screen_number ? api.original_screen_number() & 0xFF : 0;
   const subtype = api.original_screen_subtype ? api.original_screen_subtype() & 0x7F : 0;
@@ -1389,7 +1393,36 @@ function originalSpriteBankForObject(api, objectIndex, bankSlot) {
       && (bankSlot === 1 || bankSlot === 2) && api.original_object_work_0061) {
     return api.original_object_work_0061(bankSlot === 1 ? 5 : 6) & 0xFF;
   }
+  if (objectIndex <= 0x0C && originalCommittedSpriteFrameActive(api)
+      && api.original_committed_sprite_bank) {
+    return api.original_committed_sprite_bank(bankSlot) & 0xFF;
+  }
   return api.original_sprite_bank(bankSlot) & 0xFF;
+}
+function originalSpritePaletteForObject(api, objectIndex, paletteSlot) {
+  if (objectIndex <= 0x0C && originalCommittedSpriteFrameActive(api)
+      && api.original_committed_sprite_palette) {
+    return api.original_committed_sprite_palette(paletteSlot) & 0xFF;
+  }
+  return api.original_sprite_palette_number(paletteSlot) & 0xFF;
+}
+function originalPlayerFaceForObject(api, objectIndex) {
+  if (objectIndex < 0x0C && originalCommittedSpriteFrameActive(api)
+      && api.original_committed_player_face) {
+    return api.original_committed_player_face(objectIndex) & 0xFF;
+  }
+  return objectIndex < 0x0C && api.original_player_face
+    ? api.original_player_face(objectIndex) & 0xFF : 0;
+}
+function originalObjectVisibleForCommittedFrame(api, objectIndex) {
+  if (objectIndex <= 0x0C && originalCommittedSpriteFrameActive(api)
+      && api.original_committed_sprite_visibility) {
+    return (api.original_committed_sprite_visibility(objectIndex) & 0xFF) !== 0;
+  }
+  if (objectIndex === 0x0C) {
+    return !api.original_ball_visibility_flag || api.original_ball_visibility_flag() !== 0;
+  }
+  return !api.original_visibility || api.original_visibility(objectIndex) !== 0;
 }
 function originalObjectAnimation(api, objectIndex) {
   if (objectIndex <= 0x0C && api.original_committed_sprite_animation
@@ -1437,10 +1470,7 @@ function drawOriginalSpriteTile(tileCanvas, x, y, attr, drawScale) {
   ctx.restore();
 }
 function drawOriginalObject(api, objectIndex, x, y, displayScale = 2) {
-  if (objectIndex <= 0x0C && api.original_committed_sprite_visibility
-      && api.original_committed_sprite_serial
-      && api.original_committed_sprite_serial() !== 0
-      && (api.original_committed_sprite_visibility(objectIndex) & 0xFF) === 0) {
+  if (objectIndex <= 0x0C && !originalObjectVisibleForCommittedFrame(api, objectIndex)) {
     return false;
   }
   const resolved = resolveOriginalObjectFrame(api, objectIndex);
@@ -1449,7 +1479,7 @@ function drawOriginalObject(api, objectIndex, x, y, displayScale = 2) {
   const animation = resolved.animation;
   if (Number.isFinite(resolved.specialTile)) {
     const paletteSlot = ((animation & 1) + 1) & 3;
-    const paletteNumber = api.original_sprite_palette_number(paletteSlot) & 0xFF;
+    const paletteNumber = originalSpritePaletteForObject(api, objectIndex, paletteSlot);
     const bankSlot = resolved.specialTile >> 6;
     const bankNumber = originalSpriteBankForObject(api, objectIndex, bankSlot);
     const tileCanvas = originalSpriteTile(bankNumber, resolved.specialTile & 0x3F, paletteNumber);
@@ -1458,8 +1488,7 @@ function drawOriginalObject(api, objectIndex, x, y, displayScale = 2) {
     return true;
   }
   const objectPaletteSlot = manifest.objectPaletteSlots[objectIndex] || 0;
-  const faceNumber = objectIndex < 0x0C && api.original_player_face
-    ? api.original_player_face(objectIndex) & 0xFF : 0;
+  const faceNumber = originalPlayerFaceForObject(api, objectIndex);
   const mirror = (animation & 0x80) === 0;
   for (let i = 0; i < resolved.frame.count; i++) {
     let tile = resolved.frame.tile[i] & 0xFF;
@@ -1469,7 +1498,7 @@ function drawOriginalObject(api, objectIndex, x, y, displayScale = 2) {
     }
     const attr = ((resolved.frame.attr[i] ^ (mirror ? 0x40 : 0)) | objectPaletteSlot) & 0xFF;
     const paletteSlot = attr & 3;
-    const paletteNumber = api.original_sprite_palette_number(paletteSlot) & 0xFF;
+    const paletteNumber = originalSpritePaletteForObject(api, objectIndex, paletteSlot);
     const bankSlot = tile >> 6;
     const bankNumber = originalSpriteBankForObject(api, objectIndex, bankSlot);
     const tileCanvas = originalSpriteTile(bankNumber, tile & 0x3F, paletteNumber);
@@ -1493,7 +1522,7 @@ function drawOriginalBall(api, x, y, z = 0, displayScale = 2) {
 function drawOriginalObjectShadow(api, objectIndex, kind, x, y, displayScale = 2) {
   const tileNumber = kind === "state" ? 0xA1 : 0xB7;
   const paletteSlot = kind === "state" ? 1 : 0;
-  const paletteNumber = api.original_sprite_palette_number(paletteSlot) & 0xFF;
+  const paletteNumber = originalSpritePaletteForObject(api, objectIndex, paletteSlot);
   const bankSlot = tileNumber >> 6;
   const bankNumber = originalSpriteBankForObject(api, objectIndex, bankSlot);
   const tileCanvas = originalSpriteTile(bankNumber, tileNumber & 0x3F, paletteNumber);
@@ -3446,18 +3475,26 @@ function render(api) {
   ctx.clip();
   let entities = [];
   if (!isOriginalResultScreen && api.original_animation_priority_count && api.original_animation_priority) {
-    const priorityCount = Math.min(api.original_animation_priority_count(), 0x20);
+    const useCommittedPriority = originalCommittedSpriteFrameActive(api)
+      && api.original_committed_animation_priority_count
+      && api.original_committed_animation_priority;
+    const priorityCount = Math.min(useCommittedPriority
+      ? api.original_committed_animation_priority_count()
+      : api.original_animation_priority_count(), 0x20);
     const seen = new Set();
     for (let slot = priorityCount - 1; slot >= 0; slot--) {
-      const entry = api.original_animation_priority(slot);
+      const entry = useCommittedPriority
+        ? api.original_committed_animation_priority(slot)
+        : api.original_animation_priority(slot);
       const object = entry & 0x1F;
       const variant = entry & 0xE0;
       if (variant === 0x20 || variant === 0x40) {
         if (object === 0x0C) {
-          if (!api.original_ball_visibility_flag || api.original_ball_visibility_flag()) {
+          if (originalObjectVisibleForCommittedFrame(api, object)) {
             entities.push({ type: "shadow", kind: variant === 0x20 ? "state" : "air", index: object });
           }
-        } else if (object < count && (!api.player_active || api.player_active(object))) {
+        } else if (object < count && (!api.player_active || api.player_active(object))
+            && originalObjectVisibleForCommittedFrame(api, object)) {
           entities.push({ type: "shadow", kind: variant === 0x20 ? "state" : "air", index: object });
         }
         continue;
@@ -3465,7 +3502,7 @@ function render(api) {
       if ((entry & 0x60) !== 0) continue;
       if (seen.has(object)) continue;
       if (object === 0x0C) {
-        if (!api.original_ball_visibility_flag || api.original_ball_visibility_flag()) {
+        if (originalObjectVisibleForCommittedFrame(api, object)) {
           entities.push({ type: "ball", groundY: by });
           seen.add(object);
         }
