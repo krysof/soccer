@@ -1,3 +1,4 @@
+import { OriginalNesAudioTestAdapter } from "./original-audio-emulator.efc7bb6a.js";
 const INPUT = {
   UP: 1 << 0,
   DOWN: 1 << 1,
@@ -54,6 +55,7 @@ const ORIGINAL_BACKGROUND_SCREEN_IDS = [
 ];
 const ORIGINAL_CREDITS_SCREEN_IDS = [0x1c, 0x1d, 0x1e, 0x1f, 0x20, 0x21, 0x22, 0x23, 0x24];
 const keys = new Set();
+let resetRequested = false;
 const keyTapLatch = { kick: 0, sprint: 0, start: 0, select: 0 };
 const canvas = document.querySelector("#game");
 const ctx = canvas.getContext("2d");
@@ -68,7 +70,8 @@ const btnSprint = document.querySelector("#btnSprint");
 const btnStart = document.querySelector("#btnStart");
 const btnSelect = document.querySelector("#btnSelect");
 const DEBUG = new URLSearchParams(window.location.search).get("debug") === "1";
-const BUILD_ID = "original-goal-kick-full-path-20260713";
+const ORIGINAL_AUDIO_EMULATOR_ENABLED = new URLSearchParams(window.location.search).get("audio") !== "synth";
+const BUILD_ID = "original-audio-emulator-test-20260713";
 document.body.classList.toggle("debug", DEBUG);
 stats.hidden = !DEBUG;
 function enforceControllerOutsideGame() {
@@ -290,8 +293,16 @@ function originalAssetUrl(name) {
 function originalFallbackUrl(name) {
   return cacheBustedOriginalAssetUrl(rootAssetUrl(`original/${name}`));
 }
+const originalNesAudio = new OriginalNesAudioTestAdapter({
+  enabled: ORIGINAL_AUDIO_EMULATOR_ENABLED,
+  runtimeUrl: cacheBustedOriginalAssetUrl(assetUrl("../audio-emulator/jsnes.min.js")),
+  romUrl: cacheBustedOriginalAssetUrl(assetUrl("../audio-emulator/original-audio-test.nes")),
+});
+originalNesAudio.prepare();
+if (DEBUG) window.__soccerAudio = () => originalNesAudio.snapshot();
 window.addEventListener("keydown", (event) => {
   ensureAudio();
+  if (event.code === "KeyR" && !event.repeat) resetRequested = true;
   keys.add(event.code);
   if (event.code === "KeyJ" || event.code === "KeyZ") {
     if (!keys.has("KeyK") && !keys.has("KeyX")) keyTapLatch.sprint = 0;
@@ -361,11 +372,13 @@ setTouchButton(btnSelect, "select");
 function ensureAudio() {
   if (sfx.ctx) {
     if (sfx.ctx.state === "suspended") sfx.ctx.resume?.();
+    originalNesAudio.attachAudioContext(sfx.ctx);
     return sfx.ctx;
   }
   const AudioCtor = window.AudioContext || window.webkitAudioContext;
   if (!AudioCtor) return null;
   sfx.ctx = new AudioCtor();
+  originalNesAudio.attachAudioContext(sfx.ctx);
   return sfx.ctx;
 }
 function tone(freq, duration = 0.08, type = "square", gain = 0.045, delay = 0) {
@@ -433,6 +446,10 @@ function playOriginalSoundEvent(soundId) {
 }
 function updateSfx(api) {
   if (!sfx.ctx || sfx.ctx.state === "suspended") return;
+  if (originalNesAudio.claimsAudio) {
+    if (api.original_sound_event_serial) sfx.lastEventSerial = api.original_sound_event_serial() >>> 0;
+    return;
+  }
   if (api.original_sound_event_serial && api.original_sound_event) {
     const current = api.original_sound_event_serial() >>> 0;
     let previous = sfx.lastEventSerial >>> 0;
@@ -3781,6 +3798,7 @@ async function main() {
   const advanceInputVideoFrame = () => {
     const bits = inputBits();
     const ranSoftwareFrame = advanceVideoFrame(bits);
+    originalNesAudio.advanceFrame(bits);
     if (!usesOriginalVideoScheduler || ranSoftwareFrame) {
       consumeTapLatchesAfterSoftwareFrame();
     }
@@ -3788,7 +3806,11 @@ async function main() {
   };
   if (DEBUG) window.__soccerAdvanceInputVideoFrame = advanceInputVideoFrame;
   function frame(now) {
-    if (keys.has("KeyR")) api.game_init();
+    if (resetRequested) {
+      api.game_init();
+      originalNesAudio.reset();
+      resetRequested = false;
+    }
     acc += now - last; last = now; acc = Math.min(acc, stepMs * 8);
     while (acc >= stepMs) { advanceInputVideoFrame(); acc -= stepMs; }
     render(api);
