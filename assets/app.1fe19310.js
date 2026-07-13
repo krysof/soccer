@@ -1,4 +1,4 @@
-import { WasmNesApuAudioAdapter } from "./wasm-nes-apu-audio.719a31e1.js";
+import { WasmNesApuAudioAdapter } from "./wasm-nes-apu-audio.6b7e29e3.js";
 const INPUT = {
   UP: 1 << 0,
   DOWN: 1 << 1,
@@ -71,7 +71,7 @@ const btnStart = document.querySelector("#btnStart");
 const btnSelect = document.querySelector("#btnSelect");
 const DEBUG = new URLSearchParams(window.location.search).get("debug") === "1";
 const WASM_NES_APU_ENABLED = new URLSearchParams(window.location.search).get("audio") !== "synth";
-const BUILD_ID = "wasm-nes-apu-test-20260713";
+const BUILD_ID = "wasm-original-audio-driver-20260713";
 document.body.classList.toggle("debug", DEBUG);
 stats.hidden = !DEBUG;
 function enforceControllerOutsideGame() {
@@ -699,7 +699,7 @@ function consumeTapLatchesAfterSoftwareFrame() {
   if (keyTapLatch.select > 0) keyTapLatch.select -= 1;
 }
 async function loadWasm() {
-  const primary = assetUrl("../game_core.00db8867.wasm");
+  const primary = assetUrl("../game_core.a2893539.wasm");
   const fallback = rootAssetUrl("game_core.wasm");
   const response = await withFallback("game_core.wasm", primary, fallback, (url) => fetch(url).then((r) => {
     if (!r.ok) throw new Error(`failed to load ${url}: ${r.status}`);
