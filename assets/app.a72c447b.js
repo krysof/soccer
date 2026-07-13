@@ -699,7 +699,7 @@ function consumeTapLatchesAfterSoftwareFrame() {
   if (keyTapLatch.select > 0) keyTapLatch.select -= 1;
 }
 async function loadWasm() {
-  const primary = assetUrl("../game_core.99971e80.wasm");
+  const primary = assetUrl("../game_core.2710cc25.wasm");
   const fallback = rootAssetUrl("game_core.wasm");
   const response = await withFallback("game_core.wasm", primary, fallback, (url) => fetch(url).then((r) => {
     if (!r.ok) throw new Error(`failed to load ${url}: ${r.status}`);
@@ -1437,6 +1437,12 @@ function drawOriginalSpriteTile(tileCanvas, x, y, attr, drawScale) {
   ctx.restore();
 }
 function drawOriginalObject(api, objectIndex, x, y, displayScale = 2) {
+  if (objectIndex <= 0x0C && api.original_committed_sprite_visibility
+      && api.original_committed_sprite_serial
+      && api.original_committed_sprite_serial() !== 0
+      && (api.original_committed_sprite_visibility(objectIndex) & 0xFF) === 0) {
+    return false;
+  }
   const resolved = resolveOriginalObjectFrame(api, objectIndex);
   const manifest = originalAssets.sprite.manifest;
   if (!resolved || !manifest) return false;
