@@ -699,7 +699,7 @@ function consumeTapLatchesAfterSoftwareFrame() {
   if (keyTapLatch.select > 0) keyTapLatch.select -= 1;
 }
 async function loadWasm() {
-  const primary = assetUrl("../game_core.bca78cbe.wasm");
+  const primary = assetUrl("../game_core.e2043205.wasm");
   const fallback = rootAssetUrl("game_core.wasm");
   const response = await withFallback("game_core.wasm", primary, fallback, (url) => fetch(url).then((r) => {
     if (!r.ok) throw new Error(`failed to load ${url}: ${r.status}`);
@@ -3847,7 +3847,9 @@ async function main() {
   sfx.lastPhase = api.game_phase ? api.game_phase() : PHASE.TITLE;
   let last = performance.now();
   let acc = 0;
-  const stepMs = 1000 / 60;
+  const ntscRateNumerator = api.platform_ntsc_video_rate_numerator();
+  const ntscRateDenominator = api.platform_ntsc_video_rate_denominator();
+  const stepMs = 1000 * ntscRateDenominator / ntscRateNumerator;
   const usesOriginalVideoScheduler = Boolean(api.game_video_frame);
   const advanceVideoFrame = api.game_video_frame || api.game_tick;
   const advanceInputVideoFrame = () => {
