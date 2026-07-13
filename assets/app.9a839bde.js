@@ -699,7 +699,7 @@ function consumeTapLatchesAfterSoftwareFrame() {
   if (keyTapLatch.select > 0) keyTapLatch.select -= 1;
 }
 async function loadWasm() {
-  const primary = assetUrl("../game_core.926a4745.wasm");
+  const primary = assetUrl("../game_core.824bf7b3.wasm");
   const fallback = rootAssetUrl("game_core.wasm");
   const response = await withFallback("game_core.wasm", primary, fallback, (url) => fetch(url).then((r) => {
     if (!r.ok) throw new Error(`failed to load ${url}: ${r.status}`);
@@ -1415,6 +1415,11 @@ function originalPlayerFaceForObject(api, objectIndex) {
     ? api.original_player_face(objectIndex) & 0xFF : 0;
 }
 function originalObjectVisibleForCommittedFrame(api, objectIndex) {
+  const screen = api.original_screen_number ? api.original_screen_number() & 0xFF : 0;
+  if (screen === 0x02) {
+    const animation = originalObjectAnimation(api, objectIndex);
+    return Number.isFinite(animation) && (animation & 0x7F) !== 0x7F;
+  }
   if (objectIndex <= 0x0C && originalCommittedSpriteFrameActive(api)
       && api.original_committed_sprite_visibility) {
     return (api.original_committed_sprite_visibility(objectIndex) & 0xFF) !== 0;
