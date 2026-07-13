@@ -68,7 +68,7 @@ const btnSprint = document.querySelector("#btnSprint");
 const btnStart = document.querySelector("#btnStart");
 const btnSelect = document.querySelector("#btnSelect");
 const DEBUG = new URLSearchParams(window.location.search).get("debug") === "1";
-const BUILD_ID = "original-committed-sprite-frame-20260712";
+const BUILD_ID = "original-goal-kick-full-path-20260713";
 document.body.classList.toggle("debug", DEBUG);
 stats.hidden = !DEBUG;
 function enforceControllerOutsideGame() {
