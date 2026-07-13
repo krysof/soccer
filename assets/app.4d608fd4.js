@@ -1,4 +1,4 @@
-import { StandaloneNesApuAudioAdapter } from "./nes-apu-audio.dac8f98f.js";
+import { WasmNesApuAudioAdapter } from "./wasm-nes-apu-audio.719a31e1.js";
 const INPUT = {
   UP: 1 << 0,
   DOWN: 1 << 1,
@@ -70,8 +70,8 @@ const btnSprint = document.querySelector("#btnSprint");
 const btnStart = document.querySelector("#btnStart");
 const btnSelect = document.querySelector("#btnSelect");
 const DEBUG = new URLSearchParams(window.location.search).get("debug") === "1";
-const STANDALONE_NES_APU_ENABLED = new URLSearchParams(window.location.search).get("audio") !== "synth";
-const BUILD_ID = "standalone-nes-apu-test-20260713";
+const WASM_NES_APU_ENABLED = new URLSearchParams(window.location.search).get("audio") !== "synth";
+const BUILD_ID = "wasm-nes-apu-test-20260713";
 document.body.classList.toggle("debug", DEBUG);
 stats.hidden = !DEBUG;
 function enforceControllerOutsideGame() {
@@ -293,16 +293,11 @@ function originalAssetUrl(name) {
 function originalFallbackUrl(name) {
   return cacheBustedOriginalAssetUrl(rootAssetUrl(`original/${name}`));
 }
-const standaloneNesApu = new StandaloneNesApuAudioAdapter({
-  enabled: STANDALONE_NES_APU_ENABLED,
-  dpcmUrl: cacheBustedOriginalAssetUrl(assetUrl("../audio-apu/DPCM.bin")),
-  traceUrls: {
-    0x01: cacheBustedOriginalAssetUrl(assetUrl("../audio-apu/music-01-title.nat")),
-    0x02: cacheBustedOriginalAssetUrl(assetUrl("../audio-apu/music-02-menu.nat")),
-  },
+const wasmNesApu = new WasmNesApuAudioAdapter({
+  enabled: WASM_NES_APU_ENABLED,
 });
-standaloneNesApu.prepare();
-if (DEBUG) window.__soccerAudio = () => standaloneNesApu.snapshot();
+wasmNesApu.prepare();
+if (DEBUG) window.__soccerAudio = () => wasmNesApu.snapshot();
 window.addEventListener("keydown", (event) => {
   ensureAudio();
   if (event.code === "KeyR" && !event.repeat) resetRequested = true;
@@ -375,13 +370,13 @@ setTouchButton(btnSelect, "select");
 function ensureAudio() {
   if (sfx.ctx) {
     if (sfx.ctx.state === "suspended") sfx.ctx.resume?.();
-    standaloneNesApu.attachAudioContext(sfx.ctx);
+    wasmNesApu.attachAudioContext(sfx.ctx);
     return sfx.ctx;
   }
   const AudioCtor = window.AudioContext || window.webkitAudioContext;
   if (!AudioCtor) return null;
   sfx.ctx = new AudioCtor();
-  standaloneNesApu.attachAudioContext(sfx.ctx);
+  wasmNesApu.attachAudioContext(sfx.ctx);
   return sfx.ctx;
 }
 function tone(freq, duration = 0.08, type = "square", gain = 0.045, delay = 0) {
@@ -448,14 +443,14 @@ function playOriginalSoundEvent(soundId) {
   if ([0x44, 0x47, 0x48, 0x49, 0x4A, 0x4B, 0x4C, 0x4D, 0x4E].includes(soundId)) return playSfx("phone");
 }
 function updateSfx(api) {
-  if (standaloneNesApu.claimsAudio && api.original_sound_event_serial && api.original_sound_event) {
+  if (wasmNesApu.claimsAudio && api.original_sound_event_serial && api.original_sound_event) {
     const current = api.original_sound_event_serial() >>> 0;
     let previous = sfx.lastEventSerial >>> 0;
     if (current < previous) previous = 0;
     if (current - previous > 16) previous = current - 16;
     for (let serial = previous + 1; serial <= current; serial++) {
       const soundId = api.original_sound_event(serial >>> 0) & 0xFF;
-      if (soundId !== 0xFF) standaloneNesApu.handleSoundEvent(soundId);
+      if (soundId !== 0xFF) wasmNesApu.handleSoundEvent(soundId);
     }
     sfx.lastEventSerial = current;
     return;
@@ -704,7 +699,7 @@ function consumeTapLatchesAfterSoftwareFrame() {
   if (keyTapLatch.select > 0) keyTapLatch.select -= 1;
 }
 async function loadWasm() {
-  const primary = assetUrl("../game_core.3439f895.wasm");
+  const primary = assetUrl("../game_core.00db8867.wasm");
   const fallback = rootAssetUrl("game_core.wasm");
   const response = await withFallback("game_core.wasm", primary, fallback, (url) => fetch(url).then((r) => {
     if (!r.ok) throw new Error(`failed to load ${url}: ${r.status}`);
@@ -3772,6 +3767,7 @@ async function main() {
   };
   originalAssets.credits.manifest = creditsScreenManifest;
   originalAssets.credits.tileImages = creditsTiles;
+  wasmNesApu.bindCore(api);
   api.game_init();
   if (DEBUG) {
     window.__soccerApi = api;
@@ -3809,7 +3805,7 @@ async function main() {
   const advanceInputVideoFrame = () => {
     const bits = inputBits();
     const ranSoftwareFrame = advanceVideoFrame(bits);
-    standaloneNesApu.advanceFrame();
+    wasmNesApu.advanceFrame();
     if (!usesOriginalVideoScheduler || ranSoftwareFrame) {
       consumeTapLatchesAfterSoftwareFrame();
     }
@@ -3819,7 +3815,7 @@ async function main() {
   function frame(now) {
     if (resetRequested) {
       api.game_init();
-      standaloneNesApu.reset();
+      wasmNesApu.reset();
       resetRequested = false;
     }
     acc += now - last; last = now; acc = Math.min(acc, stepMs * 8);
