@@ -1,4 +1,4 @@
-import { WasmNesApuAudioAdapter } from "./wasm-nes-apu-audio.6b7e29e3.js";
+import { WasmNesApuAudioAdapter } from "./wasm-nes-apu-audio.f712e76d.js";
 const INPUT = {
   UP: 1 << 0,
   DOWN: 1 << 1,

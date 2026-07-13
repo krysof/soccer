@@ -11,6 +11,8 @@ export class WasmNesApuAudioAdapter {
     this.playbackPrimed = false;
     this.playedSamples = 0;
     this.underflows = 0;
+    this.configuredSampleRate = 0;
+    this.configuredOutputEnabled = false;
   }
   get claimsAudio() {
     return this.enabled && this.state !== "failed" && Boolean(this.api);
@@ -51,13 +53,29 @@ export class WasmNesApuAudioAdapter {
   configureCoreForContext() {
     if (!this.api) return;
     const sampleRate = this.audioContext?.sampleRate || 48000;
-    this.api.nes_apu_set_sample_rate(sampleRate);
-    this.api.nes_apu_set_output_enabled(this.audioContext ? 1 : 0);
-    this.playbackPrimed = false;
+    const outputEnabled = Boolean(this.audioContext);
+    let resetPlayback = false;
+    if (this.configuredSampleRate !== sampleRate) {
+      this.api.nes_apu_set_sample_rate(sampleRate);
+      this.configuredSampleRate = sampleRate;
+      resetPlayback = true;
+    }
+    if (this.configuredOutputEnabled !== outputEnabled) {
+      this.api.nes_apu_set_output_enabled(outputEnabled ? 1 : 0);
+      this.configuredOutputEnabled = outputEnabled;
+      resetPlayback = true;
+    }
+    if (resetPlayback) this.playbackPrimed = false;
     if (this.audioContext) this.connectProcessor();
   }
   async attachAudioContext(context) {
     if (!this.enabled || !context) return false;
+    if (this.audioContext && this.audioContext !== context) {
+      try { this.processor?.disconnect(); } catch {}
+      try { this.gain?.disconnect(); } catch {}
+      this.processor = null;
+      this.gain = null;
+    }
     this.audioContext = context;
     if (!this.api) {
       this.state = "waiting-core";
@@ -126,7 +144,10 @@ export class WasmNesApuAudioAdapter {
     this.processor = null;
     this.gain = null;
     this.playbackPrimed = false;
-    this.api?.nes_apu_set_output_enabled(0);
+    if (this.api && this.configuredOutputEnabled) {
+      this.api.nes_apu_set_output_enabled(0);
+      this.configuredOutputEnabled = false;
+    }
   }
   snapshot() {
     const api = this.api;
