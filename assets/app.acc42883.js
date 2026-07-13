@@ -1,4 +1,4 @@
-import { OriginalNesAudioTestAdapter } from "./original-audio-emulator.efc7bb6a.js";
+import { StandaloneNesApuAudioAdapter } from "./nes-apu-audio.dac8f98f.js";
 const INPUT = {
   UP: 1 << 0,
   DOWN: 1 << 1,
@@ -70,8 +70,8 @@ const btnSprint = document.querySelector("#btnSprint");
 const btnStart = document.querySelector("#btnStart");
 const btnSelect = document.querySelector("#btnSelect");
 const DEBUG = new URLSearchParams(window.location.search).get("debug") === "1";
-const ORIGINAL_AUDIO_EMULATOR_ENABLED = new URLSearchParams(window.location.search).get("audio") !== "synth";
-const BUILD_ID = "original-audio-emulator-test-20260713";
+const STANDALONE_NES_APU_ENABLED = new URLSearchParams(window.location.search).get("audio") !== "synth";
+const BUILD_ID = "standalone-nes-apu-test-20260713";
 document.body.classList.toggle("debug", DEBUG);
 stats.hidden = !DEBUG;
 function enforceControllerOutsideGame() {
@@ -293,13 +293,16 @@ function originalAssetUrl(name) {
 function originalFallbackUrl(name) {
   return cacheBustedOriginalAssetUrl(rootAssetUrl(`original/${name}`));
 }
-const originalNesAudio = new OriginalNesAudioTestAdapter({
-  enabled: ORIGINAL_AUDIO_EMULATOR_ENABLED,
-  runtimeUrl: cacheBustedOriginalAssetUrl(assetUrl("../audio-emulator/jsnes.min.js")),
-  romUrl: cacheBustedOriginalAssetUrl(assetUrl("../audio-emulator/original-audio-test.nes")),
+const standaloneNesApu = new StandaloneNesApuAudioAdapter({
+  enabled: STANDALONE_NES_APU_ENABLED,
+  dpcmUrl: cacheBustedOriginalAssetUrl(assetUrl("../audio-apu/DPCM.bin")),
+  traceUrls: {
+    0x01: cacheBustedOriginalAssetUrl(assetUrl("../audio-apu/music-01-title.nat")),
+    0x02: cacheBustedOriginalAssetUrl(assetUrl("../audio-apu/music-02-menu.nat")),
+  },
 });
-originalNesAudio.prepare();
-if (DEBUG) window.__soccerAudio = () => originalNesAudio.snapshot();
+standaloneNesApu.prepare();
+if (DEBUG) window.__soccerAudio = () => standaloneNesApu.snapshot();
 window.addEventListener("keydown", (event) => {
   ensureAudio();
   if (event.code === "KeyR" && !event.repeat) resetRequested = true;
@@ -372,13 +375,13 @@ setTouchButton(btnSelect, "select");
 function ensureAudio() {
   if (sfx.ctx) {
     if (sfx.ctx.state === "suspended") sfx.ctx.resume?.();
-    originalNesAudio.attachAudioContext(sfx.ctx);
+    standaloneNesApu.attachAudioContext(sfx.ctx);
     return sfx.ctx;
   }
   const AudioCtor = window.AudioContext || window.webkitAudioContext;
   if (!AudioCtor) return null;
   sfx.ctx = new AudioCtor();
-  originalNesAudio.attachAudioContext(sfx.ctx);
+  standaloneNesApu.attachAudioContext(sfx.ctx);
   return sfx.ctx;
 }
 function tone(freq, duration = 0.08, type = "square", gain = 0.045, delay = 0) {
@@ -445,11 +448,19 @@ function playOriginalSoundEvent(soundId) {
   if ([0x44, 0x47, 0x48, 0x49, 0x4A, 0x4B, 0x4C, 0x4D, 0x4E].includes(soundId)) return playSfx("phone");
 }
 function updateSfx(api) {
-  if (!sfx.ctx || sfx.ctx.state === "suspended") return;
-  if (originalNesAudio.claimsAudio) {
-    if (api.original_sound_event_serial) sfx.lastEventSerial = api.original_sound_event_serial() >>> 0;
+  if (standaloneNesApu.claimsAudio && api.original_sound_event_serial && api.original_sound_event) {
+    const current = api.original_sound_event_serial() >>> 0;
+    let previous = sfx.lastEventSerial >>> 0;
+    if (current < previous) previous = 0;
+    if (current - previous > 16) previous = current - 16;
+    for (let serial = previous + 1; serial <= current; serial++) {
+      const soundId = api.original_sound_event(serial >>> 0) & 0xFF;
+      if (soundId !== 0xFF) standaloneNesApu.handleSoundEvent(soundId);
+    }
+    sfx.lastEventSerial = current;
     return;
   }
+  if (!sfx.ctx || sfx.ctx.state === "suspended") return;
   if (api.original_sound_event_serial && api.original_sound_event) {
     const current = api.original_sound_event_serial() >>> 0;
     let previous = sfx.lastEventSerial >>> 0;
@@ -3798,7 +3809,7 @@ async function main() {
   const advanceInputVideoFrame = () => {
     const bits = inputBits();
     const ranSoftwareFrame = advanceVideoFrame(bits);
-    originalNesAudio.advanceFrame(bits);
+    standaloneNesApu.advanceFrame();
     if (!usesOriginalVideoScheduler || ranSoftwareFrame) {
       consumeTapLatchesAfterSoftwareFrame();
     }
@@ -3808,7 +3819,7 @@ async function main() {
   function frame(now) {
     if (resetRequested) {
       api.game_init();
-      originalNesAudio.reset();
+      standaloneNesApu.reset();
       resetRequested = false;
     }
     acc += now - last; last = now; acc = Math.min(acc, stepMs * 8);

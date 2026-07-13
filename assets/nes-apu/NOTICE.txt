@@ -1,0 +1,9 @@
+Standalone NES APU signal generator
+
+The JavaScript modules in this directory are adapted from the PAPU/audio
+portion of JSNES 2.1.0, Copyright (C) 2010-2024 Ben Firshman and contributors,
+licensed under the Apache License 2.0.
+
+Only the APU channel and mixer code is retained. This project does not include
+or instantiate JSNES's CPU, PPU, mapper, ROM loader, video, or controller loop.
+The full license text is published at audio-apu/LICENSE-jsnes.txt.
