@@ -442,20 +442,7 @@ function playOriginalSoundEvent(soundId) {
   if (soundId === 0x41) return playSfx("wind");
   if ([0x44, 0x47, 0x48, 0x49, 0x4A, 0x4B, 0x4C, 0x4D, 0x4E].includes(soundId)) return playSfx("phone");
 }
-function updateSfx(api) {
-  if (wasmNesApu.claimsAudio && api.original_sound_event_serial && api.original_sound_event) {
-    const current = api.original_sound_event_serial() >>> 0;
-    let previous = sfx.lastEventSerial >>> 0;
-    if (current < previous) previous = 0;
-    if (current - previous > 16) previous = current - 16;
-    for (let serial = previous + 1; serial <= current; serial++) {
-      const soundId = api.original_sound_event(serial >>> 0) & 0xFF;
-      if (soundId !== 0xFF) wasmNesApu.handleSoundEvent(soundId);
-    }
-    sfx.lastEventSerial = current;
-    return;
-  }
-  if (!sfx.ctx || sfx.ctx.state === "suspended") return;
+function drainOriginalSoundEvents(api, consume) {
   if (api.original_sound_event_serial && api.original_sound_event) {
     const current = api.original_sound_event_serial() >>> 0;
     let previous = sfx.lastEventSerial >>> 0;
@@ -463,9 +450,20 @@ function updateSfx(api) {
     if (current - previous > 16) previous = current - 16;
     for (let serial = previous + 1; serial <= current; serial++) {
       const soundId = api.original_sound_event(serial >>> 0) & 0xFF;
-      if (soundId !== 0xFF) playOriginalSoundEvent(soundId);
+      if (soundId !== 0xFF) consume(soundId);
     }
     sfx.lastEventSerial = current;
+    return true;
+  }
+  return false;
+}
+function updateSfx(api) {
+  if (wasmNesApu.claimsAudio) {
+    drainOriginalSoundEvents(api, (soundId) => wasmNesApu.handleSoundEvent(soundId));
+    return;
+  }
+  if (!sfx.ctx || sfx.ctx.state === "suspended") return;
+  if (drainOriginalSoundEvents(api, playOriginalSoundEvent)) {
     return;
   }
   const score = `${api.score_left()}-${api.score_right()}`;
@@ -699,7 +697,7 @@ function consumeTapLatchesAfterSoftwareFrame() {
   if (keyTapLatch.select > 0) keyTapLatch.select -= 1;
 }
 async function loadWasm() {
-  const primary = assetUrl("../game_core.4624b2eb.wasm");
+  const primary = assetUrl("../game_core.8279fa0f.wasm");
   const fallback = rootAssetUrl("game_core.wasm");
   const response = await withFallback("game_core.wasm", primary, fallback, (url) => fetch(url).then((r) => {
     if (!r.ok) throw new Error(`failed to load ${url}: ${r.status}`);
@@ -3856,6 +3854,9 @@ async function main() {
     const bits = inputBits();
     const ranSoftwareFrame = advanceVideoFrame(bits);
     wasmNesApu.advanceFrame();
+    if (wasmNesApu.claimsAudio) {
+      drainOriginalSoundEvents(api, (soundId) => wasmNesApu.handleSoundEvent(soundId));
+    }
     if (!usesOriginalVideoScheduler || ranSoftwareFrame) {
       consumeTapLatchesAfterSoftwareFrame();
     }
