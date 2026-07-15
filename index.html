@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+    <meta http-equiv="Pragma" content="no-cache" />
+    <meta http-equiv="Expires" content="0" />
+    <meta name="theme-color" content="#10141f" />
+    <title>热血足球联盟 · WASM 高保真移植</title>
+    <link rel="stylesheet" href="assets/app.39fe59fe.css" />
+  </head>
+  <body>
+    <div id="app">
+      <div class="game-wrap" aria-label="游戏画面">
+        <canvas id="game" width="960" height="540"></canvas>
+      </div>
+      <div id="touchControls" class="controller-panel controller-dock" data-surface="outside-game" role="group" aria-label="手机触控操作区（游戏画面外）">
+        <div id="stick" class="stick" aria-label="移动摇杆">
+          <div id="knob" class="knob"></div>
+        </div>
+        <div class="buttons">
+          <button id="btnSelect" class="touch-btn start" type="button">SELECT</button>
+          <button id="btnStart" class="touch-btn start" type="button">START</button>
+          <button id="btnSprint" class="touch-btn secondary" type="button">B</button>
+          <button id="btnKick" class="touch-btn primary" type="button">A</button>
+        </div>
+      </div>
+      <div class="hud">
+        <div><b>热血足球联盟 WASM 移植</b></div>
+        <div>PC：方向键/WASD，J/Z＝A，K/X＝B，A+B＝跳，Shift＝SELECT，Enter＝START，R＝重置；标准手柄支持原版四个控制槽。</div>
+        <div>手机：左侧方向，右侧原版 A/B/SELECT/START；持球与无球时动作按原版上下文自动切换。</div>
+        <div>原版必杀球：持球同时按 A+B 起球；人物恢复后再次同时按 A+B 跳起；空中按 B 射出。</div>
+        <div id="stats"></div>
+      </div>
+    </div>
+    <script type="module" src="assets/app.7a7dc113.js"></script>
+  </body>
+</html>
