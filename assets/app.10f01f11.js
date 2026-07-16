@@ -697,7 +697,7 @@ function consumeTapLatchesAfterSoftwareFrame() {
   if (keyTapLatch.select > 0) keyTapLatch.select -= 1;
 }
 async function loadWasm() {
-  const primary = assetUrl("../game_core.83e4e62d.wasm");
+  const primary = assetUrl("../game_core.4c4d4e4b.wasm");
   const fallback = rootAssetUrl("game_core.wasm");
   const response = await withFallback("game_core.wasm", primary, fallback, (url) => fetch(url).then((r) => {
     if (!r.ok) throw new Error(`failed to load ${url}: ${r.status}`);
