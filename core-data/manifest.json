@@ -2778,13 +2778,13 @@
     {
       "path": "timing/live-field-marker-resume-signature-v1.bin",
       "category": "timing",
-      "source": "src/bank_FF.asm:CCE7",
+      "source": "src/bank_FF.asm:CD1E",
       "bank": "07",
-      "address": "0xCCE7",
-      "symbol": "BD6A/tbl_803F/tbl_8CAF -> C683/BCF1/C89C/BECC -> CCE7",
-      "layout": "2 76-byte source-semantic workloads: ball handler/motion, AI stage/rank cycles, ball XY, marker continuation stage/slot, twelve player motions and handlers, and exact or semantic-sentinel `$001C-$0037` RAM at the marker boundary",
-      "length": 152,
-      "sha256": "8352af95e6c09f4b00dd71bcff828eca10fc1e0d1ba64f5bed946aa22bac1cbf"
+      "address": "0xCD1E",
+      "symbol": "BD6A/tbl_803F/tbl_8CAF -> C683/BCF1/C89C/BECC -> CBE3/CCE7/CCFF-CD1E",
+      "layout": "3 76-byte source-semantic workloads: ball handler/motion, AI stage/rank cycles, ball XY, marker continuation stage/slot, twelve player motions and handlers, and exact or semantic-sentinel `$001C-$0037` RAM at the marker boundary",
+      "length": 228,
+      "sha256": "b64e7d6413d953f44960ab79426b07c0713d282fb459cbf2b453291cb8e82e56"
     },
     {
       "path": "timing/live-player-loop-resume-signature-v1.bin",
@@ -2793,9 +2793,9 @@
       "bank": "06",
       "address": "0x803F",
       "symbol": "tbl_803F / tbl_8CAF / BD6A-BD87",
-      "layout": "109 178-byte records: ball handler/motion, AI stage/rank cycles, optional ball XY, two player cursors and partial semantic stages, visibility/pass-arc/fixed-tail/camera/priority/wind/ball-animation/weather-collision/initial-speed-multiplier/contact-selector/position-integrator boundary kinds, pair-shadow/ball-contact/state-rebuild resume cursors, twelve motion bytes and handlers, four exact `$001C-$0037` semantic-boundary scratch snapshots, and optional B20D sort or B26E filter cursors",
-      "length": 19402,
-      "sha256": "33c5e96651f6bed82e1b699ddae47f8f87794dadf62172b7e9b30483fc710062"
+      "layout": "110 178-byte records: ball handler/motion, AI stage/rank cycles, optional ball XY, two player cursors and partial semantic stages, visibility/pass-arc/fixed-tail/camera/priority/wind/ball-animation/weather-collision/initial-speed-multiplier/contact-selector/position-integrator boundary kinds, pair-shadow/ball-contact/state-rebuild resume cursors, twelve motion bytes and handlers, four exact `$001C-$0037` semantic-boundary scratch snapshots, and optional B20D sort or B26E filter cursors",
+      "length": 19580,
+      "sha256": "b6562523141fa15bd3fad379c77065f9e846f31f323095f96ea95935ee3ac46a"
     },
     {
       "path": "timing/live-visibility-inline-signature-v1.bin",
