@@ -1,4 +1,4 @@
-import { WasmNesApuAudioAdapter } from "./wasm-nes-apu-audio.f712e76d.js";
+import { WasmNesApuAudioAdapter } from "./wasm-nes-apu-audio.be2b2989.js";
 const INPUT = {
   UP: 1 << 0,
   DOWN: 1 << 1,
@@ -70,8 +70,9 @@ const btnSprint = document.querySelector("#btnSprint");
 const btnStart = document.querySelector("#btnStart");
 const btnSelect = document.querySelector("#btnSelect");
 const DEBUG = new URLSearchParams(window.location.search).get("debug") === "1";
+const CORE_KIND = "cpp";
 const WASM_NES_APU_ENABLED = new URLSearchParams(window.location.search).get("audio") !== "synth";
-const BUILD_ID = "wasm-original-audio-driver-20260713";
+const BUILD_ID = "cpp-only-core-20260720";
 document.body.classList.toggle("debug", DEBUG);
 stats.hidden = !DEBUG;
 function enforceControllerOutsideGame() {
@@ -297,7 +298,10 @@ const wasmNesApu = new WasmNesApuAudioAdapter({
   enabled: WASM_NES_APU_ENABLED,
 });
 wasmNesApu.prepare();
-if (DEBUG) window.__soccerAudio = () => wasmNesApu.snapshot();
+if (DEBUG) {
+  window.__soccerAudio = () => wasmNesApu.snapshot();
+  window.__soccerAudioAdapter = wasmNesApu;
+}
 window.addEventListener("keydown", (event) => {
   ensureAudio();
   if (event.code === "KeyR" && !event.repeat) resetRequested = true;
@@ -696,15 +700,80 @@ function consumeTapLatchesAfterSoftwareFrame() {
   if (keyTapLatch.start > 0) keyTapLatch.start -= 1;
   if (keyTapLatch.select > 0) keyTapLatch.select -= 1;
 }
-async function loadWasm() {
-  const primary = assetUrl("../game_core.14df0994.wasm");
-  const fallback = rootAssetUrl("game_core.wasm");
-  const response = await withFallback("game_core.wasm", primary, fallback, (url) => fetch(url).then((r) => {
+function fnv1aBytes(bytes) {
+  let value = 0x811c9dc5;
+  for (const byte of bytes) {
+    value ^= byte;
+    value = Math.imul(value, 0x01000193) >>> 0;
+  }
+  return value >>> 0;
+}
+function fnv1aText(text) {
+  return fnv1aBytes(new TextEncoder().encode(text));
+}
+async function fetchCoreResponse(label, primary, fallback) {
+  return withFallback(label, primary, fallback, (url) => fetch(url).then((r) => {
     if (!r.ok) throw new Error(`failed to load ${url}: ${r.status}`);
     return r;
   }));
+}
+async function loadCppCoreData(api) {
+  if (!api.cpp_asset_reset || !api.cpp_asset_reserve || !api.cpp_asset_commit || !api.memory) {
+    throw new Error("C++ core does not expose the external BIN resource ABI");
+  }
+  const manifestResponse = await fetchCoreResponse(
+    "core-data/manifest.json",
+    assetUrl("../core-data/manifest.json"),
+    rootAssetUrl("core-data/manifest.json"),
+  );
+  const manifest = await manifestResponse.json();
+  if (manifest.schema !== 1 || !Array.isArray(manifest.records)) {
+    throw new Error("unsupported C++ core-data manifest");
+  }
+  api.cpp_asset_reset();
+  let cursor = 0;
+  let loadedBytes = 0;
+  const workers = Array.from({ length: Math.min(12, manifest.records.length) }, async () => {
+    while (cursor < manifest.records.length) {
+      const record = manifest.records[cursor++];
+      const response = await fetchCoreResponse(
+        record.path,
+        assetUrl(`../core-data/${record.path}`),
+        rootAssetUrl(`core-data/${record.path}`),
+      );
+      const bytes = new Uint8Array(await response.arrayBuffer());
+      if (bytes.byteLength !== record.length) {
+        throw new Error(`${record.path}: got ${bytes.byteLength} bytes, expected ${record.length}`);
+      }
+      const assetId = fnv1aText(record.path);
+      const pointer = api.cpp_asset_reserve(assetId, bytes.byteLength) >>> 0;
+      if (!pointer) throw new Error(`C++ core rejected BIN resource ${record.path}`);
+      new Uint8Array(api.memory.buffer, pointer, bytes.byteLength).set(bytes);
+      if (api.cpp_asset_commit(assetId, bytes.byteLength) !== 1) {
+        throw new Error(`C++ core failed to commit BIN resource ${record.path}`);
+      }
+      if ((api.cpp_asset_checksum(assetId) >>> 0) !== fnv1aBytes(bytes)) {
+        throw new Error(`C++ core checksum mismatch for ${record.path}`);
+      }
+      loadedBytes += bytes.byteLength;
+    }
+  });
+  await Promise.all(workers);
+  if (api.cpp_asset_loaded_count() !== manifest.records.length
+      || api.cpp_asset_loaded_bytes() !== loadedBytes) {
+    throw new Error("C++ core did not commit the complete external BIN resource set");
+  }
+  return { count: manifest.records.length, bytes: loadedBytes };
+}
+async function loadWasm() {
+  const filename = "soccer_core_cpp.wasm";
+  const relative = "../soccer_core_cpp.055265a7.wasm";
+  const response = await fetchCoreResponse(filename, assetUrl(relative), rootAssetUrl(filename));
   const bytes = await response.arrayBuffer();
   const result = await WebAssembly.instantiate(bytes, {});
+  const loaded = await loadCppCoreData(result.instance.exports);
+  document.body.dataset.core = CORE_KIND;
+  document.body.dataset.coreAssets = String(loaded.count);
   return result.instance.exports;
 }
 function clamp(value, min, max) {
@@ -999,6 +1068,42 @@ function worldToScreen(view, x, y) {
     y: view.destY + (y - view.cameraY) * (view.destH / view.sourceH),
   };
 }
+function originalCommittedObjectScreenBytes(api, objectIndex) {
+  if (!originalCommittedSpriteFrameActive(api)
+      || !api.original_committed_sprite_screen_x
+      || !api.original_committed_sprite_screen_y
+      || !api.original_committed_sprite_ground_y) return null;
+  return {
+    x: api.original_committed_sprite_screen_x(objectIndex) & 0xFF,
+    y: api.original_committed_sprite_screen_y(objectIndex) & 0xFF,
+    groundY: api.original_committed_sprite_ground_y(objectIndex) & 0xFF,
+  };
+}
+function originalCommittedObjectCanvasPosition(api, objectIndex, view, ground = false) {
+  const position = originalCommittedObjectScreenBytes(api, objectIndex);
+  if (!position || !view?.original) return null;
+  const scaleX = view.destW / view.sourceW;
+  const scaleY = view.destH / view.sourceH;
+  return {
+    x: view.destX + position.x * scaleX,
+    y: view.destY + (ground ? position.groundY : position.y) * scaleY,
+    screenX: position.x,
+    screenY: ground ? position.groundY : position.y,
+  };
+}
+function originalCommittedCamera(api, copy = false) {
+  if (!originalCommittedSpriteFrameActive(api)) return null;
+  const prefix = copy ? "original_committed_copy_camera" : "original_committed_camera";
+  const xLo = api[`${prefix}_x_lo`];
+  const xHi = api[`${prefix}_x_hi`];
+  const yLo = api[`${prefix}_y_lo`];
+  const yHi = api[`${prefix}_y_hi`];
+  if (!xLo || !xHi || !yLo || !yHi) return null;
+  return {
+    x: ((xHi() & 0xFF) << 8) | (xLo() & 0xFF),
+    y: ((yHi() & 0xFF) << 8) | (yLo() & 0xFF),
+  };
+}
 function originalPlayerPosition(api, index) {
   if (api.original_player_x_lo && api.original_player_x_hi && api.original_player_y_lo && api.original_player_y_hi) {
     return {
@@ -1196,10 +1301,11 @@ function drawOriginalMatchStatusbar(api, view) {
     }
   }
   const markers = [];
-  const copyCameraX = api.original_copy_camera_x_lo && api.original_copy_camera_x_hi
-    ? (api.original_copy_camera_x_hi() << 8) | api.original_copy_camera_x_lo() : 0;
-  const copyCameraY = api.original_copy_camera_y_lo && api.original_copy_camera_y_hi
-    ? (api.original_copy_camera_y_hi() << 8) | api.original_copy_camera_y_lo() : 0;
+  const committedCopyCamera = originalCommittedCamera(api, true);
+  const copyCameraX = committedCopyCamera?.x ?? (api.original_copy_camera_x_lo && api.original_copy_camera_x_hi
+    ? (api.original_copy_camera_x_hi() << 8) | api.original_copy_camera_x_lo() : 0);
+  const copyCameraY = committedCopyCamera?.y ?? (api.original_copy_camera_y_lo && api.original_copy_camera_y_hi
+    ? (api.original_copy_camera_y_hi() << 8) | api.original_copy_camera_y_lo() : 0);
   const markerCount = api.original_field_marker_count ? api.original_field_marker_count() : 0;
   for (let slot = 0; slot < markerCount; slot++) {
     const animation = api.original_field_marker_animation(slot) & 0xFF;
@@ -1207,8 +1313,9 @@ function drawOriginalMatchStatusbar(api, view) {
     const visible = !api.original_field_marker_visibility
       || api.original_field_marker_visibility(slot) !== 0;
     if (!position || !visible || (animation & 0x7F) === 0x7F) continue;
-    const logicalX = position.x - copyCameraX;
-    const logicalY = position.y - copyCameraY;
+    const committedPosition = originalCommittedObjectScreenBytes(api, 0x0E + slot);
+    const logicalX = committedPosition ? committedPosition.x : position.x - copyCameraX;
+    const logicalY = committedPosition ? committedPosition.y : position.y - copyCameraY;
     const surface = normalizeOriginalHeight(position.z) === 0 ? "statusbar" : "field";
     if (surface === "statusbar") {
       drawOriginalObject(
@@ -3368,10 +3475,11 @@ function render(api) {
   const bspecial = api.ball_special_timer ? api.ball_special_timer() : 0;
   const exposesOriginalCamera = api.original_camera_x_lo && api.original_camera_x_hi
     && api.original_camera_y_lo && api.original_camera_y_hi;
-  const rawCameraX = exposesOriginalCamera
-    ? ((api.original_camera_x_hi() << 8) | api.original_camera_x_lo()) : 0;
-  const rawCameraY = exposesOriginalCamera
-    ? ((api.original_camera_y_hi() << 8) | api.original_camera_y_lo()) : 0;
+  const committedCamera = originalScreen === 0x00 ? originalCommittedCamera(api, false) : null;
+  const rawCameraX = committedCamera?.x ?? (exposesOriginalCamera
+    ? ((api.original_camera_x_hi() << 8) | api.original_camera_x_lo()) : 0);
+  const rawCameraY = committedCamera?.y ?? (exposesOriginalCamera
+    ? ((api.original_camera_y_hi() << 8) | api.original_camera_y_lo()) : 0);
   const cameraX = exposesOriginalCamera
     ? rawCameraX
     : clamp(bx - ORIGINAL_CAMERA_VIEW_W / 2, 0, 1024 - ORIGINAL_CAMERA_VIEW_W);
@@ -3390,12 +3498,13 @@ function render(api) {
   const originalResultBackground = isOriginalResultScreen
     ? composeOriginalResultBackground(api, resultBackgroundId, originalResultBaseBackground)
     : null;
-  const copyCameraX = api.original_copy_camera_x_lo && api.original_copy_camera_x_hi
+  const committedCopyCamera = originalScreen === 0x00 ? originalCommittedCamera(api, true) : null;
+  const copyCameraX = committedCopyCamera?.x ?? (api.original_copy_camera_x_lo && api.original_copy_camera_x_hi
     ? (api.original_copy_camera_x_hi() << 8) | api.original_copy_camera_x_lo()
-    : cameraX;
-  const copyCameraY = api.original_copy_camera_y_lo && api.original_copy_camera_y_hi
+    : cameraX);
+  const copyCameraY = committedCopyCamera?.y ?? (api.original_copy_camera_y_lo && api.original_copy_camera_y_hi
     ? (api.original_copy_camera_y_hi() << 8) | api.original_copy_camera_y_lo()
-    : cameraY;
+    : cameraY);
   let view;
   let objectView;
   if (isOriginalResultScreen) {
@@ -3537,12 +3646,15 @@ function render(api) {
     entities.sort((a, b) => a.groundY - b.groundY);
   }
   const renderedShadows = [];
+  const renderedObjects = [];
   for (const entity of entities) {
     if (entity.type === "shadow") {
       const position = entity.index === 0x0C
         ? { x: bx, y: by }
         : (playerPositions[entity.index] || originalPlayerPosition(api, entity.index));
-      const screenPosition = worldToScreen(objectView, position.x, position.y);
+      const screenPosition = originalCommittedObjectCanvasPosition(
+        api, entity.index, objectView, true,
+      ) || worldToScreen(objectView, position.x, position.y);
       const rendered = drawOriginalObjectShadow(
         api,
         entity.index,
@@ -3552,19 +3664,24 @@ function render(api) {
         objectView.logicalScale || 2,
       );
       if (rendered) renderedShadows.push(rendered);
+      renderedObjects.push({ type: "shadow", index: entity.index, x: screenPosition.x, y: screenPosition.y });
       continue;
     }
     if (entity.type === "ball") {
-      const b = worldToScreen(objectView, bx, by);
-      drawOriginalBall(api, b.x, b.y, bz, objectView.logicalScale || 2);
+      const committed = originalCommittedObjectCanvasPosition(api, 0x0C, objectView, false);
+      const b = committed || worldToScreen(objectView, bx, by);
+      if (committed) drawOriginalObject(api, 0x0C, b.x, b.y, objectView.logicalScale || 2);
+      else drawOriginalBall(api, b.x, b.y, bz, objectView.logicalScale || 2);
+      renderedObjects.push({ type: "ball", index: 0x0C, x: b.x, y: b.y });
       continue;
     }
     if (entity.type === "marker") {
       const originalPosition = markerPositions[entity.index]
         || originalFieldMarkerPosition(api, entity.index);
       if (!originalPosition) continue;
-      const p = worldToScreen(objectView, originalPosition.x, originalPosition.y);
-      const height = normalizeOriginalHeight(originalPosition.z);
+      const committed = originalCommittedObjectCanvasPosition(api, entity.object, objectView, false);
+      const p = committed || worldToScreen(objectView, originalPosition.x, originalPosition.y);
+      const height = committed ? 0 : normalizeOriginalHeight(originalPosition.z);
       drawOriginalObject(
         api,
         entity.object,
@@ -3572,16 +3689,20 @@ function render(api) {
         p.y - height * (objectView.logicalScale || 1),
         objectView.logicalScale || 2,
       );
+      renderedObjects.push({ type: "marker", index: entity.object, x: p.x, y: p.y - height * (objectView.logicalScale || 1) });
       continue;
     }
     const i = entity.index;
     const originalPosition = playerPositions[i] || originalPlayerPosition(api, i);
-    const p = worldToScreen(objectView, originalPosition.x, originalPosition.y);
-    const playerHeight = normalizeOriginalHeight(originalPosition.z);
+    const committed = originalCommittedObjectCanvasPosition(api, i, objectView, false);
+    const p = committed || worldToScreen(objectView, originalPosition.x, originalPosition.y);
+    const playerHeight = committed ? 0 : normalizeOriginalHeight(originalPosition.z);
     const visualY = p.y - playerHeight * (objectView.logicalScale || 1);
     drawOriginalObject(api, i, p.x, visualY, objectView.logicalScale || 2);
+    renderedObjects.push({ type: "player", index: i, x: p.x, y: visualY });
   }
   if (DEBUG) window.__soccerShadows = renderedShadows;
+  if (DEBUG) window.__soccerRenderedObjects = renderedObjects;
   if (DEBUG) {
     const overhead = entities.find((entity) => entity.type === "marker" && entity.index > 0);
     const position = overhead ? markerPositions[overhead.index] : null;
@@ -3817,6 +3938,11 @@ async function main() {
   api.game_init();
   if (DEBUG) {
     window.__soccerApi = api;
+    window.__soccerCore = () => ({
+      kind: CORE_KIND,
+      assets: api.cpp_asset_loaded_count ? api.cpp_asset_loaded_count() : 0,
+      bytes: api.cpp_asset_loaded_bytes ? api.cpp_asset_loaded_bytes() : 0,
+    });
     window.__soccerRender = () => render(api);
     window.__soccerInputBits = () => inputBits();
     window.__soccerFootprints = () => ({

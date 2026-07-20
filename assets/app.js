@@ -1,4 +1,4 @@
-import { WasmNesApuAudioAdapter } from "./wasm-nes-apu-audio.f712e76d.js";
+import { WasmNesApuAudioAdapter } from "./wasm-nes-apu-audio.be2b2989.js";
 const INPUT = {
   UP: 1 << 0,
   DOWN: 1 << 1,
@@ -70,8 +70,9 @@ const btnSprint = document.querySelector("#btnSprint");
 const btnStart = document.querySelector("#btnStart");
 const btnSelect = document.querySelector("#btnSelect");
 const DEBUG = new URLSearchParams(window.location.search).get("debug") === "1";
+const CORE_KIND = "cpp";
 const WASM_NES_APU_ENABLED = new URLSearchParams(window.location.search).get("audio") !== "synth";
-const BUILD_ID = "wasm-original-audio-driver-20260713";
+const BUILD_ID = "cpp-only-core-20260720";
 document.body.classList.toggle("debug", DEBUG);
 stats.hidden = !DEBUG;
 function enforceControllerOutsideGame() {
@@ -297,7 +298,10 @@ const wasmNesApu = new WasmNesApuAudioAdapter({
   enabled: WASM_NES_APU_ENABLED,
 });
 wasmNesApu.prepare();
-if (DEBUG) window.__soccerAudio = () => wasmNesApu.snapshot();
+if (DEBUG) {
+  window.__soccerAudio = () => wasmNesApu.snapshot();
+  window.__soccerAudioAdapter = wasmNesApu;
+}
 window.addEventListener("keydown", (event) => {
   ensureAudio();
   if (event.code === "KeyR" && !event.repeat) resetRequested = true;
@@ -696,15 +700,80 @@ function consumeTapLatchesAfterSoftwareFrame() {
   if (keyTapLatch.start > 0) keyTapLatch.start -= 1;
   if (keyTapLatch.select > 0) keyTapLatch.select -= 1;
 }
-async function loadWasm() {
-  const primary = assetUrl("../game_core.cdeaace2.wasm");
-  const fallback = rootAssetUrl("game_core.wasm");
-  const response = await withFallback("game_core.wasm", primary, fallback, (url) => fetch(url).then((r) => {
+function fnv1aBytes(bytes) {
+  let value = 0x811c9dc5;
+  for (const byte of bytes) {
+    value ^= byte;
+    value = Math.imul(value, 0x01000193) >>> 0;
+  }
+  return value >>> 0;
+}
+function fnv1aText(text) {
+  return fnv1aBytes(new TextEncoder().encode(text));
+}
+async function fetchCoreResponse(label, primary, fallback) {
+  return withFallback(label, primary, fallback, (url) => fetch(url).then((r) => {
     if (!r.ok) throw new Error(`failed to load ${url}: ${r.status}`);
     return r;
   }));
+}
+async function loadCppCoreData(api) {
+  if (!api.cpp_asset_reset || !api.cpp_asset_reserve || !api.cpp_asset_commit || !api.memory) {
+    throw new Error("C++ core does not expose the external BIN resource ABI");
+  }
+  const manifestResponse = await fetchCoreResponse(
+    "core-data/manifest.json",
+    assetUrl("../core-data/manifest.json"),
+    rootAssetUrl("core-data/manifest.json"),
+  );
+  const manifest = await manifestResponse.json();
+  if (manifest.schema !== 1 || !Array.isArray(manifest.records)) {
+    throw new Error("unsupported C++ core-data manifest");
+  }
+  api.cpp_asset_reset();
+  let cursor = 0;
+  let loadedBytes = 0;
+  const workers = Array.from({ length: Math.min(12, manifest.records.length) }, async () => {
+    while (cursor < manifest.records.length) {
+      const record = manifest.records[cursor++];
+      const response = await fetchCoreResponse(
+        record.path,
+        assetUrl(`../core-data/${record.path}`),
+        rootAssetUrl(`core-data/${record.path}`),
+      );
+      const bytes = new Uint8Array(await response.arrayBuffer());
+      if (bytes.byteLength !== record.length) {
+        throw new Error(`${record.path}: got ${bytes.byteLength} bytes, expected ${record.length}`);
+      }
+      const assetId = fnv1aText(record.path);
+      const pointer = api.cpp_asset_reserve(assetId, bytes.byteLength) >>> 0;
+      if (!pointer) throw new Error(`C++ core rejected BIN resource ${record.path}`);
+      new Uint8Array(api.memory.buffer, pointer, bytes.byteLength).set(bytes);
+      if (api.cpp_asset_commit(assetId, bytes.byteLength) !== 1) {
+        throw new Error(`C++ core failed to commit BIN resource ${record.path}`);
+      }
+      if ((api.cpp_asset_checksum(assetId) >>> 0) !== fnv1aBytes(bytes)) {
+        throw new Error(`C++ core checksum mismatch for ${record.path}`);
+      }
+      loadedBytes += bytes.byteLength;
+    }
+  });
+  await Promise.all(workers);
+  if (api.cpp_asset_loaded_count() !== manifest.records.length
+      || api.cpp_asset_loaded_bytes() !== loadedBytes) {
+    throw new Error("C++ core did not commit the complete external BIN resource set");
+  }
+  return { count: manifest.records.length, bytes: loadedBytes };
+}
+async function loadWasm() {
+  const filename = "soccer_core_cpp.wasm";
+  const relative = "../soccer_core_cpp.055265a7.wasm";
+  const response = await fetchCoreResponse(filename, assetUrl(relative), rootAssetUrl(filename));
   const bytes = await response.arrayBuffer();
   const result = await WebAssembly.instantiate(bytes, {});
+  const loaded = await loadCppCoreData(result.instance.exports);
+  document.body.dataset.core = CORE_KIND;
+  document.body.dataset.coreAssets = String(loaded.count);
   return result.instance.exports;
 }
 function clamp(value, min, max) {
@@ -3869,6 +3938,11 @@ async function main() {
   api.game_init();
   if (DEBUG) {
     window.__soccerApi = api;
+    window.__soccerCore = () => ({
+      kind: CORE_KIND,
+      assets: api.cpp_asset_loaded_count ? api.cpp_asset_loaded_count() : 0,
+      bytes: api.cpp_asset_loaded_bytes ? api.cpp_asset_loaded_bytes() : 0,
+    });
     window.__soccerRender = () => render(api);
     window.__soccerInputBits = () => inputBits();
     window.__soccerFootprints = () => ({
