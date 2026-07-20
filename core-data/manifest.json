@@ -2501,6 +2501,17 @@
       "sha256": "94ddbba58bc669feb82a776672b0f0b12a9bc06b7c9b9b0b419db61ddb07365f"
     },
     {
+      "path": "timing/live-ai-first-side-predictor-nmi-signature-v1.bin",
+      "category": "timing",
+      "source": "src/bank_03.asm:840D",
+      "bank": "03",
+      "address": "0x840D",
+      "symbol": "812A-81DD / 83CA-845B / F4C1-F538 / tbl_803F / tbl_8CAF",
+      "layout": "one 60-byte source-semantic workload selecting the first-side predictor continuation at F505",
+      "length": 60,
+      "sha256": "adf9e7186c75cbf00c8b7cd01e280a27fd04569afded160ff75dbc41f87d65e2"
+    },
+    {
       "path": "timing/live-ai-free-ball-between-sides-nmi-signature-v1.bin",
       "category": "timing",
       "source": "src/bank_03.asm:A5DB",
@@ -2721,6 +2732,17 @@
       "sha256": "58aeb993da8052ec52ad03b67a1fc4fae9eb35b95eefa5cbc8a995062ab5b6c6"
     },
     {
+      "path": "timing/live-ball-ground-decay-resume-signature-v1.bin",
+      "category": "timing",
+      "source": "src/bank_06.asm:9523",
+      "bank": "06",
+      "address": "0x9523",
+      "symbol": "8FEE / 900F-903A / 94D9-95EA / tbl_803F / tbl_8CAF",
+      "layout": "one 46-byte source-semantic workload selecting the ground-roll decay continuation after the first factor shift",
+      "length": 46,
+      "sha256": "6c5136985bfec8d142e317af5ae46b29a08a51e50f11221ca3588d1c9795afe6"
+    },
+    {
       "path": "timing/live-ball-juggle-contact-resume-signatures-v1.bin",
       "category": "timing",
       "source": "src/bank_06.asm:803F",
@@ -2771,9 +2793,9 @@
       "bank": "06",
       "address": "0x803F",
       "symbol": "tbl_803F / tbl_8CAF / BD6A-BD87",
-      "layout": "107 178-byte records: ball handler/motion, AI stage/rank cycles, optional ball XY, two player cursors and partial semantic stages, visibility/pass-arc/fixed-tail/camera/priority/wind/ball-animation/weather-collision/initial-speed-multiplier/contact-selector/position-integrator boundary kinds, pair-shadow/ball-contact/state-rebuild resume cursors, twelve motion bytes and handlers, four exact `$001C-$0037` semantic-boundary scratch snapshots, and optional B20D sort or B26E filter cursors",
-      "length": 19046,
-      "sha256": "4ffb051ea11d2d365827b340b32dccdb5ca5068b58c0b283b7083fb89a7fb83b"
+      "layout": "108 178-byte records: ball handler/motion, AI stage/rank cycles, optional ball XY, two player cursors and partial semantic stages, visibility/pass-arc/fixed-tail/camera/priority/wind/ball-animation/weather-collision/initial-speed-multiplier/contact-selector/position-integrator boundary kinds, pair-shadow/ball-contact/state-rebuild resume cursors, twelve motion bytes and handlers, four exact `$001C-$0037` semantic-boundary scratch snapshots, and optional B20D sort or B26E filter cursors",
+      "length": 19224,
+      "sha256": "3c8ae10e287f117db4c5ea73aa18987a2447c1c10e4250d06d5188cca7be41a2"
     },
     {
       "path": "timing/live-visibility-inline-signature-v1.bin",
