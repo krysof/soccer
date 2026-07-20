@@ -2617,9 +2617,9 @@
       "bank": "03",
       "address": "0xA4BD",
       "symbol": "81A9-821E / A106-A20A / A39C-A4BD / EE35-EE59 / FAAF",
-      "layout": "one 60-byte source-semantic workload selecting the owner-even first-defender RNG continuation",
-      "length": 60,
-      "sha256": "3ed9910a9e6b0d7091a9a96a0ed52fb6e7e13a7b2d2a19d50804e4845b7e1b97"
+      "layout": "two 60-byte source-semantic workloads selecting the owner-even first-defender RNG continuation",
+      "length": 120,
+      "sha256": "8006c98341f87069a8cc13c26ee8e5e55badb4ceccff5755f060f784a2ca056b"
     },
     {
       "path": "timing/live-ai-partial-second-rng-signature-v1.bin",
@@ -2804,9 +2804,9 @@
       "bank": "06",
       "address": "0x803F",
       "symbol": "tbl_803F / tbl_8CAF / BD6A-BD87",
-      "layout": "111 178-byte records: ball handler/motion, AI stage/rank cycles, optional ball XY, two player cursors and partial semantic stages, visibility/pass-arc/fixed-tail/camera/priority/wind/ball-animation/weather-collision/initial-speed-multiplier/contact-selector/position-integrator boundary kinds, pair-shadow/ball-contact/state-rebuild resume cursors, twelve motion bytes and handlers, four exact `$001C-$0037` semantic-boundary scratch snapshots, and optional B20D sort or B26E filter cursors",
-      "length": 19758,
-      "sha256": "51937ff828e1103928220c5d8ee19bbb49287d9aa5904fdb2bbc67e45f23a18a"
+      "layout": "114 178-byte records: ball handler/motion, AI stage/rank cycles, optional ball XY, two player cursors and partial semantic stages, visibility/pass-arc/fixed-tail/camera/priority/wind/ball-animation/weather-collision/initial-speed-multiplier/contact-selector/position-integrator boundary kinds, pair-shadow/ball-contact/state-rebuild resume cursors, twelve motion bytes and handlers, four exact `$001C-$0037` semantic-boundary scratch snapshots, and optional B20D sort or B26E filter cursors",
+      "length": 20292,
+      "sha256": "739318a2b0b9d1b2462248da4b139c172c88778917056309163b5cb56937068b"
     },
     {
       "path": "timing/live-visibility-inline-signature-v1.bin",
