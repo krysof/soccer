@@ -2793,9 +2793,9 @@
       "bank": "06",
       "address": "0x803F",
       "symbol": "tbl_803F / tbl_8CAF / BD6A-BD87",
-      "layout": "108 178-byte records: ball handler/motion, AI stage/rank cycles, optional ball XY, two player cursors and partial semantic stages, visibility/pass-arc/fixed-tail/camera/priority/wind/ball-animation/weather-collision/initial-speed-multiplier/contact-selector/position-integrator boundary kinds, pair-shadow/ball-contact/state-rebuild resume cursors, twelve motion bytes and handlers, four exact `$001C-$0037` semantic-boundary scratch snapshots, and optional B20D sort or B26E filter cursors",
-      "length": 19224,
-      "sha256": "3c8ae10e287f117db4c5ea73aa18987a2447c1c10e4250d06d5188cca7be41a2"
+      "layout": "109 178-byte records: ball handler/motion, AI stage/rank cycles, optional ball XY, two player cursors and partial semantic stages, visibility/pass-arc/fixed-tail/camera/priority/wind/ball-animation/weather-collision/initial-speed-multiplier/contact-selector/position-integrator boundary kinds, pair-shadow/ball-contact/state-rebuild resume cursors, twelve motion bytes and handlers, four exact `$001C-$0037` semantic-boundary scratch snapshots, and optional B20D sort or B26E filter cursors",
+      "length": 19402,
+      "sha256": "33c5e96651f6bed82e1b699ddae47f8f87794dadf62172b7e9b30483fc710062"
     },
     {
       "path": "timing/live-visibility-inline-signature-v1.bin",
