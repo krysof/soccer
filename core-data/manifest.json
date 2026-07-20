@@ -2644,6 +2644,17 @@
       "sha256": "5852728fb92559db7ea5675546a0709236eec91dd00602d7a9c10a65abae6873"
     },
     {
+      "path": "timing/live-ai-nearby-first-insertion-compare-nmi-signature-v1.bin",
+      "category": "timing",
+      "source": "src/bank_03.asm:B06F",
+      "bank": "03",
+      "address": "0xB06F",
+      "symbol": "8015-81DD / A106-A20A / A39C-A3FD / B034-B06F / tbl_803F / tbl_8CAF",
+      "layout": "one 60-byte source-semantic workload selecting the second B034 scan's first insertion comparison continuation",
+      "length": 60,
+      "sha256": "88f2b539efee8864e0626345b6871b8bee00e681c4d9e5c3a163ef083b1a3f0e"
+    },
+    {
       "path": "timing/live-ai-owner-even-first-rng-nmi-signature-v1.bin",
       "category": "timing",
       "source": "src/bank_03.asm:A4BD",
@@ -2859,9 +2870,9 @@
       "bank": "06",
       "address": "0x803F",
       "symbol": "tbl_803F / tbl_8CAF / BD6A-BD87",
-      "layout": "120 178-byte records: ball handler/motion, AI stage/rank cycles, optional ball XY, two player cursors and partial semantic stages, visibility/pass-arc/fixed-tail/camera/priority/wind/ball-animation/weather-collision/initial-speed-multiplier/contact-selector/position-integrator boundary kinds, pair-shadow/ball-contact/state-rebuild resume cursors, twelve motion bytes and handlers, four exact `$001C-$0037` semantic-boundary scratch snapshots, and optional B20D sort or B26E filter cursors",
-      "length": 21360,
-      "sha256": "04728a8a13050126201fa17430c6138e824464d36cafc4eefcbf4ec34a342f98"
+      "layout": "121 178-byte records: ball handler/motion, AI stage/rank cycles, optional ball XY, two player cursors and partial semantic stages, visibility/pass-arc/fixed-tail/camera/priority/wind/ball-animation/weather-collision/initial-speed-multiplier/contact-selector/position-integrator boundary kinds, pair-shadow/ball-contact/state-rebuild resume cursors, twelve motion bytes and handlers, four exact `$001C-$0037` semantic-boundary scratch snapshots, and optional B20D sort or B26E filter cursors",
+      "length": 21538,
+      "sha256": "913b5c47cf81dd0aa5100102c20ea89ff70cdba034599981e6fc04e43e93f815"
     },
     {
       "path": "timing/live-visibility-inline-signature-v1.bin",
