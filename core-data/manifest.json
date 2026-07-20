@@ -2760,9 +2760,9 @@
       "bank": "07",
       "address": "0xCCE7",
       "symbol": "BD6A/tbl_803F/tbl_8CAF -> C683/BCF1/C89C/BECC -> CCE7",
-      "layout": "one 76-byte source-semantic workload: ball handler/motion, AI stage/rank cycles, ball XY, marker continuation stage/slot, twelve player motions and handlers, and exact `$001C-$0037` RAM before the pending minimap X-low store",
-      "length": 76,
-      "sha256": "ca84f7e162d24c7344758729447a4c4a24f4ecd167c7e56f64ad79bf51150a27"
+      "layout": "2 76-byte source-semantic workloads: ball handler/motion, AI stage/rank cycles, ball XY, marker continuation stage/slot, twelve player motions and handlers, and exact or semantic-sentinel `$001C-$0037` RAM at the marker boundary",
+      "length": 152,
+      "sha256": "8352af95e6c09f4b00dd71bcff828eca10fc1e0d1ba64f5bed946aa22bac1cbf"
     },
     {
       "path": "timing/live-player-loop-resume-signature-v1.bin",
@@ -2771,9 +2771,9 @@
       "bank": "06",
       "address": "0x803F",
       "symbol": "tbl_803F / tbl_8CAF / BD6A-BD87",
-      "layout": "106 178-byte records: ball handler/motion, AI stage/rank cycles, optional ball XY, two player cursors and partial semantic stages, visibility/pass-arc/fixed-tail/camera/priority/wind/ball-animation/weather-collision/initial-speed-multiplier/contact-selector/position-integrator boundary kinds, pair-shadow/ball-contact/state-rebuild resume cursors, twelve motion bytes and handlers, four exact `$001C-$0037` semantic-boundary scratch snapshots, and optional B20D sort or B26E filter cursors",
-      "length": 18868,
-      "sha256": "873979d0a5725947582b3b76349804e606ad6e77848612ac232c30ce45317fa9"
+      "layout": "107 178-byte records: ball handler/motion, AI stage/rank cycles, optional ball XY, two player cursors and partial semantic stages, visibility/pass-arc/fixed-tail/camera/priority/wind/ball-animation/weather-collision/initial-speed-multiplier/contact-selector/position-integrator boundary kinds, pair-shadow/ball-contact/state-rebuild resume cursors, twelve motion bytes and handlers, four exact `$001C-$0037` semantic-boundary scratch snapshots, and optional B20D sort or B26E filter cursors",
+      "length": 19046,
+      "sha256": "4ffb051ea11d2d365827b340b32dccdb5ca5068b58c0b283b7083fb89a7fb83b"
     },
     {
       "path": "timing/live-visibility-inline-signature-v1.bin",
