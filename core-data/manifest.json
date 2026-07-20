@@ -2633,6 +2633,17 @@
       "sha256": "6ed708f83725cdc3a46a05f260b416e016596799d459da99a2cf95f002e9dcb0"
     },
     {
+      "path": "timing/live-ai-possession-animation-nmi-signature-v1.bin",
+      "category": "timing",
+      "source": "src/bank_03.asm:A147",
+      "bank": "03",
+      "address": "0xA147",
+      "symbol": "8015-81DD / A106-A147 / FCC1-FCC4",
+      "layout": "one 60-byte source-semantic workload selecting the even-owner animation-facing continuation at A147",
+      "length": 60,
+      "sha256": "69a009670e69f535efe62d99a064799a6cc08cbfe84fb1a54cde7f520c321fea"
+    },
+    {
       "path": "timing/live-ai-rank-after-last-store-nmi-signature-v1.bin",
       "category": "timing",
       "source": "src/bank_03.asm:811B",
@@ -2804,9 +2815,9 @@
       "bank": "06",
       "address": "0x803F",
       "symbol": "tbl_803F / tbl_8CAF / BD6A-BD87",
-      "layout": "115 178-byte records: ball handler/motion, AI stage/rank cycles, optional ball XY, two player cursors and partial semantic stages, visibility/pass-arc/fixed-tail/camera/priority/wind/ball-animation/weather-collision/initial-speed-multiplier/contact-selector/position-integrator boundary kinds, pair-shadow/ball-contact/state-rebuild resume cursors, twelve motion bytes and handlers, four exact `$001C-$0037` semantic-boundary scratch snapshots, and optional B20D sort or B26E filter cursors",
-      "length": 20470,
-      "sha256": "28d84f5e27823b3bdb49b1cc368894d45e10db76e03091700f2a143e634fc2ee"
+      "layout": "116 178-byte records: ball handler/motion, AI stage/rank cycles, optional ball XY, two player cursors and partial semantic stages, visibility/pass-arc/fixed-tail/camera/priority/wind/ball-animation/weather-collision/initial-speed-multiplier/contact-selector/position-integrator boundary kinds, pair-shadow/ball-contact/state-rebuild resume cursors, twelve motion bytes and handlers, four exact `$001C-$0037` semantic-boundary scratch snapshots, and optional B20D sort or B26E filter cursors",
+      "length": 20648,
+      "sha256": "2f633e9dd633ed6df0f5237f1392ded9b98279110ee6bb93fa737b14ffa36dce"
     },
     {
       "path": "timing/live-visibility-inline-signature-v1.bin",
