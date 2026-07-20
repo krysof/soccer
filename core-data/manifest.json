@@ -1786,6 +1786,17 @@
       "sha256": "eae34f2f893c03804b748770741c14c803e80e790bfff37b9189d209e3b4a5ae"
     },
     {
+      "path": "menu/tournament-record-row-8a7d-8aa4.bin",
+      "category": "menu",
+      "source": "src/bank_05.asm:8A7E",
+      "bank": "05",
+      "address": "0x8A7E",
+      "symbol": "sub_8A79/sub_8AB7 immediate operands",
+      "layout": "three cumulative group ends, separator tile, row length, PPU address low and high",
+      "length": 7,
+      "sha256": "51d62d624de3073eec4f801a796f09e96fd8d4af0066ed8c2702fe970637c1e5"
+    },
+    {
       "path": "menu/weather-preview-a23b-a281.bin",
       "category": "menu",
       "source": "src/bank_05.asm:A23B",
