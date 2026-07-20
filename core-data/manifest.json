@@ -1071,6 +1071,17 @@
       "sha256": "d596e16e523d9bca56b095d023486b74acb63ee7e88be27449435300dfbadc99"
     },
     {
+      "path": "input/hidden-skill-unlocked-tiles-cb92-cbae.bin",
+      "category": "input",
+      "source": "src/bank_FF.asm:CBAC",
+      "bank": "07",
+      "address": "0xCBAC",
+      "symbol": "bra_CB92 immediate tile operands",
+      "layout": "six HUD tile ids in ram_hud_tiles[0..5] order",
+      "length": 6,
+      "sha256": "174ba2d3e4356ce6534d56dc846ffc588e21b4b05b9ca252a6e80b4d1114a57c"
+    },
+    {
       "path": "input/pass-command-9f53-a017.bin",
       "category": "input",
       "source": "src/bank_03.asm:9F53",
