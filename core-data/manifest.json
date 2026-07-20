@@ -2622,6 +2622,17 @@
       "sha256": "5a865a55004222896a614bdd6f84bcfc028741815ad79c0470486645fc04315a"
     },
     {
+      "path": "timing/live-ai-intercept-divider-subtraction-nmi-signature-v1.bin",
+      "category": "timing",
+      "source": "src/bank_03.asm:840D",
+      "bank": "03",
+      "address": "0x840D",
+      "symbol": "812A-81DD / 83CA-845B / F4C1-F538 / tbl_803F / tbl_8CAF",
+      "layout": "one 60-byte source-semantic workload selecting the F4A5 intercept-divider subtraction continuation",
+      "length": 60,
+      "sha256": "2a5c73fe17db23b12937358d307c4e31d16148630565fe522baf5c00cc8eef31"
+    },
+    {
       "path": "timing/live-ai-moving-second-candidate-cycle-v1.bin",
       "category": "timing",
       "source": "src/bank_03.asm:A3DC",
@@ -2848,9 +2859,9 @@
       "bank": "06",
       "address": "0x803F",
       "symbol": "tbl_803F / tbl_8CAF / BD6A-BD87",
-      "layout": "119 178-byte records: ball handler/motion, AI stage/rank cycles, optional ball XY, two player cursors and partial semantic stages, visibility/pass-arc/fixed-tail/camera/priority/wind/ball-animation/weather-collision/initial-speed-multiplier/contact-selector/position-integrator boundary kinds, pair-shadow/ball-contact/state-rebuild resume cursors, twelve motion bytes and handlers, four exact `$001C-$0037` semantic-boundary scratch snapshots, and optional B20D sort or B26E filter cursors",
-      "length": 21182,
-      "sha256": "5e125da02add827e5c5c1be7b70cac01a4f80705267ae2c78840bcbbeaee2347"
+      "layout": "120 178-byte records: ball handler/motion, AI stage/rank cycles, optional ball XY, two player cursors and partial semantic stages, visibility/pass-arc/fixed-tail/camera/priority/wind/ball-animation/weather-collision/initial-speed-multiplier/contact-selector/position-integrator boundary kinds, pair-shadow/ball-contact/state-rebuild resume cursors, twelve motion bytes and handlers, four exact `$001C-$0037` semantic-boundary scratch snapshots, and optional B20D sort or B26E filter cursors",
+      "length": 21360,
+      "sha256": "04728a8a13050126201fa17430c6138e824464d36cafc4eefcbf4ec34a342f98"
     },
     {
       "path": "timing/live-visibility-inline-signature-v1.bin",
