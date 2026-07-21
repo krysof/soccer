@@ -3135,20 +3135,6 @@
       ]
     },
     {
-      "path": "menu/meeting-hidden-cursor-stack-0104-011c.bin",
-      "category": "menu",
-      "source": "src/bank_05.asm:ABEE",
-      "bank": "05",
-      "address": "0xABEE",
-      "symbol": "sub_ABEE/sub_8205/sub_822A stack-page alias",
-      "layout": "stable `$0104-$011B` coordinate bytes captured by tools-local/capture_original_meeting_stack.lua at goal3_playoff.fm2 frame 25208",
-      "length": 24,
-      "sha256": "b2bdbe0981300b975c9189e2aa3e199ebd7509935a3eabd38b83f908f4e89a63",
-      "consumers": [
-        "wasm-game/cpp-core/src/screens/meeting.cpp"
-      ]
-    },
-    {
       "path": "menu/meeting-navigation-ac09-ac87.bin",
       "category": "menu",
       "source": "src/bank_05.asm:AC09",

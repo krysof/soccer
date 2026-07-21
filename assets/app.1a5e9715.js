@@ -674,7 +674,7 @@ async function loadCppCoreData(api) {
 }
 async function loadWasm() {
   const filename = "soccer_core_cpp.wasm";
-  const relative = "../soccer_core_cpp.88e46ca9.wasm";
+  const relative = "../soccer_core_cpp.3e8eadf3.wasm";
   const response = await fetchCoreResponse(filename, assetUrl(relative), rootAssetUrl(filename));
   const bytes = await response.arrayBuffer();
   const result = await WebAssembly.instantiate(bytes, {});
@@ -2044,7 +2044,12 @@ function drawOriginalMenuObjects(api, layout, subtype) {
   ctx.rect(layout.x, layout.y, layout.w, layout.h);
   ctx.clip();
   const drawnObjectIds = [];
+  const meetingState = (subtype === 0x0c || subtype === 0x0d)
+    && api.original_option_counter
+    ? api.original_option_counter() & 0xff
+    : -1;
   for (const index of objectIds) {
+    if (meetingState === 6 && index === 0) continue;
     if (!api.original_player_x_lo || !api.original_player_animation) continue;
     const p = index === 0x0C ? originalBallPosition(api) : originalPlayerPosition(api, index);
     const cameraY = (subtype === 0x06 || subtype === 0x07)
