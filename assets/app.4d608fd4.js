@@ -302,6 +302,7 @@ const originalAssets = {
 };
 const verifiedRendererBins = new Map();
 const RENDERER_BIN_PATHS = new Set([
+  "animation/sprite-renderer-82c6-af8d.bin",
   "palette/background-d2fb.bin",
   "palette/sprite-d1b7.bin",
 ]);
@@ -1010,9 +1011,78 @@ async function loadOriginalPaletteDataFromBins() {
   document.body.dataset.nesRgbRecords = String(nesRgb.length);
   return { sprite, background_pairs: backgroundPairs, nes_rgb: nesRgb };
 }
+function loadOriginalSpriteRendererFromBin() {
+  const bytes = verifiedRendererBins.get("animation/sprite-renderer-82c6-af8d.bin");
+  const base = 0x82C6;
+  const end = 0xAF8D;
+  if (!(bytes instanceof Uint8Array) || bytes.byteLength !== end - base) {
+    throw new Error("animation/sprite-renderer-82c6-af8d.bin: invalid classified BIN length");
+  }
+  const byte = (address) => {
+    if (!Number.isInteger(address) || address < base || address >= end) {
+      throw new Error(`sprite renderer address out of range: $${address.toString(16)}`);
+    }
+    return bytes[address - base];
+  };
+  const word = (address) => byte(address) | (byte(address + 1) << 8);
+  const range = (first, last) => Array.from(bytes.subarray(first - base, last - base));
+  const signed = (value) => (value & 0x80) ? value - 0x100 : value;
+  const starts = Array.from({ length: 10 }, (_, group) => word(0x83D8 + group * 2));
+  const compactBoundaries = [...new Set([...starts.filter((start) => start < 0x8676), 0x8676])]
+    .sort((left, right) => left - right);
+  const groups = starts.map((start) => {
+    const tableEnd = start === 0xACCF
+      ? word(start)
+      : compactBoundaries.find((boundary) => boundary > start);
+    if (!tableEnd || ((tableEnd - start) & 1)) {
+      throw new Error(`unaligned sprite group table $${start.toString(16)}-$${tableEnd?.toString(16)}`);
+    }
+    return Array.from({ length: (tableEnd - start) / 2 }, (_, index) =>
+      word(start + index * 2));
+  });
+  const parseFrame = (address) => {
+    const count = byte(address);
+    if (count < 1 || count > 0x40) {
+      throw new Error(`bad sprite count $${count.toString(16)} at $${address.toString(16)}`);
+    }
+    const pointers = Array.from({ length: 4 }, (_, index) => word(address + 1 + index * 2));
+    const arrays = pointers.map((pointer) =>
+      Array.from({ length: count }, (_, index) => byte(pointer + index)));
+    return {
+      address,
+      count,
+      tile: arrays[0],
+      attr: arrays[1],
+      x: arrays[2].map(signed),
+      y: arrays[3].map(signed),
+    };
+  };
+  const uniqueFrames = [...new Set(groups.flat())].sort((left, right) => left - right);
+  const frames = Object.fromEntries(uniqueFrames.map((address) => [
+    address.toString(16).toUpperCase().padStart(4, "0"),
+    parseFrame(address),
+  ]));
+  const manifest = {
+    source: {
+      renderer: "src/bank_04.asm:809A-8188",
+      groups: "src/bank_04.asm:83D8-866D,ACCF-ACDC",
+      chrBanks: "src/bank_FF.asm:EE9A-EED2",
+    },
+    groups,
+    frames,
+    faceTiles: range(0x82C6, 0x83BC),
+    objectPaletteSlots: range(0x83BC, 0x83CE),
+    specialGroup3Tiles: range(0x83CE, 0x83D3),
+    chr: { file: "sprite_chr_indices.png", columns: 128, tileSize: 8, tileCount: 8192 },
+  };
+  document.body.dataset.spriteRendererSource = "classified-bin";
+  document.body.dataset.spriteRendererGroups = String(groups.length);
+  document.body.dataset.spriteRendererFrames = String(uniqueFrames.length);
+  return manifest;
+}
 async function loadWasm() {
   const filename = DEBUG ? "soccer_core_cpp.wasm" : "soccer_core_cpp_production.wasm";
-  const relative = DEBUG ? "../strict-tests.cb34fe95.wasm" : "../soccer_core_cpp.a3ad9146.wasm";
+  const relative = DEBUG ? "../strict-tests.853cc007.wasm" : "../soccer_core_cpp.9b618f3f.wasm";
   const response = await fetchCoreResponse(filename, assetUrl(relative), rootAssetUrl(filename));
   const bytes = await response.arrayBuffer();
   const result = await WebAssembly.instantiate(bytes, {});
@@ -4084,6 +4154,7 @@ function render(api) {
 async function main() {
   await loadReleaseMetadata();
   const apiPromise = loadWasm();
+  const spriteManifestPromise = apiPromise.then(() => loadOriginalSpriteRendererFromBin());
   const palettesPromise = apiPromise.then(() => loadOriginalPaletteDataFromBins());
   const menuScreensPromise = Promise.all(ORIGINAL_BACKGROUND_SCREEN_IDS.map(async (id) => {
     const suffix = id >= 0x10 && id <= 0x12 ? "_wide" : "";
@@ -4101,7 +4172,7 @@ async function main() {
     withFallback("chr_sprite_pal_01.png", originalAssetUrl("chr_sprite_pal_01.png"), originalFallbackUrl("chr_sprite_pal_01.png"), loadImage),
     withFallback("chr_sprite_pal_08.png", originalAssetUrl("chr_sprite_pal_08.png"), originalFallbackUrl("chr_sprite_pal_08.png"), loadImage),
     loadOriginalFieldAssets(),
-    withFallback("sprite_renderer.json", originalAssetUrl("sprite_renderer.json"), originalFallbackUrl("sprite_renderer.json"), loadJson),
+    spriteManifestPromise,
     withFallback("sprite_chr_indices.png", originalAssetUrl("sprite_chr_indices.png"), originalFallbackUrl("sprite_chr_indices.png"), loadImage),
     palettesPromise,
     withFallback("statusbar_renderer.json", originalAssetUrl("statusbar_renderer.json"), originalFallbackUrl("statusbar_renderer.json"), loadJson),
