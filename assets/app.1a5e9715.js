@@ -60,6 +60,8 @@ const keyTapLatch = { kick: 0, sprint: 0, start: 0, select: 0 };
 const canvas = document.querySelector("#game");
 const ctx = canvas.getContext("2d");
 const stats = document.querySelector("#stats");
+const releaseVersionElement = document.querySelector("#releaseVersion");
+const releaseVersionMeta = document.querySelector('meta[name="soccer-release-version"]');
 const app = document.querySelector("#app");
 const gameWrap = document.querySelector(".game-wrap");
 const touchControls = document.querySelector("#touchControls");
@@ -71,9 +73,40 @@ const btnStart = document.querySelector("#btnStart");
 const btnSelect = document.querySelector("#btnSelect");
 const DEBUG = new URLSearchParams(window.location.search).get("debug") === "1";
 const CORE_KIND = "cpp";
-const BUILD_ID = "cpp-only-core-20260720";
+let BUILD_ID = "development";
+let releaseMetadata = null;
 document.body.classList.toggle("debug", DEBUG);
 stats.hidden = !DEBUG;
+function validateReleaseMetadata(value) {
+  const date = Number(value?.date);
+  const revision = Number(value?.revision);
+  const version = String(value?.version || "");
+  if (!/^\d{8}\.\d+$/.test(version) || version !== `${date}.${revision}` || revision < 1) {
+    throw new Error("invalid release-version.json");
+  }
+  return { date, revision, version };
+}
+async function loadReleaseMetadata() {
+  const response = await fetch(rootAssetUrl("release-version.json"), { cache: "no-store" });
+  if (!response.ok) throw new Error(`failed to load release-version.json: ${response.status}`);
+  releaseMetadata = validateReleaseMetadata(await response.json());
+  BUILD_ID = releaseMetadata.version;
+  releaseVersionElement.textContent = releaseMetadata.version;
+  releaseVersionMeta.content = releaseMetadata.version;
+  document.body.dataset.releaseVersion = releaseMetadata.version;
+  return releaseMetadata;
+}
+function verifyCoreReleaseMetadata(api) {
+  if (!releaseMetadata || !api.soccer_release_version_date || !api.soccer_release_version_revision) {
+    throw new Error("C++ core does not expose formal release metadata");
+  }
+  const coreDate = api.soccer_release_version_date() >>> 0;
+  const coreRevision = api.soccer_release_version_revision() >>> 0;
+  if (coreDate !== releaseMetadata.date || coreRevision !== releaseMetadata.revision) {
+    throw new Error(`mixed release artifacts: page=${releaseMetadata.version} wasm=${coreDate}.${coreRevision}`);
+  }
+  document.body.dataset.coreReleaseVersion = `${coreDate}.${coreRevision}`;
+}
 function enforceControllerOutsideGame() {
   if (touchControls.parentElement !== app || touchControls.previousElementSibling !== gameWrap) {
     gameWrap.insertAdjacentElement("afterend", touchControls);
@@ -674,10 +707,11 @@ async function loadCppCoreData(api) {
 }
 async function loadWasm() {
   const filename = "soccer_core_cpp.wasm";
-  const relative = "../soccer_core_cpp.4f7affd0.wasm";
+  const relative = "../soccer_core_cpp.850bfe4c.wasm";
   const response = await fetchCoreResponse(filename, assetUrl(relative), rootAssetUrl(filename));
   const bytes = await response.arrayBuffer();
   const result = await WebAssembly.instantiate(bytes, {});
+  verifyCoreReleaseMetadata(result.instance.exports);
   const loaded = await loadCppCoreData(result.instance.exports);
   document.body.dataset.core = CORE_KIND;
   document.body.dataset.coreAssets = String(loaded.count);
@@ -3736,6 +3770,7 @@ function render(api) {
   }
 }
 async function main() {
+  await loadReleaseMetadata();
   const menuScreensPromise = Promise.all(ORIGINAL_BACKGROUND_SCREEN_IDS.map(async (id) => {
     const suffix = id >= 0x10 && id <= 0x12 ? "_wide" : "";
     const name = `screen_${id.toString(16).padStart(2, "0")}${suffix}.png`;

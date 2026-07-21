@@ -1,0 +1,20 @@
+{
+  "schema": 1,
+  "version": "20260721.1",
+  "release_date": 20260721,
+  "release_revision": 1,
+  "artifacts": {
+    "javascript": {
+      "path": "assets/app.831b66c3.js",
+      "sha256": "831b66c3a1cb097b65d2382f3b7b2d30d27b258a9ab92f02df43e884965bb9f6"
+    },
+    "stylesheet": {
+      "path": "assets/app.dc164103.css",
+      "sha256": "dc164103e8af447e1282907370e799c86d25b36c8be4b5475809edbc5c6191fd"
+    },
+    "wasm": {
+      "path": "soccer_core_cpp.850bfe4c.wasm",
+      "sha256": "850bfe4c9827bc36e0891486bcb6948e66120e60a6154bff01cb870ac396ae7f"
+    }
+  }
+}
