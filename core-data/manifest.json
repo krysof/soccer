@@ -1015,20 +1015,88 @@
       ]
     },
     {
-      "path": "audio/sound-executable-opcode-starts-bank00.bin",
+      "path": "audio/sound-command-handlers.bin",
+      "category": "audio-code",
+      "source": "src/bank_00.asm:83AE",
+      "bank": "00",
+      "address": "0x83AE",
+      "symbol": "sound command handlers",
+      "layout": "6502 implementations of sequence commands $C0-$DF and channel helpers",
+      "length": 1485,
+      "sha256": "f6c44967d46bd818da47fb46046ef8aab5ab909788eda153384f9a22af3827bc",
+      "source_ranges": [
+        {
+          "bank": "00",
+          "start": "0x83AE",
+          "length": 1485
+        }
+      ],
+      "consumers": [
+        "soccer::audio::SoundProgramCpu"
+      ]
+    },
+    {
+      "path": "audio/sound-command-vectors.bin",
       "category": "audio-metadata",
+      "source": "src/bank_00.asm:836E",
+      "bank": "00",
+      "address": "0x836E",
+      "symbol": "sound command handler vectors",
+      "layout": "32 low bytes followed by 32 high bytes for command handlers $C0-$DF",
+      "length": 64,
+      "sha256": "12ecf62b2e1fe1bd3f911f4124a4a276b373e178a6f5941f9baeec7d822e6e36",
+      "source_ranges": [
+        {
+          "bank": "00",
+          "start": "0x836E",
+          "length": 64
+        }
+      ],
+      "consumers": [
+        "soccer::audio::SoundProgramCpu"
+      ]
+    },
+    {
+      "path": "audio/sound-driver-core.bin",
+      "category": "audio-code",
       "source": "src/bank_00.asm:8000",
       "bank": "00",
       "address": "0x8000",
-      "symbol": "bank_00 decoded instruction starts",
-      "layout": "16384-bit bitmap for CPU $8000-$BFFF; bit N permits only the annotated 6502 instruction beginning at $8000+N",
-      "length": 2048,
-      "sha256": "cbe80fad9d9d88b085830efe18a18c81f9fcdf3cb61fa3f15190699c853e0583",
+      "symbol": "sound request/frame driver core",
+      "layout": "6502 sound request entry, frame entry, channel engine and command dispatcher",
+      "length": 878,
+      "sha256": "af1a41b70ff23d29e1b1757178d373e64613230846aa0d91062682cc929efa21",
       "source_ranges": [
         {
           "bank": "00",
           "start": "0x8000",
-          "length": 16384
+          "length": 878
+        }
+      ],
+      "consumers": [
+        "soccer::audio::SoundProgramCpu"
+      ]
+    },
+    {
+      "path": "audio/sound-executable-opcode-starts.bin",
+      "category": "audio-metadata",
+      "source": "src/bank_00.asm:8000",
+      "bank": "00",
+      "address": "0x8000",
+      "symbol": "isolated sound-driver decoded instruction starts",
+      "layout": "16384-bit bitmap for CPU $8000-$BFFF; bits are set only for annotated instruction starts inside sound code $8000-$836D/$83AE-$897A",
+      "length": 2048,
+      "sha256": "b7192270c76e2c69522a27cc53776dfceae729ce8901a90196c832eedde8d3ab",
+      "source_ranges": [
+        {
+          "bank": "00",
+          "start": "0x8000",
+          "length": 878
+        },
+        {
+          "bank": "00",
+          "start": "0x83AE",
+          "length": 1485
         }
       ],
       "consumers": [
@@ -1036,20 +1104,20 @@
       ]
     },
     {
-      "path": "audio/sound-program-bank00.bin",
+      "path": "audio/sound-sequences.bin",
       "category": "audio",
-      "source": "src/bank_00.asm:8000",
+      "source": "src/bank_00.asm:897B",
       "bank": "00",
-      "address": "0x8000",
-      "symbol": "bank_00 PRG image",
-      "layout": "16 KiB isolated original sound program used by entry points $8006/$8183",
-      "length": 16384,
-      "sha256": "dcec1cea70680bb269b3960c7b00437879a8031d9fcdba53f278345bd21b004e",
+      "address": "0x897B",
+      "symbol": "music and sound-effect sequence region",
+      "layout": "pointer tables, instruments, note streams and sound-effect command streams",
+      "length": 9372,
+      "sha256": "6948861488ccf9cf48d59ccf6d45e22150a7b27edce003c94df10a40ef8afce1",
       "source_ranges": [
         {
           "bank": "00",
-          "start": "0x8000",
-          "length": 16384
+          "start": "0x897B",
+          "length": 9372
         }
       ],
       "consumers": [
