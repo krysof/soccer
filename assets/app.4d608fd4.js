@@ -913,7 +913,7 @@ async function loadCppCoreData(api) {
 }
 async function loadWasm() {
   const filename = "soccer_core_cpp.wasm";
-  const relative = "../soccer_core_cpp.13f80262.wasm";
+  const relative = "../soccer_core_cpp.94f633eb.wasm";
   const response = await fetchCoreResponse(filename, assetUrl(relative), rootAssetUrl(filename));
   const bytes = await response.arrayBuffer();
   const result = await WebAssembly.instantiate(bytes, {});
@@ -2151,7 +2151,11 @@ function drawOriginalResultWetnessRows(api, resultContext, screenMeta) {
   const scripts = originalAssets.result.scripts;
   if (!scripts) return;
   const wetness = api.original_surface_wetness ? api.original_surface_wetness() & 0x0F : 0;
-  const pattern = scripts.wetnessPatterns[Math.min(wetness, scripts.wetnessPatterns.length - 1)];
+  const selectedWetness = Math.min(wetness, scripts.wetnessPatterns.length - 1);
+  const pattern = api.original_result_wetness_pattern_tile
+    ? Array.from({ length: 6 }, (_, index) =>
+      api.original_result_wetness_pattern_tile(selectedWetness, index) & 0xFF)
+    : scripts.wetnessPatterns[selectedWetness];
   for (const base of [0x2300, 0x2700]) {
     for (let column = 0; column < 0x20; column++) {
       writeOriginalResultTiles(resultContext, screenMeta, base + column, pattern, 0x20);
@@ -2166,7 +2170,10 @@ function applyOriginalResultSupporterUpdate(resultContext, screenMeta) {
     do {
       const group = result.supporterSubframe & 1;
       const frame = result.supporterFrame;
-      const strip = scripts.supporterScrollFrames[group][frame];
+      const strip = api.original_result_supporter_scroll_tile
+        ? Array.from({ length: 18 }, (_, index) =>
+          api.original_result_supporter_scroll_tile(group, frame, index) & 0xFF)
+        : scripts.supporterScrollFrames[group][frame];
       const count = result.supporterPpuHi === 0x24
         && result.supporterPpuLo >= 0x04 && result.supporterPpuLo < 0x1C ? 4 : 18;
       writeOriginalResultTiles(

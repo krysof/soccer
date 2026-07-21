@@ -950,6 +950,27 @@
       ]
     },
     {
+      "path": "animation/score-scene-sprite-bank-b4ff-b501.bin",
+      "category": "animation",
+      "source": "src/bank_02.asm:B4FF",
+      "bank": "02",
+      "address": "0xB4FF",
+      "symbol": "tbl_B4FF",
+      "layout": "two score-scene sprite-bank ids selected from the possessing team",
+      "length": 2,
+      "sha256": "f7f4791af8c2fe5825591201df09b72c2463d705c04f2f8e5ccf54f16ebaa424",
+      "source_ranges": [
+        {
+          "bank": "02",
+          "start": "0xB4FF",
+          "length": 2
+        }
+      ],
+      "consumers": [
+        "wasm-game/cpp-core/src/screens/result_characters.cpp"
+      ]
+    },
+    {
       "path": "animation/splash-juggle-af60-af6a.bin",
       "category": "animation",
       "source": "src/bank_02.asm:AF60",
@@ -3812,6 +3833,27 @@
       ]
     },
     {
+      "path": "menu/result-supporter-scroll-b180-b430.bin",
+      "category": "menu",
+      "source": "src/bank_01.asm:B180",
+      "bank": "01",
+      "address": "0xB180",
+      "symbol": "tbl_B180/off_B184_00/off_B2EC_01",
+      "layout": "two 18-entry pointer forests and 36 eighteen-tile supporter scroll rows",
+      "length": 688,
+      "sha256": "4ef8628bba0fdbd6d33b322b5ae1b27014d02d5436f850d0f1804daec18306cb",
+      "source_ranges": [
+        {
+          "bank": "01",
+          "start": "0xB180",
+          "length": 688
+        }
+      ],
+      "consumers": [
+        "wasm-game/cpp-core/src/screens/result_supporters.cpp"
+      ]
+    },
+    {
       "path": "menu/result-supporter-tiles-b935-b955.bin",
       "category": "menu",
       "source": "src/bank_01.asm:B935",
@@ -3826,6 +3868,27 @@
           "bank": "01",
           "start": "0xB935",
           "length": 32
+        }
+      ],
+      "consumers": [
+        "wasm-game/cpp-core/src/screens/result_supporters.cpp"
+      ]
+    },
+    {
+      "path": "menu/result-wetness-patterns-b9a8-b9c0.bin",
+      "category": "menu",
+      "source": "src/bank_01.asm:B9A8",
+      "bank": "01",
+      "address": "0xB9A8",
+      "symbol": "tbl_B9A8/off_B9AE_00..off_B9BA_02",
+      "layout": "three pointers followed by three six-tile result-screen wetness rows",
+      "length": 24,
+      "sha256": "558935d172b74bf5d1c11a443e1039e94458d1a48276a6bbb8e6f045b3370158",
+      "source_ranges": [
+        {
+          "bank": "01",
+          "start": "0xB9A8",
+          "length": 24
         }
       ],
       "consumers": [
@@ -4262,6 +4325,27 @@
       ]
     },
     {
+      "path": "position/credits-score-object-order-bb1e-bb21.bin",
+      "category": "position",
+      "source": "src/bank_02.asm:BB1E",
+      "bank": "02",
+      "address": "0xBB1E",
+      "symbol": "tbl_BB1E",
+      "layout": "three source object ids initialized by the ending score-card loop",
+      "length": 3,
+      "sha256": "8c3069e898c86349d41d2ed08ef84dcd9c8c29bf4a5682d6fd63da56fbac0c8f",
+      "source_ranges": [
+        {
+          "bank": "02",
+          "start": "0xBB1E",
+          "length": 3
+        }
+      ],
+      "consumers": [
+        "wasm-game/cpp-core/src/screens/result_characters.cpp"
+      ]
+    },
+    {
       "path": "position/result-character-bounds-bb89-bb99.bin",
       "category": "position",
       "source": "src/bank_06.asm:BB89",
@@ -4280,6 +4364,28 @@
       ],
       "consumers": [
         "wasm-game/cpp-core/src/rules/rules.cpp"
+      ]
+    },
+    {
+      "path": "position/screen-object-bounds-b333-b33f.bin",
+      "category": "position",
+      "source": "src/bank_02.asm:B333",
+      "bank": "02",
+      "address": "0xB333",
+      "symbol": "tbl_B333..tbl_B338",
+      "layout": "little-endian Y and normal/cup X clamp bounds used by screen objects",
+      "length": 12,
+      "sha256": "234d15acd96cd344ddd2dc7fc80d2978a30b147d97d0b5c1601500e986ae231e",
+      "source_ranges": [
+        {
+          "bank": "02",
+          "start": "0xB333",
+          "length": 12
+        }
+      ],
+      "consumers": [
+        "wasm-game/cpp-core/src/ball/motion.cpp",
+        "wasm-game/cpp-core/src/screens/result_characters.cpp"
       ]
     },
     {
