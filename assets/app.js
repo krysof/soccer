@@ -1,4 +1,4 @@
-import { WasmNesApuAudioAdapter } from "./wasm-nes-apu-audio.be2b2989.js";
+import { WasmNesApuAudioAdapter } from "./wasm-nes-apu-audio.eb14abb4.js";
 const INPUT = {
   UP: 1 << 0,
   DOWN: 1 << 1,
@@ -71,7 +71,6 @@ const btnStart = document.querySelector("#btnStart");
 const btnSelect = document.querySelector("#btnSelect");
 const DEBUG = new URLSearchParams(window.location.search).get("debug") === "1";
 const CORE_KIND = "cpp";
-const WASM_NES_APU_ENABLED = new URLSearchParams(window.location.search).get("audio") !== "synth";
 const BUILD_ID = "cpp-only-core-20260720";
 document.body.classList.toggle("debug", DEBUG);
 stats.hidden = !DEBUG;
@@ -245,11 +244,6 @@ const originalAssets = {
 const sfx = {
   ctx: null,
   lastEventSerial: 0,
-  lastScore: "0-0",
-  lastPhase: PHASE.TITLE,
-  lastSpecial: 0,
-  lastAction: ACTION.STAND,
-  lastKeeper: 0,
 };
 function loadImage(src) {
   return new Promise((resolve, reject) => {
@@ -294,9 +288,7 @@ function originalAssetUrl(name) {
 function originalFallbackUrl(name) {
   return cacheBustedOriginalAssetUrl(rootAssetUrl(`original/${name}`));
 }
-const wasmNesApu = new WasmNesApuAudioAdapter({
-  enabled: WASM_NES_APU_ENABLED,
-});
+const wasmNesApu = new WasmNesApuAudioAdapter();
 wasmNesApu.prepare();
 if (DEBUG) {
   window.__soccerAudio = () => wasmNesApu.snapshot();
@@ -383,69 +375,6 @@ function ensureAudio() {
   wasmNesApu.attachAudioContext(sfx.ctx);
   return sfx.ctx;
 }
-function tone(freq, duration = 0.08, type = "square", gain = 0.045, delay = 0) {
-  const ctx = sfx.ctx;
-  if (!ctx || ctx.state === "suspended") return;
-  const now = ctx.currentTime + delay;
-  const osc = ctx.createOscillator();
-  const amp = ctx.createGain();
-  osc.type = type;
-  osc.frequency.setValueAtTime(freq, now);
-  amp.gain.setValueAtTime(0.0001, now);
-  amp.gain.exponentialRampToValueAtTime(gain, now + 0.006);
-  amp.gain.exponentialRampToValueAtTime(0.0001, now + duration);
-  osc.connect(amp).connect(ctx.destination);
-  osc.start(now);
-  osc.stop(now + duration + 0.02);
-}
-function noise(duration = 0.06, gain = 0.035, delay = 0) {
-  const ctx = sfx.ctx;
-  if (!ctx || ctx.state === "suspended") return;
-  const samples = Math.max(1, Math.floor(ctx.sampleRate * duration));
-  const buffer = ctx.createBuffer(1, samples, ctx.sampleRate);
-  const data = buffer.getChannelData(0);
-  for (let i = 0; i < samples; i++) data[i] = (Math.random() * 2 - 1) * (1 - i / samples);
-  const src = ctx.createBufferSource();
-  const amp = ctx.createGain();
-  src.buffer = buffer;
-  amp.gain.value = gain;
-  src.connect(amp).connect(ctx.destination);
-  src.start(ctx.currentTime + delay);
-}
-function playSfx(name) {
-  if (!sfx.ctx || sfx.ctx.state === "suspended") return;
-  if (name === "kick") { tone(190, 0.045, "square", 0.035); noise(0.035, 0.018); }
-  if (name === "tackle") { noise(0.11, 0.045); tone(95, 0.08, "sawtooth", 0.025); }
-  if (name === "special") { tone(330, 0.07, "square", 0.04); tone(660, 0.09, "square", 0.035, 0.055); tone(990, 0.08, "triangle", 0.03, 0.12); }
-  if (name === "keeper") { tone(150, 0.06, "triangle", 0.04); noise(0.05, 0.025, 0.02); }
-  if (name === "whistle") { tone(1350, 0.12, "square", 0.028); tone(1750, 0.08, "square", 0.022, 0.10); }
-  if (name === "goal") { tone(523, 0.10, "square", 0.045); tone(659, 0.10, "square", 0.045, 0.10); tone(784, 0.18, "square", 0.05, 0.20); noise(0.22, 0.025, 0.06); }
-  if (name === "jump") { tone(260, 0.055, "square", 0.025); tone(390, 0.05, "square", 0.022, 0.035); }
-  if (name === "land") { noise(0.045, 0.022); tone(80, 0.045, "triangle", 0.025); }
-  if (name === "cursor") { tone(720, 0.025, "square", 0.018); }
-  if (name === "confirm") { tone(520, 0.045, "square", 0.022); tone(780, 0.055, "square", 0.022, 0.035); }
-  if (name === "reject") { tone(190, 0.06, "sawtooth", 0.025); tone(140, 0.08, "sawtooth", 0.02, 0.045); }
-  if (name === "text") { tone(880, 0.018, "square", 0.012); }
-  if (name === "wind") { noise(0.16, 0.018); tone(110, 0.13, "triangle", 0.012); }
-  if (name === "phone") { tone(440, 0.08, "square", 0.018); tone(660, 0.08, "square", 0.016, 0.09); }
-}
-function playOriginalSoundEvent(soundId) {
-  if ([0x20, 0x22, 0x29].includes(soundId)) return playSfx("kick");
-  if ([0x23, 0x26, 0x27].includes(soundId)) return playSfx("keeper");
-  if (soundId === 0x24) return playSfx("kick");
-  if ([0x28, 0x2A, 0x37, 0x38, 0x39, 0x3C, 0x3E, 0x43, 0x45, 0x46].includes(soundId)) return playSfx("special");
-  if (soundId === 0x2B) return playSfx("jump");
-  if ([0x2C, 0x3D].includes(soundId)) return playSfx("land");
-  if ([0x2D, 0x31, 0x40].includes(soundId)) return playSfx("whistle");
-  if (soundId === 0x2E) return playSfx("goal");
-  if (soundId === 0x32) return playSfx("cursor");
-  if (soundId === 0x33) return playSfx("confirm");
-  if (soundId === 0x34) return playSfx("reject");
-  if (soundId === 0x35) return playSfx("text");
-  if ([0x36, 0x3B].includes(soundId)) return playSfx("tackle");
-  if (soundId === 0x41) return playSfx("wind");
-  if ([0x44, 0x47, 0x48, 0x49, 0x4A, 0x4B, 0x4C, 0x4D, 0x4E].includes(soundId)) return playSfx("phone");
-}
 function drainOriginalSoundEvents(api, consume) {
   if (api.original_sound_event_serial && api.original_sound_event) {
     const current = api.original_sound_event_serial() >>> 0;
@@ -462,30 +391,8 @@ function drainOriginalSoundEvents(api, consume) {
   return false;
 }
 function updateSfx(api) {
-  if (wasmNesApu.claimsAudio) {
-    drainOriginalSoundEvents(api, (soundId) => wasmNesApu.handleSoundEvent(soundId));
-    return;
-  }
-  if (!sfx.ctx || sfx.ctx.state === "suspended") return;
-  if (drainOriginalSoundEvents(api, playOriginalSoundEvent)) {
-    return;
-  }
-  const score = `${api.score_left()}-${api.score_right()}`;
-  const phase = api.game_phase ? api.game_phase() : PHASE.PLAYING;
-  const action = api.player_action ? api.player_action(api.controlled_player ? api.controlled_player() : 0) : ACTION.STAND;
-  const special = api.ball_special_timer ? api.ball_special_timer() : 0;
-  const keeper = api.keeper_outcome ? api.keeper_outcome() : 0;
-  if (score !== sfx.lastScore) playSfx("goal");
-  else if (phase !== sfx.lastPhase && [PHASE.KICKOFF, PHASE.FREE_KICK, PHASE.PENALTY_KICK, PHASE.THROW_IN, PHASE.GOAL_KICK, PHASE.CORNER_KICK].includes(phase)) playSfx("whistle");
-  if (special > 0 && sfx.lastSpecial === 0) playSfx("special");
-  if (action === ACTION.KICK && sfx.lastAction !== ACTION.KICK) playSfx("kick");
-  if (action === ACTION.TACKLE && sfx.lastAction !== ACTION.TACKLE) playSfx("tackle");
-  if (keeper > 0 && sfx.lastKeeper === 0) playSfx("keeper");
-  sfx.lastScore = score;
-  sfx.lastPhase = phase;
-  sfx.lastSpecial = special;
-  sfx.lastAction = action;
-  sfx.lastKeeper = keeper;
+  if (!wasmNesApu.claimsAudio) return;
+  drainOriginalSoundEvents(api, (soundId) => wasmNesApu.handleSoundEvent(soundId));
 }
 function resetStick() {
   touch.stickPointer = null;
@@ -3967,8 +3874,6 @@ async function main() {
       };
     };
   }
-  sfx.lastScore = `${api.score_left()}-${api.score_right()}`;
-  sfx.lastPhase = api.game_phase ? api.game_phase() : PHASE.TITLE;
   let last = performance.now();
   let acc = 0;
   const ntscRateNumerator = api.platform_ntsc_video_rate_numerator();

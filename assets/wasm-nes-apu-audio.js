@@ -1,5 +1,5 @@
 export class WasmNesApuAudioAdapter {
-  constructor({ enabled = true, volume = 0.58 }) {
+  constructor({ enabled = true, volume = 0.58 } = {}) {
     this.enabled = Boolean(enabled);
     this.volume = volume;
     this.state = this.enabled ? "waiting-core" : "disabled";
