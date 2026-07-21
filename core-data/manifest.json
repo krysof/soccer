@@ -1327,6 +1327,27 @@
       ]
     },
     {
+      "path": "dispatch/ball-motion-handler-ids.bin",
+      "category": "dispatch-semantic",
+      "source": "src/bank_02.asm:B09D",
+      "bank": "02",
+      "address": "0xB09D",
+      "symbol": "tbl_B09D",
+      "layout": "15 one-byte semantic handler ids; each id is the lowest motion entry sharing the source target",
+      "length": 15,
+      "sha256": "cd91a25fda3161dae2737bafb67722e0151b5943b8a6cccddd9a096703df9148",
+      "source_ranges": [
+        {
+          "bank": "02",
+          "start": "0xB09D",
+          "length": 30
+        }
+      ],
+      "consumers": [
+        "soccer::ball_screen_motion_handler"
+      ]
+    },
+    {
       "path": "dispatch/ball-object-motion-8caf.bin",
       "category": "dispatch",
       "source": "src/bank_06.asm:8CAF",
@@ -1342,6 +1363,27 @@
           "start": "0x8CAF",
           "length": 50
         }
+      ]
+    },
+    {
+      "path": "dispatch/ball-object-motion-handler-ids.bin",
+      "category": "dispatch-semantic",
+      "source": "src/bank_06.asm:8CAF",
+      "bank": "06",
+      "address": "0x8CAF",
+      "symbol": "tbl_8CAF",
+      "layout": "25 one-byte semantic live-ball handler ids derived from the source target table",
+      "length": 25,
+      "sha256": "b729ce724d9a48d3884dbfcbee1d3793d922b29fa9d639e7290af4978263772b",
+      "source_ranges": [
+        {
+          "bank": "06",
+          "start": "0x8CAF",
+          "length": 50
+        }
+      ],
+      "consumers": [
+        "soccer::ball_object_motion_handler"
       ]
     },
     {
@@ -1378,6 +1420,27 @@
           "start": "0x803F",
           "length": 186
         }
+      ]
+    },
+    {
+      "path": "dispatch/player-main-motion-handler-ids.bin",
+      "category": "dispatch-semantic",
+      "source": "src/bank_06.asm:803F",
+      "bank": "06",
+      "address": "0x803F",
+      "symbol": "tbl_803F",
+      "layout": "93 one-byte semantic handler ids; each id is the lowest motion entry sharing the source target",
+      "length": 93,
+      "sha256": "9321b0d68878321c55658f8ece91eff73acddb0a45b6671c5f69ae876ef0677a",
+      "source_ranges": [
+        {
+          "bank": "06",
+          "start": "0x803F",
+          "length": 186
+        }
+      ],
+      "consumers": [
+        "soccer::player_main_motion_handler"
       ]
     },
     {
