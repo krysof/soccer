@@ -1002,7 +1002,38 @@
       "symbol": "DPCM.bin",
       "layout": "original DPCM sample bytes mapped at CPU address $FE40",
       "length": 385,
-      "sha256": "ba22052168dbe98434a62547718eacf875a8bfb37bcb557fa34a17136460bbcd"
+      "sha256": "ba22052168dbe98434a62547718eacf875a8bfb37bcb557fa34a17136460bbcd",
+      "source_ranges": [
+        {
+          "bank": "07",
+          "start": "0xFE40",
+          "length": 385
+        }
+      ],
+      "consumers": [
+        "soccer::audio::Apu::read_dpcm_sample"
+      ]
+    },
+    {
+      "path": "audio/sound-executable-opcode-starts-bank00.bin",
+      "category": "audio-metadata",
+      "source": "src/bank_00.asm:8000",
+      "bank": "00",
+      "address": "0x8000",
+      "symbol": "bank_00 decoded instruction starts",
+      "layout": "16384-bit bitmap for CPU $8000-$BFFF; bit N permits only the annotated 6502 instruction beginning at $8000+N",
+      "length": 2048,
+      "sha256": "cbe80fad9d9d88b085830efe18a18c81f9fcdf3cb61fa3f15190699c853e0583",
+      "source_ranges": [
+        {
+          "bank": "00",
+          "start": "0x8000",
+          "length": 16384
+        }
+      ],
+      "consumers": [
+        "soccer::audio::SoundProgramCpu::step"
+      ]
     },
     {
       "path": "audio/sound-program-bank00.bin",
@@ -1013,7 +1044,17 @@
       "symbol": "bank_00 PRG image",
       "layout": "16 KiB isolated original sound program used by entry points $8006/$8183",
       "length": 16384,
-      "sha256": "dcec1cea70680bb269b3960c7b00437879a8031d9fcdba53f278345bd21b004e"
+      "sha256": "dcec1cea70680bb269b3960c7b00437879a8031d9fcdba53f278345bd21b004e",
+      "source_ranges": [
+        {
+          "bank": "00",
+          "start": "0x8000",
+          "length": 16384
+        }
+      ],
+      "consumers": [
+        "soccer::audio::SoundProgramCpu"
+      ]
     },
     {
       "path": "background/upload-records-ea1a-eb42.bin",
