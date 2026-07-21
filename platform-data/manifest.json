@@ -1,0 +1,18 @@
+{
+  "schema": 1,
+  "generator": "tools-local/extract_palettes.py",
+  "description": "Platform-only video conversion data; contains no game logic or ROM palette-number tables",
+  "records": [
+    {
+      "path": "video/nes-rgb-fceux.bin",
+      "category": "platform-video",
+      "provenance": "192-byte FCEUX reference NES RGB palette used by the differential video oracle",
+      "layout": "64 records x RGB888 (3 bytes per NES colour index)",
+      "length": 192,
+      "sha256": "bbb0355bcadc4be771efeb81930b09b17d97dcb8c70167a652902a789158c5f8",
+      "consumers": [
+        "wasm-game/web/src/main.js"
+      ]
+    }
+  ]
+}

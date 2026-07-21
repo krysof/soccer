@@ -300,6 +300,11 @@ const originalAssets = {
     backgroundTileCache: new Map(),
   },
 };
+const verifiedRendererBins = new Map();
+const RENDERER_BIN_PATHS = new Set([
+  "palette/background-d2fb.bin",
+  "palette/sprite-d1b7.bin",
+]);
 const sfx = {
   ctx: null,
   lastEventSerial: 0,
@@ -937,6 +942,9 @@ async function loadCppCoreData(api) {
       if ((api.cpp_asset_checksum(assetId) >>> 0) !== fnv1aBytes(bytes)) {
         throw new Error(`C++ core checksum mismatch for ${record.path}`);
       }
+      if (RENDERER_BIN_PATHS.has(record.path)) {
+        verifiedRendererBins.set(record.path, bytes.slice());
+      }
       loadedBytes += bytes.byteLength;
     }
   });
@@ -952,9 +960,59 @@ async function loadCppCoreData(api) {
   }
   return { count: manifest.records.length, bytes: loadedBytes };
 }
+function splitPaletteRecords(bytes, recordBytes, expectedRecords, label) {
+  if (!(bytes instanceof Uint8Array)
+      || bytes.byteLength !== recordBytes * expectedRecords) {
+    throw new Error(`${label}: invalid classified BIN length`);
+  }
+  return Array.from({ length: expectedRecords }, (_, index) =>
+    Array.from(bytes.subarray(index * recordBytes, (index + 1) * recordBytes)));
+}
+async function loadPlatformNesRgbPalette() {
+  const manifestResponse = await fetchCoreResponse(
+    "platform-data/manifest.json",
+    assetUrl("../platform-data/manifest.json"),
+    rootAssetUrl("platform-data/manifest.json"),
+  );
+  const manifest = await manifestResponse.json();
+  const record = manifest?.records?.find((entry) => entry?.path === "video/nes-rgb-fceux.bin");
+  if (manifest?.schema !== 1 || !Array.isArray(manifest.records) || manifest.records.length !== 1
+      || record?.category !== "platform-video" || record?.length !== 64 * 3
+      || !/^[0-9a-f]{64}$/.test(record?.sha256 || "")) {
+    throw new Error("invalid platform video-data manifest");
+  }
+  const response = await fetchCoreResponse(
+    record.path,
+    assetUrl(`../platform-data/${record.path}`),
+    rootAssetUrl(`platform-data/${record.path}`),
+  );
+  const bytes = new Uint8Array(await response.arrayBuffer());
+  if (bytes.byteLength !== record.length || await sha256Hex(bytes) !== record.sha256) {
+    throw new Error(`${record.path}: platform palette integrity failure`);
+  }
+  return splitPaletteRecords(bytes, 3, 64, record.path);
+}
+async function loadOriginalPaletteDataFromBins() {
+  const spriteBytes = verifiedRendererBins.get("palette/sprite-d1b7.bin");
+  const backgroundBytes = verifiedRendererBins.get("palette/background-d2fb.bin");
+  const sprite = splitPaletteRecords(spriteBytes, 4, 54, "palette/sprite-d1b7.bin");
+  const flattenedBackground = splitPaletteRecords(
+    backgroundBytes, 8, 74, "palette/background-d2fb.bin",
+  );
+  const backgroundPairs = flattenedBackground.map((record) => [
+    record.slice(0, 4),
+    record.slice(4, 8),
+  ]);
+  const nesRgb = await loadPlatformNesRgbPalette();
+  document.body.dataset.paletteSource = "classified-bin";
+  document.body.dataset.spritePaletteRecords = String(sprite.length);
+  document.body.dataset.backgroundPaletteRecords = String(backgroundPairs.length);
+  document.body.dataset.nesRgbRecords = String(nesRgb.length);
+  return { sprite, background_pairs: backgroundPairs, nes_rgb: nesRgb };
+}
 async function loadWasm() {
   const filename = DEBUG ? "soccer_core_cpp.wasm" : "soccer_core_cpp_production.wasm";
-  const relative = DEBUG ? "../strict-tests.984a5561.wasm" : "../soccer_core_cpp.c0c2cf29.wasm";
+  const relative = DEBUG ? "../strict-tests.cb34fe95.wasm" : "../soccer_core_cpp.a3ad9146.wasm";
   const response = await fetchCoreResponse(filename, assetUrl(relative), rootAssetUrl(filename));
   const bytes = await response.arrayBuffer();
   const result = await WebAssembly.instantiate(bytes, {});
@@ -4025,6 +4083,8 @@ function render(api) {
 }
 async function main() {
   await loadReleaseMetadata();
+  const apiPromise = loadWasm();
+  const palettesPromise = apiPromise.then(() => loadOriginalPaletteDataFromBins());
   const menuScreensPromise = Promise.all(ORIGINAL_BACKGROUND_SCREEN_IDS.map(async (id) => {
     const suffix = id >= 0x10 && id <= 0x12 ? "_wide" : "";
     const name = `screen_${id.toString(16).padStart(2, "0")}${suffix}.png`;
@@ -4037,13 +4097,13 @@ async function main() {
     return [id, image];
   })).then((entries) => Object.fromEntries(entries));
   const [api, chr, chrAlt, field, spriteManifest, spriteIndexImage, palettes, statusbarRenderer, splashLogo, splashTitle, splashTitleBlink, splashStory, resultScreenManifest, resultRenderer, modeSelectionScreenManifest, modeSelectionTiles, opponentSelectionScreenManifest, opponentSelectionTiles, teamPreviewScreenManifest, playerOrderScreenManifest, playerOrderTiles, bracketScreenManifest, bracketRenderer, bracketTiles, matchSettingsScreenManifest, matchSettingsRenderer, matchSettingsTiles, formationControlScreenManifest, formationControlRenderer, formationControlTiles, weatherPreviewScreenManifest, weatherPreviewRenderer, weatherPreviewTiles, tournamentRecordScreenManifest, tournamentRecordRenderer, tournamentRecordTiles, playerProfileScreenManifest, playerProfileRenderer, playerProfileTiles, musicSelectionScreenManifest, musicSelectionRenderer, musicSelectionTiles, meetingSecretScreenManifest, meetingSecretRenderer, meetingSecretTiles0a, meetingSecretTiles0f, creditsScreenManifest, creditsTiles, menuScreens] = await Promise.all([
-    loadWasm(),
+    apiPromise,
     withFallback("chr_sprite_pal_01.png", originalAssetUrl("chr_sprite_pal_01.png"), originalFallbackUrl("chr_sprite_pal_01.png"), loadImage),
     withFallback("chr_sprite_pal_08.png", originalAssetUrl("chr_sprite_pal_08.png"), originalFallbackUrl("chr_sprite_pal_08.png"), loadImage),
     loadOriginalFieldAssets(),
     withFallback("sprite_renderer.json", originalAssetUrl("sprite_renderer.json"), originalFallbackUrl("sprite_renderer.json"), loadJson),
     withFallback("sprite_chr_indices.png", originalAssetUrl("sprite_chr_indices.png"), originalFallbackUrl("sprite_chr_indices.png"), loadImage),
-    withFallback("palettes.json", originalAssetUrl("palettes.json"), originalFallbackUrl("palettes.json"), loadJson),
+    palettesPromise,
     withFallback("statusbar_renderer.json", originalAssetUrl("statusbar_renderer.json"), originalFallbackUrl("statusbar_renderer.json"), loadJson),
     withFallback("splash_00_logo.png", originalAssetUrl("splash_00_logo.png"), originalFallbackUrl("splash_00_logo.png"), loadImage),
     withFallback("splash_01_title.png", originalAssetUrl("splash_01_title.png"), originalFallbackUrl("splash_01_title.png"), loadImage),
