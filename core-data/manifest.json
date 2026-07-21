@@ -1297,6 +1297,27 @@
       ]
     },
     {
+      "path": "background/upload-chr-stream-map.bin",
+      "category": "background",
+      "source": "src/CHR_ROM.chr:1D800",
+      "bank": "CHR",
+      "address": "0x1D800",
+      "symbol": "compressed background streams reachable through sub_E8E6/sub_E941",
+      "layout": "BSM1 sparse u32-offset spans containing only E941-reachable CHR command bytes",
+      "length": 10103,
+      "sha256": "6c6b4a90851658f814603a270194a8c7bd46a1c0e359229223d8834ff0f9341a",
+      "source_ranges": [
+        {
+          "bank": "CHR",
+          "start": "0x1D800",
+          "length": 10091
+        }
+      ],
+      "consumers": [
+        "wasm-game/cpp-core/src/screens/background.cpp"
+      ]
+    },
+    {
       "path": "background/upload-records-ea1a-eb42.bin",
       "category": "background",
       "source": "src/bank_FF.asm:EA1A",
@@ -1318,15 +1339,22 @@
       ]
     },
     {
-      "path": "background/upload-shared-player-y-speed-high-e828-e9f8.bin",
+      "path": "background/upload-source-pointers-eb42-eb8c.bin",
       "category": "background",
-      "source": "src/bank_FF.asm:E828",
+      "source": "src/bank_FF.asm:EB42",
       "bank": "07",
-      "address": "0xE828",
-      "symbol": "sub_E8E6/sub_E941/sub_E9D2",
-      "layout": "37 final `$0415` values by image id; FF means the CPU-source path performs no write",
-      "length": 37,
-      "sha256": "7f73d3f04e1981b9881d2849fd958ce1c8e493a0a405ec5acb3e3d5c6dc41866",
+      "address": "0xEB42",
+      "symbol": "tbl_EB42",
+      "layout": "37 little-endian compressed-background source pointers",
+      "length": 74,
+      "sha256": "a43192bd8339f40aa2a007da59a46bb0bf2fc913b95f74e859599bd6ed581bb1",
+      "source_ranges": [
+        {
+          "bank": "07",
+          "start": "0xEB42",
+          "length": 74
+        }
+      ],
       "consumers": [
         "wasm-game/cpp-core/src/screens/background.cpp"
       ]
