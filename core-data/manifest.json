@@ -4131,6 +4131,58 @@
       ]
     },
     {
+      "path": "menu/tournament-record-glyphs-8988-8a58.bin",
+      "category": "menu",
+      "source": "src/bank_05.asm:8989",
+      "bank": "05",
+      "address": "0x8989",
+      "symbol": "sub_8953/sub_8A34 immediate tile operands",
+      "layout": "win mark, loss mark and leading-zero blank tile ids",
+      "length": 3,
+      "sha256": "4b73772c014f2e5e22ffa9b6b958d22f095107b6389acf06fc6f6e7eb6d67990",
+      "source_ranges": [
+        {
+          "bank": "05",
+          "start": "0x8989",
+          "length": 1
+        },
+        {
+          "bank": "05",
+          "start": "0x898E",
+          "length": 1
+        },
+        {
+          "bank": "05",
+          "start": "0x8A59",
+          "length": 1
+        }
+      ],
+      "consumers": [
+        "wasm-game/cpp-core/src/screens/tournament_record_renderer.cpp"
+      ]
+    },
+    {
+      "path": "menu/tournament-record-number-addresses-8a67-8a6d.bin",
+      "category": "menu",
+      "source": "src/bank_05.asm:8A67",
+      "bank": "05",
+      "address": "0x8A67",
+      "symbol": "tbl_8A67_ppu_addr",
+      "layout": "three little-endian PPU destinations for decimal record values",
+      "length": 6,
+      "sha256": "fd1031f0397dbcf981fb0c3abda0ef184474a74167c07913b852e68cd34c0c8e",
+      "source_ranges": [
+        {
+          "bank": "05",
+          "start": "0x8A67",
+          "length": 6
+        }
+      ],
+      "consumers": [
+        "wasm-game/cpp-core/src/screens/tournament_record_renderer.cpp"
+      ]
+    },
+    {
       "path": "menu/tournament-record-row-8a7d-8aa4.bin",
       "category": "menu",
       "source": "src/bank_05.asm:8A7E",
@@ -4178,7 +4230,50 @@
         }
       ],
       "consumers": [
-        "wasm-game/cpp-core/src/screens/tournament.cpp"
+        "wasm-game/cpp-core/src/screens/tournament.cpp",
+        "wasm-game/cpp-core/src/screens/tournament_record_renderer.cpp"
+      ]
+    },
+    {
+      "path": "menu/tournament-record-status-addresses-89e1-89f9.bin",
+      "category": "menu",
+      "source": "src/bank_05.asm:89E1",
+      "bank": "05",
+      "address": "0x89E1",
+      "symbol": "tbl_89E1_ppu_addr",
+      "layout": "twelve little-endian PPU destinations for win/loss marks",
+      "length": 24,
+      "sha256": "176b7e1640cb5da619a205f3ce12b9aeb64ba4487b280d8436ceed4d9c6e29d6",
+      "source_ranges": [
+        {
+          "bank": "05",
+          "start": "0x89E1",
+          "length": 24
+        }
+      ],
+      "consumers": [
+        "wasm-game/cpp-core/src/screens/tournament_record_renderer.cpp"
+      ]
+    },
+    {
+      "path": "menu/tournament-record-status-order-89fa-8a11.bin",
+      "category": "menu",
+      "source": "src/bank_05.asm:89FA",
+      "bank": "05",
+      "address": "0x89FA",
+      "symbol": "tbl_89FA",
+      "layout": "twelve interleaved team-status indices and adjacent menu values",
+      "length": 23,
+      "sha256": "a6bf7c650e88cb17f47076b19f508cf76914bc94b3e3d6e014220e36bd0fe288",
+      "source_ranges": [
+        {
+          "bank": "05",
+          "start": "0x89FA",
+          "length": 23
+        }
+      ],
+      "consumers": [
+        "wasm-game/cpp-core/src/screens/tournament_record_renderer.cpp"
       ]
     },
     {
