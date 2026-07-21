@@ -1503,20 +1503,6 @@
       ]
     },
     {
-      "path": "compatibility/host-kickoff-defaults-v1.bin",
-      "category": "compatibility",
-      "source": "tools-local/fixtures/compatibility/host-kickoff-defaults-v1.json",
-      "bank": null,
-      "address": null,
-      "symbol": "portable host kickoff container defaults",
-      "layout": "12 records x little-endian u16 X, u16 Y, u8 first-half stamina, u8 second-half stamina, u8 control",
-      "length": 84,
-      "sha256": "1c89faeb60fa2c5e4f45ecea203956778088d319fb99c7af19695610158134d1",
-      "consumers": [
-        "wasm-game/cpp-core/src/player/player.cpp"
-      ]
-    },
-    {
       "path": "dispatch/ball-motion-b09d.bin",
       "category": "dispatch",
       "source": "src/bank_02.asm:B09D",
