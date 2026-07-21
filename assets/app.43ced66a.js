@@ -857,6 +857,13 @@ function fnv1aBytes(bytes) {
 function fnv1aText(text) {
   return fnv1aBytes(new TextEncoder().encode(text));
 }
+async function sha256Hex(bytes) {
+  if (!globalThis.crypto?.subtle) {
+    throw new Error("SHA-256 verification is unavailable in this browser");
+  }
+  const digest = await globalThis.crypto.subtle.digest("SHA-256", bytes);
+  return Array.from(new Uint8Array(digest), (byte) => byte.toString(16).padStart(2, "0")).join("");
+}
 async function fetchCoreResponse(label, primary, fallback) {
   return withFallback(label, primary, fallback, (url) => fetch(url).then((r) => {
     if (!r.ok) throw new Error(`failed to load ${url}: ${r.status}`);
@@ -867,6 +874,10 @@ async function loadCppCoreData(api) {
   if (!api.cpp_asset_reset || !api.cpp_asset_reserve || !api.cpp_asset_commit || !api.memory) {
     throw new Error("C++ core does not expose the external BIN resource ABI");
   }
+  if (!api.resource_catalog_validate || !api.resource_catalog_ready
+      || !api.resource_catalog_required_count || !api.resource_catalog_required_bytes) {
+    throw new Error("C++ core does not expose the strict resource catalog ABI");
+  }
   const manifestResponse = await fetchCoreResponse(
     "core-data/manifest.json",
     assetUrl("../core-data/manifest.json"),
@@ -875,6 +886,27 @@ async function loadCppCoreData(api) {
   const manifest = await manifestResponse.json();
   if (manifest.schema !== 1 || !Array.isArray(manifest.records)) {
     throw new Error("unsupported C++ core-data manifest");
+  }
+  const paths = new Set();
+  let manifestBytes = 0;
+  for (const [index, record] of manifest.records.entries()) {
+    if (!record || typeof record.path !== "string"
+        || !/^[a-z0-9][a-z0-9/_.-]*\.bin$/.test(record.path)
+        || record.path.includes("..") || paths.has(record.path)
+        || !Number.isInteger(record.length) || record.length <= 0
+        || typeof record.sha256 !== "string" || !/^[0-9a-f]{64}$/.test(record.sha256)
+        || typeof record.category !== "string" || !record.category
+        || typeof record.layout !== "string" || !record.layout
+        || !Array.isArray(record.source_ranges) || record.source_ranges.length === 0
+        || !Array.isArray(record.consumers) || record.consumers.length === 0) {
+      throw new Error(`invalid C++ core-data manifest record ${index}`);
+    }
+    paths.add(record.path);
+    manifestBytes += record.length;
+  }
+  if (manifest.records.length !== (api.resource_catalog_required_count() >>> 0)
+      || manifestBytes !== (api.resource_catalog_required_bytes() >>> 0)) {
+    throw new Error("C++ core-data manifest does not match the compiled resource contract");
   }
   api.cpp_asset_reset();
   let cursor = 0;
@@ -890,6 +922,10 @@ async function loadCppCoreData(api) {
       const bytes = new Uint8Array(await response.arrayBuffer());
       if (bytes.byteLength !== record.length) {
         throw new Error(`${record.path}: got ${bytes.byteLength} bytes, expected ${record.length}`);
+      }
+      const actualSha256 = await sha256Hex(bytes);
+      if (actualSha256 !== record.sha256) {
+        throw new Error(`${record.path}: SHA-256 mismatch`);
       }
       const assetId = fnv1aText(record.path);
       const pointer = api.cpp_asset_reserve(assetId, bytes.byteLength) >>> 0;
@@ -909,11 +945,16 @@ async function loadCppCoreData(api) {
       || api.cpp_asset_loaded_bytes() !== loadedBytes) {
     throw new Error("C++ core did not commit the complete external BIN resource set");
   }
+  if (api.resource_catalog_validate() !== 1 || api.resource_catalog_ready() !== 1) {
+    const code = api.resource_catalog_error_code?.() >>> 0;
+    const asset = api.resource_catalog_error_asset_id?.() >>> 0;
+    throw new Error(`C++ core rejected required resource catalog: code=${code} asset=${asset}`);
+  }
   return { count: manifest.records.length, bytes: loadedBytes };
 }
 async function loadWasm() {
   const filename = "soccer_core_cpp.wasm";
-  const relative = "../soccer_core_cpp.94f633eb.wasm";
+  const relative = "../soccer_core_cpp.4c16c02d.wasm";
   const response = await fetchCoreResponse(filename, assetUrl(relative), rootAssetUrl(filename));
   const bytes = await response.arrayBuffer();
   const result = await WebAssembly.instantiate(bytes, {});
@@ -4096,6 +4137,9 @@ async function main() {
   originalAssets.credits.tileImages = creditsTiles;
   wasmNesApu.bindCore(api);
   api.game_init();
+  if (!api.game_initialization_ready || api.game_initialization_ready() !== 1) {
+    throw new Error("C++ game initialization refused an invalid resource catalog");
+  }
   if (DEBUG) {
     window.__soccerApi = api;
     window.__soccerCore = () => ({

@@ -1,20 +1,20 @@
 {
   "schema": 1,
-  "version": "20260721.4",
+  "version": "20260721.5",
   "release_date": 20260721,
-  "release_revision": 4,
+  "release_revision": 5,
   "artifacts": {
     "javascript": {
-      "path": "assets/app.d0e11cc6.js",
-      "sha256": "d0e11cc6eaddba83832aefee0eeb3c68e5990514191721a184f591d359b2d446"
+      "path": "assets/app.7598e974.js",
+      "sha256": "7598e974b2f6e76b81604c7f7660ba230103090ff79314402552721c198ce929"
     },
     "stylesheet": {
       "path": "assets/app.e6a4cdc4.css",
       "sha256": "e6a4cdc43bb446441f1b64f701254a5f62bfa0fa4f182c60a0367bfc4f520007"
     },
     "wasm": {
-      "path": "soccer_core_cpp.94f633eb.wasm",
-      "sha256": "94f633eb04cd7eaca109b1a96af4894788e0ecf4bf0dd52f3124c9e38a10301c"
+      "path": "soccer_core_cpp.4c16c02d.wasm",
+      "sha256": "4c16c02d1a237ea292dc10e22e1cd84bf52d389c422b1632e3df7f1c7659cfae"
     }
   }
 }
