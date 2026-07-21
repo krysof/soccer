@@ -168,11 +168,7 @@ const runtimeLifecycle = {
 };
 let wakeLockSentinel = null;
 const originalAssets = {
-  chr: null,
-  chrAlt: null,
   field: null,
-  tileSize: 16,
-  columns: 128,
   splash: {},
   menu: {},
   modeSelection: {
@@ -293,9 +289,8 @@ const originalAssets = {
   sprite: {
     manifest: null,
     palettes: null,
-    indexImage: null,
-    indexPixels: null,
-    indexWidth: 0,
+    patternApi: null,
+    patternIndexCache: new Map(),
     tileCache: new Map(),
     backgroundTileCache: new Map(),
   },
@@ -1011,7 +1006,7 @@ async function loadOriginalPaletteDataFromBins() {
   document.body.dataset.nesRgbRecords = String(nesRgb.length);
   return { sprite, background_pairs: backgroundPairs, nes_rgb: nesRgb };
 }
-function loadOriginalSpriteRendererFromBin() {
+function loadOriginalSpriteRendererFromBin(api) {
   const bytes = verifiedRendererBins.get("animation/sprite-renderer-82c6-af8d.bin");
   const base = 0x82C6;
   const end = 0xAF8D;
@@ -1062,6 +1057,11 @@ function loadOriginalSpriteRendererFromBin() {
     address.toString(16).toUpperCase().padStart(4, "0"),
     parseFrame(address),
   ]));
+  const patternTileCount = api.graphics_pattern_tile_count?.() >>> 0;
+  if (typeof api.graphics_pattern_color_index !== "function"
+      || patternTileCount !== 8192) {
+    throw new Error("classified CHR pattern-table API is unavailable or malformed");
+  }
   const manifest = {
     source: {
       renderer: "src/bank_04.asm:809A-8188",
@@ -1073,16 +1073,18 @@ function loadOriginalSpriteRendererFromBin() {
     faceTiles: range(0x82C6, 0x83BC),
     objectPaletteSlots: range(0x83BC, 0x83CE),
     specialGroup3Tiles: range(0x83CE, 0x83D3),
-    chr: { file: "sprite_chr_indices.png", columns: 128, tileSize: 8, tileCount: 8192 },
+    chr: { tileCount: patternTileCount },
   };
   document.body.dataset.spriteRendererSource = "classified-bin";
   document.body.dataset.spriteRendererGroups = String(groups.length);
   document.body.dataset.spriteRendererFrames = String(uniqueFrames.length);
+  document.body.dataset.graphicsPatternsSource = "classified-bin";
+  document.body.dataset.graphicsPatternTiles = String(patternTileCount);
   return manifest;
 }
 async function loadWasm() {
   const filename = DEBUG ? "soccer_core_cpp.wasm" : "soccer_core_cpp_production.wasm";
-  const relative = DEBUG ? "../strict-tests.853cc007.wasm" : "../soccer_core_cpp.9b618f3f.wasm";
+  const relative = DEBUG ? "../strict-tests.7f8890b1.wasm" : "../soccer_core_cpp.89b286da.wasm";
   const response = await fetchCoreResponse(filename, assetUrl(relative), rootAssetUrl(filename));
   const bytes = await response.arrayBuffer();
   const result = await WebAssembly.instantiate(bytes, {});
@@ -1673,28 +1675,25 @@ function drawOriginalMatchStatusbar(api, view) {
 function drawCircle(x, y, r, fill, stroke = "rgba(0,0,0,.35)") {
   ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2); ctx.fillStyle = fill; ctx.fill(); ctx.lineWidth = 2; ctx.strokeStyle = stroke; ctx.stroke();
 }
-function drawOriginalTile(tileIndex, x, y, size = 16, alt = false) {
-  const img = alt ? originalAssets.chrAlt : originalAssets.chr;
-  if (!img) return false;
-  const ts = originalAssets.tileSize;
-  const sx = (tileIndex % originalAssets.columns) * ts;
-  const sy = Math.floor(tileIndex / originalAssets.columns) * ts;
-  ctx.drawImage(img, sx, sy, ts, ts, x, y, size, size);
-  return true;
-}
-function initializeOriginalSpritePixels() {
+function originalPatternTile(bankNumber, tileWithinBank) {
   const sprite = originalAssets.sprite;
-  if (!sprite.indexImage) return;
-  const canvas = document.createElement("canvas");
-  canvas.width = sprite.indexImage.naturalWidth;
-  canvas.height = sprite.indexImage.naturalHeight;
-  const context = canvas.getContext("2d", { willReadFrequently: true });
-  context.imageSmoothingEnabled = false;
-  context.drawImage(sprite.indexImage, 0, 0);
-  sprite.indexPixels = context.getImageData(0, 0, canvas.width, canvas.height).data;
-  sprite.indexWidth = canvas.width;
-  sprite.tileCache.clear();
-  sprite.backgroundTileCache.clear();
+  const api = sprite.patternApi;
+  if (!api?.graphics_pattern_color_index) return null;
+  const bank = bankNumber & 0xFF;
+  const tile = tileWithinBank & 0x3F;
+  const key = `${bank}:${tile}`;
+  const cached = sprite.patternIndexCache.get(key);
+  if (cached) return cached;
+  const indices = new Uint8Array(64);
+  for (let y = 0; y < 8; y++) {
+    for (let x = 0; x < 8; x++) {
+      const value = api.graphics_pattern_color_index(bank, tile, x, y) >>> 0;
+      if (value > 3) return null;
+      indices[y * 8 + x] = value;
+    }
+  }
+  sprite.patternIndexCache.set(key, indices);
+  return indices;
 }
 function originalSignedByte(value) {
   const byte = value & 0xFF;
@@ -1708,17 +1707,17 @@ function originalSpriteTile(bankNumber, tileWithinBank, paletteNumber) {
   const sprite = originalAssets.sprite;
   const manifest = sprite.manifest;
   const paletteData = sprite.palettes;
-  if (!manifest || !paletteData || !sprite.indexPixels) return null;
+  if (!manifest || !paletteData || !sprite.patternApi) return null;
   const key = `${bankNumber & 0xFF}:${tileWithinBank & 0x3F}:${paletteNumber & 0xFF}`;
   const cached = sprite.tileCache.get(key);
   if (cached) return cached;
   const tileIndex = (bankNumber & 0xFF) * 64 + (tileWithinBank & 0x3F);
   if (tileIndex >= manifest.chr.tileCount) return null;
+  const indices = originalPatternTile(bankNumber, tileWithinBank);
+  if (!indices) return null;
   const palette = paletteData.sprite[paletteNumber & 0xFF];
   if (!palette || palette.length < 4) return null;
   const nesRgb = paletteData.nes_rgb;
-  const sourceX = (tileIndex % manifest.chr.columns) * manifest.chr.tileSize;
-  const sourceY = Math.floor(tileIndex / manifest.chr.columns) * manifest.chr.tileSize;
   const tileCanvas = document.createElement("canvas");
   tileCanvas.width = 8;
   tileCanvas.height = 8;
@@ -1726,8 +1725,7 @@ function originalSpriteTile(bankNumber, tileWithinBank, paletteNumber) {
   const image = tileContext.createImageData(8, 8);
   for (let y = 0; y < 8; y++) {
     for (let x = 0; x < 8; x++) {
-      const sourceOffset = ((sourceY + y) * sprite.indexWidth + sourceX + x) * 4;
-      const colorIndex = Math.round(sprite.indexPixels[sourceOffset] / 85) & 3;
+      const colorIndex = indices[y * 8 + x];
       const destinationOffset = (y * 8 + x) * 4;
       const color = nesRgb[(palette[colorIndex] || 0) & 0x3F];
       image.data[destinationOffset] = color[0];
@@ -1744,17 +1742,18 @@ function originalBackgroundTile(bank0, bank1, tileByte, palette) {
   const sprite = originalAssets.sprite;
   const manifest = sprite.manifest;
   const paletteData = sprite.palettes;
-  if (!manifest || !paletteData || !sprite.indexPixels || !palette || palette.length < 4) return null;
+  if (!manifest || !paletteData || !sprite.patternApi || !palette || palette.length < 4) return null;
   const tile = tileByte & 0xFF;
   const tileIndex = tile < 0x80
     ? (bank0 & 0xFE) * 64 + tile
     : (bank1 & 0xFE) * 64 + (tile - 0x80);
   if (tileIndex >= manifest.chr.tileCount) return null;
+  const patternBank = Math.floor(tileIndex / 64);
+  const indices = originalPatternTile(patternBank, tileIndex & 0x3F);
+  if (!indices) return null;
   const key = `${bank0 & 0xFE}:${bank1 & 0xFE}:${tile}:${palette.join("/")}`;
   const cached = sprite.backgroundTileCache.get(key);
   if (cached) return cached;
-  const sourceX = (tileIndex % manifest.chr.columns) * manifest.chr.tileSize;
-  const sourceY = Math.floor(tileIndex / manifest.chr.columns) * manifest.chr.tileSize;
   const tileCanvas = document.createElement("canvas");
   tileCanvas.width = 8;
   tileCanvas.height = 8;
@@ -1762,8 +1761,7 @@ function originalBackgroundTile(bank0, bank1, tileByte, palette) {
   const image = tileContext.createImageData(8, 8);
   for (let y = 0; y < 8; y++) {
     for (let x = 0; x < 8; x++) {
-      const sourceOffset = ((sourceY + y) * sprite.indexWidth + sourceX + x) * 4;
-      const colorIndex = Math.round(sprite.indexPixels[sourceOffset] / 85) & 3;
+      const colorIndex = indices[y * 8 + x];
       const destinationOffset = (y * 8 + x) * 4;
       const color = paletteData.nes_rgb[(palette[colorIndex] || 0) & 0x3F];
       image.data[destinationOffset] = color[0];
@@ -2191,7 +2189,7 @@ function originalResultBackgroundTile(screenMeta, tileNumber, paletteSlot) {
   const sprite = originalAssets.sprite;
   const rendererManifest = sprite.manifest;
   const paletteData = sprite.palettes;
-  if (!screenMeta || !rendererManifest || !paletteData || !sprite.indexPixels) return null;
+  if (!screenMeta || !rendererManifest || !paletteData || !sprite.patternApi) return null;
   const palette = screenMeta.subPalettes?.[paletteSlot & 3];
   if (!palette || palette.length < 4) return null;
   const key = `${screenMeta.chr0}:${screenMeta.chr1}:${tileNumber & 0xFF}:${palette.join("/")}`;
@@ -2202,8 +2200,8 @@ function originalResultBackgroundTile(screenMeta, tileNumber, paletteSlot) {
     ? (screenMeta.chr0 & 0xFE) * 64 + tile
     : (screenMeta.chr1 & 0xFE) * 64 + (tile - 0x80);
   if (absoluteTile >= rendererManifest.chr.tileCount) return null;
-  const sourceX = (absoluteTile % rendererManifest.chr.columns) * rendererManifest.chr.tileSize;
-  const sourceY = Math.floor(absoluteTile / rendererManifest.chr.columns) * rendererManifest.chr.tileSize;
+  const indices = originalPatternTile(Math.floor(absoluteTile / 64), absoluteTile & 0x3F);
+  if (!indices) return null;
   const tileCanvas = document.createElement("canvas");
   tileCanvas.width = 8;
   tileCanvas.height = 8;
@@ -2211,8 +2209,7 @@ function originalResultBackgroundTile(screenMeta, tileNumber, paletteSlot) {
   const image = tileContext.createImageData(8, 8);
   for (let y = 0; y < 8; y++) {
     for (let x = 0; x < 8; x++) {
-      const sourceOffset = ((sourceY + y) * sprite.indexWidth + sourceX + x) * 4;
-      const colorIndex = Math.round(sprite.indexPixels[sourceOffset] / 85) & 3;
+      const colorIndex = indices[y * 8 + x];
       const destinationOffset = (y * 8 + x) * 4;
       const color = paletteData.nes_rgb[(palette[colorIndex] || 0) & 0x3F];
       image.data[destinationOffset] = color[0];
@@ -4154,7 +4151,7 @@ function render(api) {
 async function main() {
   await loadReleaseMetadata();
   const apiPromise = loadWasm();
-  const spriteManifestPromise = apiPromise.then(() => loadOriginalSpriteRendererFromBin());
+  const spriteManifestPromise = apiPromise.then((api) => loadOriginalSpriteRendererFromBin(api));
   const palettesPromise = apiPromise.then(() => loadOriginalPaletteDataFromBins());
   const menuScreensPromise = Promise.all(ORIGINAL_BACKGROUND_SCREEN_IDS.map(async (id) => {
     const suffix = id >= 0x10 && id <= 0x12 ? "_wide" : "";
@@ -4167,13 +4164,10 @@ async function main() {
     const image = await withFallback(name, originalAssetUrl(name), originalFallbackUrl(name), loadImage);
     return [id, image];
   })).then((entries) => Object.fromEntries(entries));
-  const [api, chr, chrAlt, field, spriteManifest, spriteIndexImage, palettes, statusbarRenderer, splashLogo, splashTitle, splashTitleBlink, splashStory, resultScreenManifest, resultRenderer, modeSelectionScreenManifest, modeSelectionTiles, opponentSelectionScreenManifest, opponentSelectionTiles, teamPreviewScreenManifest, playerOrderScreenManifest, playerOrderTiles, bracketScreenManifest, bracketRenderer, bracketTiles, matchSettingsScreenManifest, matchSettingsRenderer, matchSettingsTiles, formationControlScreenManifest, formationControlRenderer, formationControlTiles, weatherPreviewScreenManifest, weatherPreviewRenderer, weatherPreviewTiles, tournamentRecordScreenManifest, tournamentRecordRenderer, tournamentRecordTiles, playerProfileScreenManifest, playerProfileRenderer, playerProfileTiles, musicSelectionScreenManifest, musicSelectionRenderer, musicSelectionTiles, meetingSecretScreenManifest, meetingSecretRenderer, meetingSecretTiles0a, meetingSecretTiles0f, creditsScreenManifest, creditsTiles, menuScreens] = await Promise.all([
+  const [api, field, spriteManifest, palettes, statusbarRenderer, splashLogo, splashTitle, splashTitleBlink, splashStory, resultScreenManifest, resultRenderer, modeSelectionScreenManifest, modeSelectionTiles, opponentSelectionScreenManifest, opponentSelectionTiles, teamPreviewScreenManifest, playerOrderScreenManifest, playerOrderTiles, bracketScreenManifest, bracketRenderer, bracketTiles, matchSettingsScreenManifest, matchSettingsRenderer, matchSettingsTiles, formationControlScreenManifest, formationControlRenderer, formationControlTiles, weatherPreviewScreenManifest, weatherPreviewRenderer, weatherPreviewTiles, tournamentRecordScreenManifest, tournamentRecordRenderer, tournamentRecordTiles, playerProfileScreenManifest, playerProfileRenderer, playerProfileTiles, musicSelectionScreenManifest, musicSelectionRenderer, musicSelectionTiles, meetingSecretScreenManifest, meetingSecretRenderer, meetingSecretTiles0a, meetingSecretTiles0f, creditsScreenManifest, creditsTiles, menuScreens] = await Promise.all([
     apiPromise,
-    withFallback("chr_sprite_pal_01.png", originalAssetUrl("chr_sprite_pal_01.png"), originalFallbackUrl("chr_sprite_pal_01.png"), loadImage),
-    withFallback("chr_sprite_pal_08.png", originalAssetUrl("chr_sprite_pal_08.png"), originalFallbackUrl("chr_sprite_pal_08.png"), loadImage),
     loadOriginalFieldAssets(),
     spriteManifestPromise,
-    withFallback("sprite_chr_indices.png", originalAssetUrl("sprite_chr_indices.png"), originalFallbackUrl("sprite_chr_indices.png"), loadImage),
     palettesPromise,
     withFallback("statusbar_renderer.json", originalAssetUrl("statusbar_renderer.json"), originalFallbackUrl("statusbar_renderer.json"), loadJson),
     withFallback("splash_00_logo.png", originalAssetUrl("splash_00_logo.png"), originalFallbackUrl("splash_00_logo.png"), loadImage),
@@ -4218,14 +4212,11 @@ async function main() {
     creditsTilesPromise,
     menuScreensPromise,
   ]);
-  originalAssets.chr = chr;
-  originalAssets.chrAlt = chrAlt;
   originalAssets.field = field;
   originalAssets.sprite.manifest = spriteManifest;
-  originalAssets.sprite.indexImage = spriteIndexImage;
+  originalAssets.sprite.patternApi = api;
   originalAssets.sprite.palettes = palettes;
   originalAssets.statusbar.manifest = statusbarRenderer;
-  initializeOriginalSpritePixels();
   originalAssets.splash = { 0: splashLogo, 1: splashTitle, 0x0e: splashStory, titleBlink: splashTitleBlink };
   originalAssets.menu = menuScreens;
   originalAssets.result.manifest = resultScreenManifest;

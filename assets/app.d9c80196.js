@@ -1057,8 +1057,8 @@ function loadOriginalSpriteRendererFromBin(api) {
     address.toString(16).toUpperCase().padStart(4, "0"),
     parseFrame(address),
   ]));
-  const patternTileCount = api.graphics_pattern_tile_count?.() >>> 0;
-  if (typeof api.graphics_pattern_color_index !== "function"
+  const patternTileCount = api.original_graphics_pattern_tile_count?.() >>> 0;
+  if (typeof api.original_graphics_pattern_color_index !== "function"
       || patternTileCount !== 8192) {
     throw new Error("classified CHR pattern-table API is unavailable or malformed");
   }
@@ -1084,7 +1084,7 @@ function loadOriginalSpriteRendererFromBin(api) {
 }
 async function loadWasm() {
   const filename = DEBUG ? "soccer_core_cpp.wasm" : "soccer_core_cpp_production.wasm";
-  const relative = DEBUG ? "../strict-tests.7f8890b1.wasm" : "../soccer_core_cpp.89b286da.wasm";
+  const relative = DEBUG ? "../strict-tests.79cc03b1.wasm" : "../soccer_core_cpp.4bf35077.wasm";
   const response = await fetchCoreResponse(filename, assetUrl(relative), rootAssetUrl(filename));
   const bytes = await response.arrayBuffer();
   const result = await WebAssembly.instantiate(bytes, {});
@@ -1678,7 +1678,7 @@ function drawCircle(x, y, r, fill, stroke = "rgba(0,0,0,.35)") {
 function originalPatternTile(bankNumber, tileWithinBank) {
   const sprite = originalAssets.sprite;
   const api = sprite.patternApi;
-  if (!api?.graphics_pattern_color_index) return null;
+  if (!api?.original_graphics_pattern_color_index) return null;
   const bank = bankNumber & 0xFF;
   const tile = tileWithinBank & 0x3F;
   const key = `${bank}:${tile}`;
@@ -1687,7 +1687,7 @@ function originalPatternTile(bankNumber, tileWithinBank) {
   const indices = new Uint8Array(64);
   for (let y = 0; y < 8; y++) {
     for (let x = 0; x < 8; x++) {
-      const value = api.graphics_pattern_color_index(bank, tile, x, y) >>> 0;
+      const value = api.original_graphics_pattern_color_index(bank, tile, x, y) >>> 0;
       if (value > 3) return null;
       indices[y * 8 + x] = value;
     }

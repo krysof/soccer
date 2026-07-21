@@ -2529,6 +2529,28 @@
       ]
     },
     {
+      "path": "graphics/pattern-tables-chr.bin",
+      "category": "graphics-pattern",
+      "source": "src/CHR_ROM.chr:0000",
+      "bank": "CHR",
+      "address": "0x0000",
+      "symbol": "128 addressable CHR pattern banks",
+      "layout": "128 banks x 1024 bytes; each bank is 64 NES 8x8 2bpp planar tiles x 16 bytes (low rows 0-7, high rows 8-15)",
+      "length": 131072,
+      "sha256": "46ff4bbdcb96ccbeaf3a4b48cf1c7c56ffd0a2ac28f621b971200a522833a0a4",
+      "source_ranges": [
+        {
+          "bank": "CHR",
+          "start": "0x0000",
+          "length": 131072
+        }
+      ],
+      "consumers": [
+        "soccer::graphics::pattern_color_index",
+        "wasm-game/cpp-core/src/screens/pattern_graphics.cpp"
+      ]
+    },
+    {
       "path": "input/controlled-action-b727-b850.bin",
       "category": "input",
       "source": "src/bank_04.asm:B727",
