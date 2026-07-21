@@ -19,6 +19,9 @@
           "start": "0xB097",
           "length": 186
         }
+      ],
+      "consumers": [
+        "wasm-game/cpp-core/src/collision/ball_contact.cpp"
       ]
     },
     {
@@ -37,6 +40,10 @@
           "start": "0xAC4D",
           "length": 128
         }
+      ],
+      "consumers": [
+        "wasm-game/cpp-core/src/ball/state_pipeline.cpp",
+        "wasm-game/cpp-core/src/collision/ball_contact.cpp"
       ]
     },
     {
@@ -55,6 +62,9 @@
           "start": "0xAC65",
           "length": 220
         }
+      ],
+      "consumers": [
+        "wasm-game/cpp-core/src/player/action_pipeline.cpp"
       ]
     },
     {
@@ -73,6 +83,9 @@
           "start": "0x948F",
           "length": 4
         }
+      ],
+      "consumers": [
+        "wasm-game/cpp-core/src/ai/ai.cpp"
       ]
     },
     {
@@ -91,6 +104,9 @@
           "start": "0x8525",
           "length": 4
         }
+      ],
+      "consumers": [
+        "wasm-game/cpp-core/src/ai/ai.cpp"
       ]
     },
     {
@@ -109,6 +125,9 @@
           "start": "0x832E",
           "length": 11
         }
+      ],
+      "consumers": [
+        "wasm-game/cpp-core/src/ai/ai.cpp"
       ]
     },
     {
@@ -127,6 +146,9 @@
           "start": "0x86E6",
           "length": 78
         }
+      ],
+      "consumers": [
+        "wasm-game/cpp-core/src/ai/ai.cpp"
       ]
     },
     {
@@ -145,6 +167,9 @@
           "start": "0x9AAE",
           "length": 12
         }
+      ],
+      "consumers": [
+        "wasm-game/cpp-core/src/ai/ai.cpp"
       ]
     },
     {
@@ -163,6 +188,9 @@
           "start": "0x9BC2",
           "length": 16
         }
+      ],
+      "consumers": [
+        "wasm-game/cpp-core/src/ai/ai.cpp"
       ]
     },
     {
@@ -181,6 +209,9 @@
           "start": "0xA2F2",
           "length": 9
         }
+      ],
+      "consumers": [
+        "wasm-game/cpp-core/src/rules/field_setup.cpp"
       ]
     },
     {
@@ -199,6 +230,9 @@
           "start": "0xB1F8",
           "length": 1398
         }
+      ],
+      "consumers": [
+        "wasm-game/cpp-core/src/ai/ai.cpp"
       ]
     },
     {
@@ -217,6 +251,9 @@
           "start": "0xB76E",
           "length": 555
         }
+      ],
+      "consumers": [
+        "wasm-game/cpp-core/src/ai/ai.cpp"
       ]
     },
     {
@@ -235,6 +272,9 @@
           "start": "0x90AF",
           "length": 8
         }
+      ],
+      "consumers": [
+        "wasm-game/cpp-core/src/ai/ai.cpp"
       ]
     },
     {
@@ -253,6 +293,9 @@
           "start": "0x8AC4",
           "length": 4
         }
+      ],
+      "consumers": [
+        "wasm-game/cpp-core/src/ai/ai.cpp"
       ]
     },
     {
@@ -271,6 +314,9 @@
           "start": "0x8901",
           "length": 220
         }
+      ],
+      "consumers": [
+        "wasm-game/cpp-core/src/ai/ai.cpp"
       ]
     },
     {
@@ -289,6 +335,9 @@
           "start": "0x9372",
           "length": 16
         }
+      ],
+      "consumers": [
+        "wasm-game/cpp-core/src/ai/ai.cpp"
       ]
     },
     {
@@ -307,6 +356,9 @@
           "start": "0x936E",
           "length": 4
         }
+      ],
+      "consumers": [
+        "wasm-game/cpp-core/src/ai/ai.cpp"
       ]
     },
     {
@@ -325,6 +377,9 @@
           "start": "0x952B",
           "length": 8
         }
+      ],
+      "consumers": [
+        "wasm-game/cpp-core/src/ai/ai.cpp"
       ]
     },
     {
@@ -343,6 +398,9 @@
           "start": "0xA597",
           "length": 4
         }
+      ],
+      "consumers": [
+        "wasm-game/cpp-core/src/ai/ai.cpp"
       ]
     },
     {
@@ -361,6 +419,9 @@
           "start": "0xA79E",
           "length": 4
         }
+      ],
+      "consumers": [
+        "wasm-game/cpp-core/src/ai/ai.cpp"
       ]
     },
     {
@@ -379,6 +440,9 @@
           "start": "0xB014",
           "length": 32
         }
+      ],
+      "consumers": [
+        "wasm-game/cpp-core/src/ai/ai.cpp"
       ]
     },
     {
@@ -397,6 +461,9 @@
           "start": "0xB1ED",
           "length": 11
         }
+      ],
+      "consumers": [
+        "wasm-game/cpp-core/src/ai/ai.cpp"
       ]
     },
     {
@@ -415,6 +482,9 @@
           "start": "0x91CB",
           "length": 64
         }
+      ],
+      "consumers": [
+        "wasm-game/cpp-core/src/ai/ai.cpp"
       ]
     },
     {
@@ -433,6 +503,9 @@
           "start": "0xA587",
           "length": 2
         }
+      ],
+      "consumers": [
+        "wasm-game/cpp-core/src/ai/ai.cpp"
       ]
     },
     {
@@ -451,6 +524,9 @@
           "start": "0x84CD",
           "length": 4
         }
+      ],
+      "consumers": [
+        "wasm-game/cpp-core/src/ai/ai.cpp"
       ]
     },
     {
@@ -469,6 +545,9 @@
           "start": "0x9841",
           "length": 30
         }
+      ],
+      "consumers": [
+        "wasm-game/cpp-core/src/ai/ai.cpp"
       ]
     },
     {
@@ -487,6 +566,9 @@
           "start": "0x85A8",
           "length": 4
         }
+      ],
+      "consumers": [
+        "wasm-game/cpp-core/src/ai/ai.cpp"
       ]
     },
     {
@@ -505,6 +587,9 @@
           "start": "0x9729",
           "length": 4
         }
+      ],
+      "consumers": [
+        "wasm-game/cpp-core/src/ai/ai.cpp"
       ]
     },
     {
@@ -523,6 +608,9 @@
           "start": "0xA2FB",
           "length": 6
         }
+      ],
+      "consumers": [
+        "wasm-game/cpp-core/src/ai/ai.cpp"
       ]
     },
     {
@@ -541,6 +629,9 @@
           "start": "0xA41B",
           "length": 98
         }
+      ],
+      "consumers": [
+        "wasm-game/cpp-core/src/ball/object_motion.cpp"
       ]
     },
     {
@@ -559,6 +650,9 @@
           "start": "0xB371",
           "length": 184
         }
+      ],
+      "consumers": [
+        "wasm-game/cpp-core/src/ball/animation.cpp"
       ]
     },
     {
@@ -577,6 +671,9 @@
           "start": "0xB272",
           "length": 16
         }
+      ],
+      "consumers": [
+        "wasm-game/cpp-core/src/ball/animation.cpp"
       ]
     },
     {
@@ -595,6 +692,9 @@
           "start": "0xBF13",
           "length": 16
         }
+      ],
+      "consumers": [
+        "wasm-game/cpp-core/src/screens/sprite_bank.cpp"
       ]
     },
     {
@@ -613,6 +713,9 @@
           "start": "0xBB21",
           "length": 9
         }
+      ],
+      "consumers": [
+        "wasm-game/cpp-core/src/screens/result_characters.cpp"
       ]
     },
     {
@@ -631,6 +734,9 @@
           "start": "0xCD1F",
           "length": 16
         }
+      ],
+      "consumers": [
+        "wasm-game/cpp-core/src/screens/field_markers.cpp"
       ]
     },
     {
@@ -649,6 +755,9 @@
           "start": "0xA5C6",
           "length": 1102
         }
+      ],
+      "consumers": [
+        "wasm-game/cpp-core/src/player/animation.cpp"
       ]
     },
     {
@@ -667,6 +776,9 @@
           "start": "0xA287",
           "length": 8
         }
+      ],
+      "consumers": [
+        "wasm-game/cpp-core/src/player/motion21.cpp"
       ]
     },
     {
@@ -685,6 +797,9 @@
           "start": "0xA2CD",
           "length": 4
         }
+      ],
+      "consumers": [
+        "wasm-game/cpp-core/src/player/motion21.cpp"
       ]
     },
     {
@@ -703,6 +818,9 @@
           "start": "0x8BCD",
           "length": 8
         }
+      ],
+      "consumers": [
+        "wasm-game/cpp-core/src/player/animation.cpp"
       ]
     },
     {
@@ -721,6 +839,9 @@
           "start": "0x8BD5",
           "length": 93
         }
+      ],
+      "consumers": [
+        "wasm-game/cpp-core/src/player/animation.cpp"
       ]
     },
     {
@@ -739,6 +860,9 @@
           "start": "0x83BF",
           "length": 2
         }
+      ],
+      "consumers": [
+        "wasm-game/cpp-core/src/player/motion.cpp"
       ]
     },
     {
@@ -757,6 +881,9 @@
           "start": "0x81A5",
           "length": 2
         }
+      ],
+      "consumers": [
+        "wasm-game/cpp-core/src/player/motion.cpp"
       ]
     },
     {
@@ -775,6 +902,9 @@
           "start": "0x91F0",
           "length": 93
         }
+      ],
+      "consumers": [
+        "wasm-game/cpp-core/src/screens/menu_actor.cpp"
       ]
     },
     {
@@ -793,6 +923,9 @@
           "start": "0xA242",
           "length": 6
         }
+      ],
+      "consumers": [
+        "wasm-game/cpp-core/src/player/motion21.cpp"
       ]
     },
     {
@@ -811,6 +944,9 @@
           "start": "0x8FE0",
           "length": 25
         }
+      ],
+      "consumers": [
+        "wasm-game/cpp-core/src/screens/menu.cpp"
       ]
     },
     {
@@ -829,6 +965,9 @@
           "start": "0xAF60",
           "length": 10
         }
+      ],
+      "consumers": [
+        "wasm-game/cpp-core/src/screens/title.cpp"
       ]
     },
     {
@@ -847,6 +986,9 @@
           "start": "0xAE29",
           "length": 20
         }
+      ],
+      "consumers": [
+        "wasm-game/cpp-core/src/screens/title.cpp"
       ]
     },
     {
@@ -865,6 +1007,9 @@
           "start": "0xADFD",
           "length": 4
         }
+      ],
+      "consumers": [
+        "wasm-game/cpp-core/src/screens/title.cpp"
       ]
     },
     {
@@ -883,6 +1028,9 @@
           "start": "0xB06F",
           "length": 28
         }
+      ],
+      "consumers": [
+        "wasm-game/cpp-core/src/screens/title.cpp"
       ]
     },
     {
@@ -901,6 +1049,9 @@
           "start": "0x82C6",
           "length": 11463
         }
+      ],
+      "consumers": [
+        "wasm-game/cpp-core/src/screens/sprite_renderer.cpp"
       ]
     },
     {
@@ -919,6 +1070,9 @@
           "start": "0xBE0C",
           "length": 365
         }
+      ],
+      "consumers": [
+        "wasm-game/cpp-core/src/ball/object_motion.cpp"
       ]
     },
     {
@@ -937,6 +1091,9 @@
           "start": "0xB95A",
           "length": 268
         }
+      ],
+      "consumers": [
+        "wasm-game/cpp-core/src/screens/result_characters.cpp"
       ]
     },
     {
@@ -955,6 +1112,9 @@
           "start": "0xB8B2",
           "length": 43
         }
+      ],
+      "consumers": [
+        "wasm-game/cpp-core/src/screens/result_characters.cpp"
       ]
     },
     {
@@ -973,6 +1133,9 @@
           "start": "0xB8DD",
           "length": 8
         }
+      ],
+      "consumers": [
+        "wasm-game/cpp-core/src/screens/result_characters.cpp"
       ]
     },
     {
@@ -991,6 +1154,9 @@
           "start": "0xB904",
           "length": 86
         }
+      ],
+      "consumers": [
+        "wasm-game/cpp-core/src/screens/result_characters.cpp"
       ]
     },
     {
@@ -1011,7 +1177,8 @@
         }
       ],
       "consumers": [
-        "soccer::audio::Apu::read_dpcm_sample"
+        "soccer::audio::Apu::read_dpcm_sample",
+        "wasm-game/cpp-core/src/audio/apu.cpp"
       ]
     },
     {
@@ -1032,7 +1199,8 @@
         }
       ],
       "consumers": [
-        "soccer::audio::SoundProgramCpu"
+        "soccer::audio::SoundProgramCpu",
+        "wasm-game/cpp-core/src/audio/audio_driver.cpp"
       ]
     },
     {
@@ -1053,7 +1221,8 @@
         }
       ],
       "consumers": [
-        "soccer::audio::SoundProgramCpu"
+        "soccer::audio::SoundProgramCpu",
+        "wasm-game/cpp-core/src/audio/audio_driver.cpp"
       ]
     },
     {
@@ -1074,7 +1243,8 @@
         }
       ],
       "consumers": [
-        "soccer::audio::SoundProgramCpu"
+        "soccer::audio::SoundProgramCpu",
+        "wasm-game/cpp-core/src/audio/audio_driver.cpp"
       ]
     },
     {
@@ -1100,7 +1270,8 @@
         }
       ],
       "consumers": [
-        "soccer::audio::SoundProgramCpu::step"
+        "soccer::audio::SoundProgramCpu::step",
+        "wasm-game/cpp-core/src/audio/audio_driver.cpp"
       ]
     },
     {
@@ -1121,7 +1292,8 @@
         }
       ],
       "consumers": [
-        "soccer::audio::SoundProgramCpu"
+        "soccer::audio::SoundProgramCpu",
+        "wasm-game/cpp-core/src/audio/audio_driver.cpp"
       ]
     },
     {
@@ -1140,6 +1312,9 @@
           "start": "0xEA1A",
           "length": 296
         }
+      ],
+      "consumers": [
+        "wasm-game/cpp-core/src/screens/background.cpp"
       ]
     },
     {
@@ -1151,7 +1326,10 @@
       "symbol": "sub_E8E6/sub_E941/sub_E9D2",
       "layout": "37 final `$0415` values by image id; FF means the CPU-source path performs no write",
       "length": 37,
-      "sha256": "7f73d3f04e1981b9881d2849fd958ce1c8e493a0a405ec5acb3e3d5c6dc41866"
+      "sha256": "7f73d3f04e1981b9881d2849fd958ce1c8e493a0a405ec5acb3e3d5c6dc41866",
+      "consumers": [
+        "wasm-game/cpp-core/src/screens/background.cpp"
+      ]
     },
     {
       "path": "camera/field-boundary-c873-c87b.bin",
@@ -1169,6 +1347,9 @@
           "start": "0xC873",
           "length": 8
         }
+      ],
+      "consumers": [
+        "wasm-game/cpp-core/src/screens/camera.cpp"
       ]
     },
     {
@@ -1187,6 +1368,10 @@
           "start": "0xB643",
           "length": 375
         }
+      ],
+      "consumers": [
+        "wasm-game/cpp-core/src/collision/ball_contact.cpp",
+        "wasm-game/cpp-core/src/collision/player_contact.cpp"
       ]
     },
     {
@@ -1205,6 +1390,9 @@
           "start": "0xBC3C",
           "length": 40
         }
+      ],
+      "consumers": [
+        "wasm-game/cpp-core/src/rules/rules.cpp"
       ]
     },
     {
@@ -1223,6 +1411,9 @@
           "start": "0x9E6B",
           "length": 6
         }
+      ],
+      "consumers": [
+        "wasm-game/cpp-core/src/collision/player_contact.cpp"
       ]
     },
     {
@@ -1241,6 +1432,9 @@
           "start": "0x9E9D",
           "length": 8
         }
+      ],
+      "consumers": [
+        "wasm-game/cpp-core/src/collision/player_contact.cpp"
       ]
     },
     {
@@ -1259,6 +1453,10 @@
           "start": "0xB53B",
           "length": 264
         }
+      ],
+      "consumers": [
+        "wasm-game/cpp-core/src/collision/ball_contact.cpp",
+        "wasm-game/cpp-core/src/collision/player_contact.cpp"
       ]
     },
     {
@@ -1277,6 +1475,10 @@
           "start": "0xB030",
           "length": 20
         }
+      ],
+      "consumers": [
+        "wasm-game/cpp-core/src/collision/ball_contact.cpp",
+        "wasm-game/cpp-core/src/collision/player_contact.cpp"
       ]
     },
     {
@@ -1295,6 +1497,9 @@
           "start": "0xB2F9",
           "length": 8
         }
+      ],
+      "consumers": [
+        "wasm-game/cpp-core/src/collision/ball_contact.cpp"
       ]
     },
     {
@@ -1306,7 +1511,10 @@
       "symbol": "portable host kickoff container defaults",
       "layout": "12 records x little-endian u16 X, u16 Y, u8 first-half stamina, u8 second-half stamina, u8 control",
       "length": 84,
-      "sha256": "1c89faeb60fa2c5e4f45ecea203956778088d319fb99c7af19695610158134d1"
+      "sha256": "1c89faeb60fa2c5e4f45ecea203956778088d319fb99c7af19695610158134d1",
+      "consumers": [
+        "wasm-game/cpp-core/src/player/player.cpp"
+      ]
     },
     {
       "path": "dispatch/ball-motion-b09d.bin",
@@ -1324,6 +1532,9 @@
           "start": "0xB09D",
           "length": 30
         }
+      ],
+      "consumers": [
+        "wasm-game/cpp-core/src/ball/motion.cpp"
       ]
     },
     {
@@ -1344,7 +1555,8 @@
         }
       ],
       "consumers": [
-        "soccer::ball_screen_motion_handler"
+        "soccer::ball_screen_motion_handler",
+        "wasm-game/cpp-core/src/ball/motion.cpp"
       ]
     },
     {
@@ -1363,6 +1575,9 @@
           "start": "0x8CAF",
           "length": 50
         }
+      ],
+      "consumers": [
+        "wasm-game/cpp-core/src/ball/object_motion.cpp"
       ]
     },
     {
@@ -1383,7 +1598,8 @@
         }
       ],
       "consumers": [
-        "soccer::ball_object_motion_handler"
+        "soccer::ball_object_motion_handler",
+        "wasm-game/cpp-core/src/ball/object_motion.cpp"
       ]
     },
     {
@@ -1402,6 +1618,9 @@
           "start": "0x8359",
           "length": 88
         }
+      ],
+      "consumers": [
+        "wasm-game/cpp-core/src/ai/ai.cpp"
       ]
     },
     {
@@ -1420,6 +1639,9 @@
           "start": "0x803F",
           "length": 186
         }
+      ],
+      "consumers": [
+        "wasm-game/cpp-core/src/player/motion.cpp"
       ]
     },
     {
@@ -1440,7 +1662,8 @@
         }
       ],
       "consumers": [
-        "soccer::player_main_motion_handler"
+        "soccer::player_main_motion_handler",
+        "wasm-game/cpp-core/src/player/motion.cpp"
       ]
     },
     {
@@ -1459,6 +1682,9 @@
           "start": "0x8A02",
           "length": 3
         }
+      ],
+      "consumers": [
+        "wasm-game/cpp-core/src/player/motion.cpp"
       ]
     },
     {
@@ -1477,6 +1703,9 @@
           "start": "0x8DF5",
           "length": 192
         }
+      ],
+      "consumers": [
+        "wasm-game/cpp-core/src/ai/ai.cpp"
       ]
     },
     {
@@ -1495,6 +1724,9 @@
           "start": "0xB6EF",
           "length": 86
         }
+      ],
+      "consumers": [
+        "wasm-game/cpp-core/src/screens/result_characters.cpp"
       ]
     },
     {
@@ -1600,7 +1832,8 @@
         }
       ],
       "consumers": [
-        "soccer::build_statusbar_and_scrolling_field_column"
+        "soccer::build_statusbar_and_scrolling_field_column",
+        "wasm-game/cpp-core/src/screens/field_scroll.cpp"
       ]
     },
     {
@@ -1701,7 +1934,8 @@
         }
       ],
       "consumers": [
-        "soccer::build_statusbar_and_scrolling_field_column"
+        "soccer::build_statusbar_and_scrolling_field_column",
+        "wasm-game/cpp-core/src/screens/field_scroll.cpp"
       ]
     },
     {
@@ -1720,6 +1954,9 @@
           "start": "0xDDDB",
           "length": 48
         }
+      ],
+      "consumers": [
+        "wasm-game/cpp-core/src/screens/weather_nmi.cpp"
       ]
     },
     {
@@ -1738,6 +1975,9 @@
           "start": "0xBCC8",
           "length": 112
         }
+      ],
+      "consumers": [
+        "wasm-game/cpp-core/src/rules/field_setup.cpp"
       ]
     },
     {
@@ -1854,7 +2094,9 @@
       ],
       "consumers": [
         "soccer::probe_field_surface",
-        "soccer::build_statusbar_and_scrolling_field_column"
+        "soccer::build_statusbar_and_scrolling_field_column",
+        "wasm-game/cpp-core/src/collision/collision.cpp",
+        "wasm-game/cpp-core/src/screens/field_scroll.cpp"
       ]
     },
     {
@@ -1951,7 +2193,9 @@
       ],
       "consumers": [
         "soccer::probe_field_surface",
-        "soccer::build_statusbar_and_scrolling_field_column"
+        "soccer::build_statusbar_and_scrolling_field_column",
+        "wasm-game/cpp-core/src/collision/collision.cpp",
+        "wasm-game/cpp-core/src/screens/field_scroll.cpp"
       ]
     },
     {
@@ -1970,6 +2214,9 @@
           "start": "0xBA1D",
           "length": 16
         }
+      ],
+      "consumers": [
+        "wasm-game/cpp-core/src/rules/weather_effect.cpp"
       ]
     },
     {
@@ -1988,6 +2235,9 @@
           "start": "0xBB2D",
           "length": 16
         }
+      ],
+      "consumers": [
+        "wasm-game/cpp-core/src/rules/weather_effect.cpp"
       ]
     },
     {
@@ -2006,6 +2256,9 @@
           "start": "0xBA8E",
           "length": 185
         }
+      ],
+      "consumers": [
+        "wasm-game/cpp-core/src/rules/field_setup.cpp"
       ]
     },
     {
@@ -2024,6 +2277,9 @@
           "start": "0xBC80",
           "length": 4
         }
+      ],
+      "consumers": [
+        "wasm-game/cpp-core/src/rules/match_time_weather.cpp"
       ]
     },
     {
@@ -2042,6 +2298,9 @@
           "start": "0xDCA5",
           "length": 12
         }
+      ],
+      "consumers": [
+        "wasm-game/cpp-core/src/screens/weather_nmi.cpp"
       ]
     },
     {
@@ -2060,6 +2319,9 @@
           "start": "0xB44E",
           "length": 32
         }
+      ],
+      "consumers": [
+        "wasm-game/cpp-core/src/rules/match_time_weather.cpp"
       ]
     },
     {
@@ -2078,6 +2340,9 @@
           "start": "0xD891",
           "length": 256
         }
+      ],
+      "consumers": [
+        "wasm-game/cpp-core/src/screens/weather_nmi.cpp"
       ]
     },
     {
@@ -2096,6 +2361,9 @@
           "start": "0xDA46",
           "length": 59
         }
+      ],
+      "consumers": [
+        "wasm-game/cpp-core/src/screens/weather_nmi.cpp"
       ]
     },
     {
@@ -2114,6 +2382,9 @@
           "start": "0xBB7A",
           "length": 10
         }
+      ],
+      "consumers": [
+        "wasm-game/cpp-core/src/rules/field_setup.cpp"
       ]
     },
     {
@@ -2132,6 +2403,9 @@
           "start": "0xB48E",
           "length": 36
         }
+      ],
+      "consumers": [
+        "wasm-game/cpp-core/src/rules/match_time_weather.cpp"
       ]
     },
     {
@@ -2150,6 +2424,9 @@
           "start": "0xBDA7",
           "length": 18
         }
+      ],
+      "consumers": [
+        "wasm-game/cpp-core/src/screens/camera.cpp"
       ]
     },
     {
@@ -2168,6 +2445,10 @@
           "start": "0xBDC9",
           "length": 31
         }
+      ],
+      "consumers": [
+        "wasm-game/cpp-core/src/screens/field_flow.cpp",
+        "wasm-game/cpp-core/src/screens/field_markers.cpp"
       ]
     },
     {
@@ -2186,6 +2467,9 @@
           "start": "0xBDE8",
           "length": 270
         }
+      ],
+      "consumers": [
+        "wasm-game/cpp-core/src/screens/field_flow.cpp"
       ]
     },
     {
@@ -2204,6 +2488,9 @@
           "start": "0xBF98",
           "length": 19
         }
+      ],
+      "consumers": [
+        "wasm-game/cpp-core/src/rules/player_progression.cpp"
       ]
     },
     {
@@ -2222,6 +2509,9 @@
           "start": "0xB727",
           "length": 297
         }
+      ],
+      "consumers": [
+        "wasm-game/cpp-core/src/player/action_pipeline.cpp"
       ]
     },
     {
@@ -2240,6 +2530,9 @@
           "start": "0xB9F5",
           "length": 38
         }
+      ],
+      "consumers": [
+        "wasm-game/cpp-core/src/player/action_pipeline.cpp"
       ]
     },
     {
@@ -2258,6 +2551,9 @@
           "start": "0xB8A8",
           "length": 4
         }
+      ],
+      "consumers": [
+        "wasm-game/cpp-core/src/player/action_pipeline.cpp"
       ]
     },
     {
@@ -2276,6 +2572,9 @@
           "start": "0xBDB9",
           "length": 16
         }
+      ],
+      "consumers": [
+        "wasm-game/cpp-core/src/screens/field_flow.cpp"
       ]
     },
     {
@@ -2294,6 +2593,9 @@
           "start": "0xCBC7",
           "length": 15
         }
+      ],
+      "consumers": [
+        "wasm-game/cpp-core/src/screens/field_flow.cpp"
       ]
     },
     {
@@ -2305,7 +2607,42 @@
       "symbol": "bra_CB92 immediate tile operands",
       "layout": "six HUD tile ids in ram_hud_tiles[0..5] order",
       "length": 6,
-      "sha256": "174ba2d3e4356ce6534d56dc846ffc588e21b4b05b9ca252a6e80b4d1114a57c"
+      "sha256": "174ba2d3e4356ce6534d56dc846ffc588e21b4b05b9ca252a6e80b4d1114a57c",
+      "source_ranges": [
+        {
+          "bank": "07",
+          "start": "0xCB93",
+          "length": 1
+        },
+        {
+          "bank": "07",
+          "start": "0xCB98",
+          "length": 1
+        },
+        {
+          "bank": "07",
+          "start": "0xCB9D",
+          "length": 1
+        },
+        {
+          "bank": "07",
+          "start": "0xCBA2",
+          "length": 1
+        },
+        {
+          "bank": "07",
+          "start": "0xCBA7",
+          "length": 1
+        },
+        {
+          "bank": "07",
+          "start": "0xCBAC",
+          "length": 1
+        }
+      ],
+      "consumers": [
+        "wasm-game/cpp-core/src/screens/field_flow.cpp"
+      ]
     },
     {
       "path": "input/pass-command-9f53-a017.bin",
@@ -2323,6 +2660,9 @@
           "start": "0x9F53",
           "length": 196
         }
+      ],
+      "consumers": [
+        "wasm-game/cpp-core/src/ai/ai.cpp"
       ]
     },
     {
@@ -2341,6 +2681,9 @@
           "start": "0x9D2A",
           "length": 2
         }
+      ],
+      "consumers": [
+        "wasm-game/cpp-core/src/ai/ai.cpp"
       ]
     },
     {
@@ -2359,6 +2702,9 @@
           "start": "0xFBA9",
           "length": 2
         }
+      ],
+      "consumers": [
+        "wasm-game/cpp-core/src/input/controller.cpp"
       ]
     },
     {
@@ -2377,6 +2723,9 @@
           "start": "0xBAA1",
           "length": 88
         }
+      ],
+      "consumers": [
+        "wasm-game/cpp-core/src/player/live_frame.cpp"
       ]
     },
     {
@@ -2395,6 +2744,9 @@
           "start": "0x816E",
           "length": 16
         }
+      ],
+      "consumers": [
+        "wasm-game/cpp-core/src/screens/screen_flow.cpp"
       ]
     },
     {
@@ -2413,6 +2765,9 @@
           "start": "0xB5D4",
           "length": 18
         }
+      ],
+      "consumers": [
+        "wasm-game/cpp-core/src/screens/tournament.cpp"
       ]
     },
     {
@@ -2431,6 +2786,9 @@
           "start": "0xB7C6",
           "length": 72
         }
+      ],
+      "consumers": [
+        "wasm-game/cpp-core/src/screens/tournament.cpp"
       ]
     },
     {
@@ -2449,6 +2807,9 @@
           "start": "0xB744",
           "length": 2
         }
+      ],
+      "consumers": [
+        "wasm-game/cpp-core/src/screens/tournament.cpp"
       ]
     },
     {
@@ -2467,6 +2828,9 @@
           "start": "0xB07C",
           "length": 44
         }
+      ],
+      "consumers": [
+        "wasm-game/cpp-core/src/screens/menu.cpp"
       ]
     },
     {
@@ -2485,6 +2849,9 @@
           "start": "0xBCD0",
           "length": 48
         }
+      ],
+      "consumers": [
+        "wasm-game/cpp-core/src/screens/credits.cpp"
       ]
     },
     {
@@ -2503,6 +2870,9 @@
           "start": "0xBEEC",
           "length": 186
         }
+      ],
+      "consumers": [
+        "wasm-game/cpp-core/src/screens/result_characters.cpp"
       ]
     },
     {
@@ -2521,6 +2891,9 @@
           "start": "0xB9B1",
           "length": 354
         }
+      ],
+      "consumers": [
+        "wasm-game/cpp-core/src/screens/credits.cpp"
       ]
     },
     {
@@ -2539,6 +2912,9 @@
           "start": "0xB186",
           "length": 6
         }
+      ],
+      "consumers": [
+        "wasm-game/cpp-core/src/screens/credits.cpp"
       ]
     },
     {
@@ -2557,6 +2933,9 @@
           "start": "0xA050",
           "length": 144
         }
+      ],
+      "consumers": [
+        "wasm-game/cpp-core/src/screens/menu_formation.cpp"
       ]
     },
     {
@@ -2575,6 +2954,9 @@
           "start": "0x9CDE",
           "length": 65
         }
+      ],
+      "consumers": [
+        "wasm-game/cpp-core/src/screens/menu_formation.cpp"
       ]
     },
     {
@@ -2593,6 +2975,9 @@
           "start": "0x9B20",
           "length": 194
         }
+      ],
+      "consumers": [
+        "wasm-game/cpp-core/src/screens/menu_formation.cpp"
       ]
     },
     {
@@ -2611,6 +2996,9 @@
           "start": "0x9DBE",
           "length": 557
         }
+      ],
+      "consumers": [
+        "wasm-game/cpp-core/src/screens/menu_formation.cpp"
       ]
     },
     {
@@ -2629,6 +3017,9 @@
           "start": "0x98A8",
           "length": 16
         }
+      ],
+      "consumers": [
+        "wasm-game/cpp-core/src/screens/menu_formation.cpp"
       ]
     },
     {
@@ -2647,6 +3038,9 @@
           "start": "0x94AE",
           "length": 175
         }
+      ],
+      "consumers": [
+        "wasm-game/cpp-core/src/screens/menu_settings.cpp"
       ]
     },
     {
@@ -2665,6 +3059,9 @@
           "start": "0x96E7",
           "length": 220
         }
+      ],
+      "consumers": [
+        "wasm-game/cpp-core/src/screens/menu_settings.cpp"
       ]
     },
     {
@@ -2683,6 +3080,9 @@
           "start": "0x959F",
           "length": 6
         }
+      ],
+      "consumers": [
+        "wasm-game/cpp-core/src/screens/menu_settings.cpp"
       ]
     },
     {
@@ -2701,6 +3101,9 @@
           "start": "0x962E",
           "length": 4
         }
+      ],
+      "consumers": [
+        "wasm-game/cpp-core/src/screens/menu_settings.cpp"
       ]
     },
     {
@@ -2719,6 +3122,9 @@
           "start": "0xAA33",
           "length": 5
         }
+      ],
+      "consumers": [
+        "wasm-game/cpp-core/src/screens/meeting.cpp"
       ]
     },
     {
@@ -2737,6 +3143,9 @@
           "start": "0xAB88",
           "length": 8
         }
+      ],
+      "consumers": [
+        "wasm-game/cpp-core/src/screens/meeting.cpp"
       ]
     },
     {
@@ -2748,7 +3157,10 @@
       "symbol": "sub_ABEE/sub_8205/sub_822A stack-page alias",
       "layout": "stable `$0104-$011B` coordinate bytes captured by tools-local/capture_original_meeting_stack.lua at goal3_playoff.fm2 frame 25208",
       "length": 24,
-      "sha256": "b2bdbe0981300b975c9189e2aa3e199ebd7509935a3eabd38b83f908f4e89a63"
+      "sha256": "b2bdbe0981300b975c9189e2aa3e199ebd7509935a3eabd38b83f908f4e89a63",
+      "consumers": [
+        "wasm-game/cpp-core/src/screens/meeting.cpp"
+      ]
     },
     {
       "path": "menu/meeting-navigation-ac09-ac87.bin",
@@ -2766,6 +3178,9 @@
           "start": "0xAC09",
           "length": 126
         }
+      ],
+      "consumers": [
+        "wasm-game/cpp-core/src/screens/meeting.cpp"
       ]
     },
     {
@@ -2784,6 +3199,9 @@
           "start": "0xADC2",
           "length": 96
         }
+      ],
+      "consumers": [
+        "wasm-game/cpp-core/src/screens/meeting.cpp"
       ]
     },
     {
@@ -2802,6 +3220,9 @@
           "start": "0xB157",
           "length": 168
         }
+      ],
+      "consumers": [
+        "wasm-game/cpp-core/src/screens/meeting.cpp"
       ]
     },
     {
@@ -2820,6 +3241,9 @@
           "start": "0xABF1",
           "length": 44
         }
+      ],
+      "consumers": [
+        "wasm-game/cpp-core/src/screens/meeting.cpp"
       ]
     },
     {
@@ -2838,6 +3262,9 @@
           "start": "0xA93C",
           "length": 4
         }
+      ],
+      "consumers": [
+        "wasm-game/cpp-core/src/screens/meeting.cpp"
       ]
     },
     {
@@ -2856,6 +3283,9 @@
           "start": "0xA959",
           "length": 11
         }
+      ],
+      "consumers": [
+        "wasm-game/cpp-core/src/screens/meeting.cpp"
       ]
     },
     {
@@ -2874,6 +3304,9 @@
           "start": "0xB3EA",
           "length": 1479
         }
+      ],
+      "consumers": [
+        "wasm-game/cpp-core/src/screens/credits.cpp"
       ]
     },
     {
@@ -2892,6 +3325,9 @@
           "start": "0xB134",
           "length": 82
         }
+      ],
+      "consumers": [
+        "wasm-game/cpp-core/src/screens/credits.cpp"
       ]
     },
     {
@@ -2910,6 +3346,9 @@
           "start": "0x8687",
           "length": 8
         }
+      ],
+      "consumers": [
+        "wasm-game/cpp-core/src/screens/menu.cpp"
       ]
     },
     {
@@ -2928,6 +3367,9 @@
           "start": "0x8596",
           "length": 118
         }
+      ],
+      "consumers": [
+        "wasm-game/cpp-core/src/screens/menu_mode.cpp"
       ]
     },
     {
@@ -2946,6 +3388,9 @@
           "start": "0xA673",
           "length": 94
         }
+      ],
+      "consumers": [
+        "wasm-game/cpp-core/src/screens/menu_music.cpp"
       ]
     },
     {
@@ -2964,6 +3409,9 @@
           "start": "0x87DF",
           "length": 80
         }
+      ],
+      "consumers": [
+        "wasm-game/cpp-core/src/screens/menu_opponent.cpp"
       ]
     },
     {
@@ -2982,6 +3430,9 @@
           "start": "0x892B",
           "length": 28
         }
+      ],
+      "consumers": [
+        "wasm-game/cpp-core/src/screens/menu_opponent.cpp"
       ]
     },
     {
@@ -3000,6 +3451,9 @@
           "start": "0x8698",
           "length": 8
         }
+      ],
+      "consumers": [
+        "wasm-game/cpp-core/src/screens/menu.cpp"
       ]
     },
     {
@@ -3018,6 +3472,9 @@
           "start": "0x865B",
           "length": 16
         }
+      ],
+      "consumers": [
+        "wasm-game/cpp-core/src/screens/menu.cpp"
       ]
     },
     {
@@ -3036,6 +3493,9 @@
           "start": "0x9184",
           "length": 16
         }
+      ],
+      "consumers": [
+        "wasm-game/cpp-core/src/screens/menu_order.cpp"
       ]
     },
     {
@@ -3054,6 +3514,9 @@
           "start": "0x90EE",
           "length": 256
         }
+      ],
+      "consumers": [
+        "wasm-game/cpp-core/src/screens/menu_order.cpp"
       ]
     },
     {
@@ -3072,6 +3535,9 @@
           "start": "0x90CA",
           "length": 50
         }
+      ],
+      "consumers": [
+        "wasm-game/cpp-core/src/screens/menu_order.cpp"
       ]
     },
     {
@@ -3090,6 +3556,9 @@
           "start": "0x92BF",
           "length": 14
         }
+      ],
+      "consumers": [
+        "wasm-game/cpp-core/src/screens/menu_order.cpp"
       ]
     },
     {
@@ -3108,6 +3577,9 @@
           "start": "0x9313",
           "length": 74
         }
+      ],
+      "consumers": [
+        "wasm-game/cpp-core/src/screens/menu_order.cpp"
       ]
     },
     {
@@ -3126,6 +3598,9 @@
           "start": "0xA43C",
           "length": 314
         }
+      ],
+      "consumers": [
+        "wasm-game/cpp-core/src/screens/menu_profile.cpp"
       ]
     },
     {
@@ -3144,6 +3619,9 @@
           "start": "0xB18E",
           "length": 604
         }
+      ],
+      "consumers": [
+        "wasm-game/cpp-core/src/screens/credits.cpp"
       ]
     },
     {
@@ -3162,6 +3640,9 @@
           "start": "0xB11A",
           "length": 26
         }
+      ],
+      "consumers": [
+        "wasm-game/cpp-core/src/screens/credits.cpp"
       ]
     },
     {
@@ -3173,7 +3654,57 @@
       "symbol": "sub_B2F0 immediate operands",
       "layout": "option, ball work, left team, sprite palette/ball animation, sprite bank 0, sprite bank 3, ball X, ball Y, sound id",
       "length": 9,
-      "sha256": "369daf7f8c31e57cbde6e471af97e30ceffdea80588610cd04bae0610223fd9e"
+      "sha256": "369daf7f8c31e57cbde6e471af97e30ceffdea80588610cd04bae0610223fd9e",
+      "source_ranges": [
+        {
+          "bank": "05",
+          "start": "0xB2F1",
+          "length": 1
+        },
+        {
+          "bank": "05",
+          "start": "0xB2F6",
+          "length": 1
+        },
+        {
+          "bank": "05",
+          "start": "0xB2FF",
+          "length": 1
+        },
+        {
+          "bank": "05",
+          "start": "0xB304",
+          "length": 1
+        },
+        {
+          "bank": "05",
+          "start": "0xB30C",
+          "length": 1
+        },
+        {
+          "bank": "05",
+          "start": "0xB315",
+          "length": 1
+        },
+        {
+          "bank": "05",
+          "start": "0xB31D",
+          "length": 1
+        },
+        {
+          "bank": "05",
+          "start": "0xB322",
+          "length": 1
+        },
+        {
+          "bank": "05",
+          "start": "0xB32A",
+          "length": 1
+        }
+      ],
+      "consumers": [
+        "wasm-game/cpp-core/src/screens/tournament.cpp"
+      ]
     },
     {
       "path": "menu/postmatch-subtype-b3dc-b3de.bin",
@@ -3191,6 +3722,9 @@
           "start": "0xB3DC",
           "length": 2
         }
+      ],
+      "consumers": [
+        "wasm-game/cpp-core/src/screens/tournament.cpp"
       ]
     },
     {
@@ -3209,6 +3743,9 @@
           "start": "0x8D69",
           "length": 82
         }
+      ],
+      "consumers": [
+        "wasm-game/cpp-core/src/screens/menu.cpp"
       ]
     },
     {
@@ -3227,6 +3764,9 @@
           "start": "0x8712",
           "length": 8
         }
+      ],
+      "consumers": [
+        "wasm-game/cpp-core/src/screens/menu.cpp"
       ]
     },
     {
@@ -3245,6 +3785,9 @@
           "start": "0xB3AE",
           "length": 4
         }
+      ],
+      "consumers": [
+        "wasm-game/cpp-core/src/screens/tournament.cpp"
       ]
     },
     {
@@ -3263,6 +3806,9 @@
           "start": "0xB4F4",
           "length": 104
         }
+      ],
+      "consumers": [
+        "wasm-game/cpp-core/src/screens/result_supporters.cpp"
       ]
     },
     {
@@ -3281,6 +3827,9 @@
           "start": "0xB935",
           "length": 32
         }
+      ],
+      "consumers": [
+        "wasm-game/cpp-core/src/screens/result_supporters.cpp"
       ]
     },
     {
@@ -3299,6 +3848,9 @@
           "start": "0xAEE5",
           "length": 18
         }
+      ],
+      "consumers": [
+        "wasm-game/cpp-core/src/screens/title.cpp"
       ]
     },
     {
@@ -3317,42 +3869,9 @@
           "start": "0xAB48",
           "length": 48
         }
-      ]
-    },
-    {
-      "path": "menu/statusbar-attributes-e608-e610.bin",
-      "category": "menu",
-      "source": "src/bank_FF.asm:E608",
-      "bank": "07",
-      "address": "0xE608",
-      "symbol": "tbl_E608",
-      "layout": "first eight statusbar attribute bytes",
-      "length": 8,
-      "sha256": "ca282e9851403493b900504f9cd1ac2a14771142d0405b23c54812442cb2decf",
-      "source_ranges": [
-        {
-          "bank": "07",
-          "start": "0xE608",
-          "length": 8
-        }
-      ]
-    },
-    {
-      "path": "menu/statusbar-base-tiles-e610-e6f0.bin",
-      "category": "menu",
-      "source": "src/bank_FF.asm:E610",
-      "bank": "07",
-      "address": "0xE610",
-      "symbol": "tbl_E610",
-      "layout": "seven 32-tile statusbar nametable rows",
-      "length": 224,
-      "sha256": "051b1540929315f59e09f711d71030496ad6b0b4ef92c267ecbfb006c9d3355c",
-      "source_ranges": [
-        {
-          "bank": "07",
-          "start": "0xE610",
-          "length": 224
-        }
+      ],
+      "consumers": [
+        "wasm-game/cpp-core/src/screens/title.cpp"
       ]
     },
     {
@@ -3371,6 +3890,9 @@
           "start": "0xAB88",
           "length": 455
         }
+      ],
+      "consumers": [
+        "wasm-game/cpp-core/src/ai/ai.cpp"
       ]
     },
     {
@@ -3389,6 +3911,9 @@
           "start": "0xAB4B",
           "length": 61
         }
+      ],
+      "consumers": [
+        "wasm-game/cpp-core/src/ai/ai.cpp"
       ]
     },
     {
@@ -3407,6 +3932,9 @@
           "start": "0xAD4F",
           "length": 200
         }
+      ],
+      "consumers": [
+        "wasm-game/cpp-core/src/ai/ai.cpp"
       ]
     },
     {
@@ -3425,6 +3953,9 @@
           "start": "0xC080",
           "length": 452
         }
+      ],
+      "consumers": [
+        "wasm-game/cpp-core/src/ai/ai.cpp"
       ]
     },
     {
@@ -3443,6 +3974,9 @@
           "start": "0xE153",
           "length": 8
         }
+      ],
+      "consumers": [
+        "wasm-game/cpp-core/src/screens/field_scroll.cpp"
       ]
     },
     {
@@ -3461,6 +3995,9 @@
           "start": "0x8C7E",
           "length": 72
         }
+      ],
+      "consumers": [
+        "wasm-game/cpp-core/src/screens/menu_preview.cpp"
       ]
     },
     {
@@ -3472,7 +4009,47 @@
       "symbol": "sub_8A79/sub_8AB7 immediate operands",
       "layout": "three cumulative group ends, separator tile, row length, PPU address low and high",
       "length": 7,
-      "sha256": "51d62d624de3073eec4f801a796f09e96fd8d4af0066ed8c2702fe970637c1e5"
+      "sha256": "51d62d624de3073eec4f801a796f09e96fd8d4af0066ed8c2702fe970637c1e5",
+      "source_ranges": [
+        {
+          "bank": "05",
+          "start": "0x8A7E",
+          "length": 1
+        },
+        {
+          "bank": "05",
+          "start": "0x8A88",
+          "length": 1
+        },
+        {
+          "bank": "05",
+          "start": "0x8A92",
+          "length": 1
+        },
+        {
+          "bank": "05",
+          "start": "0x8A99",
+          "length": 1
+        },
+        {
+          "bank": "05",
+          "start": "0x8A9E",
+          "length": 1
+        },
+        {
+          "bank": "05",
+          "start": "0x8AA3",
+          "length": 1
+        },
+        {
+          "bank": "05",
+          "start": "0x8AB8",
+          "length": 1
+        }
+      ],
+      "consumers": [
+        "wasm-game/cpp-core/src/screens/tournament.cpp"
+      ]
     },
     {
       "path": "menu/weather-preview-a23b-a281.bin",
@@ -3490,6 +4067,9 @@
           "start": "0xA23B",
           "length": 70
         }
+      ],
+      "consumers": [
+        "wasm-game/cpp-core/src/screens/menu_weather.cpp"
       ]
     },
     {
@@ -3508,6 +4088,9 @@
           "start": "0xD2FB",
           "length": 756
         }
+      ],
+      "consumers": [
+        "wasm-game/cpp-core/src/screens/palette.cpp"
       ]
     },
     {
@@ -3526,6 +4109,9 @@
           "start": "0xD0CB",
           "length": 10
         }
+      ],
+      "consumers": [
+        "wasm-game/cpp-core/src/screens/palette.cpp"
       ]
     },
     {
@@ -3544,6 +4130,9 @@
           "start": "0x8FAF",
           "length": 32
         }
+      ],
+      "consumers": [
+        "wasm-game/cpp-core/src/screens/menu.cpp"
       ]
     },
     {
@@ -3562,6 +4151,9 @@
           "start": "0xBDD6",
           "length": 32
         }
+      ],
+      "consumers": [
+        "wasm-game/cpp-core/src/screens/menu.cpp"
       ]
     },
     {
@@ -3580,6 +4172,9 @@
           "start": "0xAB40",
           "length": 8
         }
+      ],
+      "consumers": [
+        "wasm-game/cpp-core/src/screens/title.cpp"
       ]
     },
     {
@@ -3598,6 +4193,9 @@
           "start": "0xD1B7",
           "length": 324
         }
+      ],
+      "consumers": [
+        "wasm-game/cpp-core/src/screens/palette.cpp"
       ]
     },
     {
@@ -3616,6 +4214,9 @@
           "start": "0xEC85",
           "length": 10
         }
+      ],
+      "consumers": [
+        "wasm-game/cpp-core/src/screens/animation_priority.cpp"
       ]
     },
     {
@@ -3634,6 +4235,9 @@
           "start": "0xB07C",
           "length": 392
         }
+      ],
+      "consumers": [
+        "wasm-game/cpp-core/src/ball/object_motion.cpp"
       ]
     },
     {
@@ -3652,6 +4256,9 @@
           "start": "0xBB2A",
           "length": 18
         }
+      ],
+      "consumers": [
+        "wasm-game/cpp-core/src/screens/result_characters.cpp"
       ]
     },
     {
@@ -3670,6 +4277,9 @@
           "start": "0xBB89",
           "length": 16
         }
+      ],
+      "consumers": [
+        "wasm-game/cpp-core/src/rules/rules.cpp"
       ]
     },
     {
@@ -3688,6 +4298,9 @@
           "start": "0xBF7E",
           "length": 52
         }
+      ],
+      "consumers": [
+        "wasm-game/cpp-core/src/rules/set_piece.cpp"
       ]
     },
     {
@@ -3706,6 +4319,9 @@
           "start": "0xBD53",
           "length": 23
         }
+      ],
+      "consumers": [
+        "wasm-game/cpp-core/src/rules/rules.cpp"
       ]
     },
     {
@@ -3724,6 +4340,9 @@
           "start": "0xBD0F",
           "length": 59
         }
+      ],
+      "consumers": [
+        "wasm-game/cpp-core/src/ball/object_motion.cpp"
       ]
     },
     {
@@ -3742,6 +4361,9 @@
           "start": "0xBC5F",
           "length": 3
         }
+      ],
+      "consumers": [
+        "wasm-game/cpp-core/src/ball/object_motion.cpp"
       ]
     },
     {
@@ -3760,6 +4382,9 @@
           "start": "0xBC7D",
           "length": 2
         }
+      ],
+      "consumers": [
+        "wasm-game/cpp-core/src/ball/object_motion.cpp"
       ]
     },
     {
@@ -3778,6 +4403,9 @@
           "start": "0xBB0E",
           "length": 16
         }
+      ],
+      "consumers": [
+        "wasm-game/cpp-core/src/ball/object_motion.cpp"
       ]
     },
     {
@@ -3796,6 +4424,9 @@
           "start": "0xBBBA",
           "length": 50
         }
+      ],
+      "consumers": [
+        "wasm-game/cpp-core/src/ball/object_motion.cpp"
       ]
     },
     {
@@ -3814,6 +4445,9 @@
           "start": "0xBD5E",
           "length": 98
         }
+      ],
+      "consumers": [
+        "wasm-game/cpp-core/src/ball/object_motion.cpp"
       ]
     },
     {
@@ -3832,6 +4466,9 @@
           "start": "0xBDD7",
           "length": 13
         }
+      ],
+      "consumers": [
+        "wasm-game/cpp-core/src/ball/object_motion.cpp"
       ]
     },
     {
@@ -3850,6 +4487,9 @@
           "start": "0xA4C6",
           "length": 18
         }
+      ],
+      "consumers": [
+        "wasm-game/cpp-core/src/ball/object_motion.cpp"
       ]
     },
     {
@@ -3868,6 +4508,10 @@
           "start": "0xF8E7",
           "length": 131
         }
+      ],
+      "consumers": [
+        "wasm-game/cpp-core/src/ai/ai.cpp",
+        "wasm-game/cpp-core/src/ball/object_motion.cpp"
       ]
     },
     {
@@ -3886,6 +4530,9 @@
           "start": "0x9435",
           "length": 64
         }
+      ],
+      "consumers": [
+        "wasm-game/cpp-core/src/ball/object_motion.cpp"
       ]
     },
     {
@@ -3904,6 +4551,9 @@
           "start": "0x96D0",
           "length": 10
         }
+      ],
+      "consumers": [
+        "wasm-game/cpp-core/src/ball/object_motion.cpp"
       ]
     },
     {
@@ -3922,6 +4572,10 @@
           "start": "0x9AFC",
           "length": 56
         }
+      ],
+      "consumers": [
+        "wasm-game/cpp-core/src/ball/speed.cpp",
+        "wasm-game/cpp-core/src/player/motion.cpp"
       ]
     },
     {
@@ -3940,6 +4594,9 @@
           "start": "0x95EB",
           "length": 30
         }
+      ],
+      "consumers": [
+        "wasm-game/cpp-core/src/ball/object_motion.cpp"
       ]
     },
     {
@@ -3958,6 +4615,9 @@
           "start": "0x94D7",
           "length": 2
         }
+      ],
+      "consumers": [
+        "wasm-game/cpp-core/src/ball/object_motion.cpp"
       ]
     },
     {
@@ -3976,6 +4636,10 @@
           "start": "0xB164",
           "length": 16
         }
+      ],
+      "consumers": [
+        "wasm-game/cpp-core/src/ball/motion.cpp",
+        "wasm-game/cpp-core/src/screens/result_characters.cpp"
       ]
     },
     {
@@ -3994,6 +4658,9 @@
           "start": "0x9837",
           "length": 8
         }
+      ],
+      "consumers": [
+        "wasm-game/cpp-core/src/ball/object_motion.cpp"
       ]
     },
     {
@@ -4012,6 +4679,9 @@
           "start": "0x982F",
           "length": 8
         }
+      ],
+      "consumers": [
+        "wasm-game/cpp-core/src/ball/object_motion.cpp"
       ]
     },
     {
@@ -4030,6 +4700,9 @@
           "start": "0x971F",
           "length": 16
         }
+      ],
+      "consumers": [
+        "wasm-game/cpp-core/src/ball/object_motion.cpp"
       ]
     },
     {
@@ -4048,6 +4721,9 @@
           "start": "0x90CA",
           "length": 16
         }
+      ],
+      "consumers": [
+        "wasm-game/cpp-core/src/ball/object_motion.cpp"
       ]
     },
     {
@@ -4066,6 +4742,10 @@
           "start": "0x9A57",
           "length": 32
         }
+      ],
+      "consumers": [
+        "wasm-game/cpp-core/src/ball/speed.cpp",
+        "wasm-game/cpp-core/src/player/motion21.cpp"
       ]
     },
     {
@@ -4084,6 +4764,9 @@
           "start": "0x94BF",
           "length": 24
         }
+      ],
+      "consumers": [
+        "wasm-game/cpp-core/src/ball/object_motion.cpp"
       ]
     },
     {
@@ -4102,6 +4785,11 @@
           "start": "0xA1D8",
           "length": 16
         }
+      ],
+      "consumers": [
+        "wasm-game/cpp-core/src/ball/object_motion.cpp",
+        "wasm-game/cpp-core/src/player/motion.cpp",
+        "wasm-game/cpp-core/src/rules/rules.cpp"
       ]
     },
     {
@@ -4120,6 +4808,9 @@
           "start": "0xA5A6",
           "length": 1
         }
+      ],
+      "consumers": [
+        "wasm-game/cpp-core/src/ball/object_motion.cpp"
       ]
     },
     {
@@ -4138,6 +4829,9 @@
           "start": "0xA167",
           "length": 32
         }
+      ],
+      "consumers": [
+        "wasm-game/cpp-core/src/player/motion.cpp"
       ]
     },
     {
@@ -4156,6 +4850,9 @@
           "start": "0x861B",
           "length": 16
         }
+      ],
+      "consumers": [
+        "wasm-game/cpp-core/src/player/motion.cpp"
       ]
     },
     {
@@ -4174,6 +4871,9 @@
           "start": "0x99BC",
           "length": 44
         }
+      ],
+      "consumers": [
+        "wasm-game/cpp-core/src/player/motion21.cpp"
       ]
     },
     {
@@ -4192,6 +4892,9 @@
           "start": "0xCE40",
           "length": 96
         }
+      ],
+      "consumers": [
+        "wasm-game/cpp-core/src/player/vertical.cpp"
       ]
     },
     {
@@ -4210,6 +4913,9 @@
           "start": "0x8498",
           "length": 16
         }
+      ],
+      "consumers": [
+        "wasm-game/cpp-core/src/player/motion21.cpp"
       ]
     },
     {
@@ -4228,6 +4934,9 @@
           "start": "0x86E5",
           "length": 5
         }
+      ],
+      "consumers": [
+        "wasm-game/cpp-core/src/player/motion.cpp"
       ]
     },
     {
@@ -4246,6 +4955,9 @@
           "start": "0x8ABC",
           "length": 2
         }
+      ],
+      "consumers": [
+        "wasm-game/cpp-core/src/player/motion.cpp"
       ]
     },
     {
@@ -4264,6 +4976,9 @@
           "start": "0xCDC7",
           "length": 4
         }
+      ],
+      "consumers": [
+        "wasm-game/cpp-core/src/player/vertical.cpp"
       ]
     },
     {
@@ -4282,6 +4997,9 @@
           "start": "0xCE30",
           "length": 16
         }
+      ],
+      "consumers": [
+        "wasm-game/cpp-core/src/player/vertical.cpp"
       ]
     },
     {
@@ -4300,6 +5018,9 @@
           "start": "0x8F6D",
           "length": 6
         }
+      ],
+      "consumers": [
+        "wasm-game/cpp-core/src/screens/menu.cpp"
       ]
     },
     {
@@ -4318,6 +5039,9 @@
           "start": "0xBD4A",
           "length": 20
         }
+      ],
+      "consumers": [
+        "wasm-game/cpp-core/src/ball/object_motion.cpp"
       ]
     },
     {
@@ -4336,6 +5060,10 @@
           "start": "0x9B7B",
           "length": 24
         }
+      ],
+      "consumers": [
+        "wasm-game/cpp-core/src/ball/speed.cpp",
+        "wasm-game/cpp-core/src/player/motion.cpp"
       ]
     },
     {
@@ -4354,6 +5082,10 @@
           "start": "0xC0A0",
           "length": 60
         }
+      ],
+      "consumers": [
+        "wasm-game/cpp-core/src/screens/meeting.cpp",
+        "wasm-game/cpp-core/src/screens/menu_profile.cpp"
       ]
     },
     {
@@ -4372,6 +5104,11 @@
           "start": "0xA6D1",
           "length": 5
         }
+      ],
+      "consumers": [
+        "wasm-game/cpp-core/src/screens/menu.cpp",
+        "wasm-game/cpp-core/src/screens/menu_music.cpp",
+        "wasm-game/cpp-core/src/screens/menu_settings.cpp"
       ]
     },
     {
@@ -4390,6 +5127,9 @@
           "start": "0x89F9",
           "length": 24
         }
+      ],
+      "consumers": [
+        "wasm-game/cpp-core/src/screens/menu.cpp"
       ]
     },
     {
@@ -4408,6 +5148,10 @@
           "start": "0xBDD6",
           "length": 64
         }
+      ],
+      "consumers": [
+        "wasm-game/cpp-core/src/screens/menu_formation.cpp",
+        "wasm-game/cpp-core/src/screens/menu_order.cpp"
       ]
     },
     {
@@ -4426,6 +5170,9 @@
           "start": "0xBCFC",
           "length": 396
         }
+      ],
+      "consumers": [
+        "wasm-game/cpp-core/src/rules/field_setup.cpp"
       ]
     },
     {
@@ -4444,6 +5191,9 @@
           "start": "0x8EA4",
           "length": 65
         }
+      ],
+      "consumers": [
+        "wasm-game/cpp-core/src/screens/menu.cpp"
       ]
     },
     {
@@ -4462,6 +5212,9 @@
           "start": "0xBE16",
           "length": 30
         }
+      ],
+      "consumers": [
+        "wasm-game/cpp-core/src/screens/menu.cpp"
       ]
     },
     {
@@ -4480,6 +5233,9 @@
           "start": "0x8EFB",
           "length": 4
         }
+      ],
+      "consumers": [
+        "wasm-game/cpp-core/src/screens/menu.cpp"
       ]
     },
     {
@@ -4498,6 +5254,9 @@
           "start": "0xBDF6",
           "length": 32
         }
+      ],
+      "consumers": [
+        "wasm-game/cpp-core/src/screens/menu.cpp"
       ]
     },
     {
@@ -4516,6 +5275,9 @@
           "start": "0x8CFE",
           "length": 12
         }
+      ],
+      "consumers": [
+        "wasm-game/cpp-core/src/screens/menu.cpp"
       ]
     },
     {
@@ -4534,6 +5296,9 @@
           "start": "0x8B7C",
           "length": 4
         }
+      ],
+      "consumers": [
+        "wasm-game/cpp-core/src/screens/menu.cpp"
       ]
     },
     {
@@ -4552,6 +5317,9 @@
           "start": "0xBEF6",
           "length": 16
         }
+      ],
+      "consumers": [
+        "wasm-game/cpp-core/src/screens/field_flow.cpp"
       ]
     },
     {
@@ -4570,6 +5338,9 @@
           "start": "0xBF1F",
           "length": 12
         }
+      ],
+      "consumers": [
+        "wasm-game/cpp-core/src/rules/player_progression.cpp"
       ]
     },
     {
@@ -4588,6 +5359,9 @@
           "start": "0xB501",
           "length": 60
         }
+      ],
+      "consumers": [
+        "wasm-game/cpp-core/src/screens/result_characters.cpp"
       ]
     },
     {
@@ -4606,6 +5380,9 @@
           "start": "0xB9C4",
           "length": 32
         }
+      ],
+      "consumers": [
+        "wasm-game/cpp-core/src/screens/tournament.cpp"
       ]
     },
     {
@@ -4624,6 +5401,9 @@
           "start": "0xB465",
           "length": 23
         }
+      ],
+      "consumers": [
+        "wasm-game/cpp-core/src/screens/tournament.cpp"
       ]
     },
     {
@@ -4642,6 +5422,9 @@
           "start": "0xB989",
           "length": 4
         }
+      ],
+      "consumers": [
+        "wasm-game/cpp-core/src/screens/tournament.cpp"
       ]
     },
     {
@@ -4660,6 +5443,9 @@
           "start": "0xB511",
           "length": 12
         }
+      ],
+      "consumers": [
+        "wasm-game/cpp-core/src/screens/result_characters.cpp"
       ]
     },
     {
@@ -4678,6 +5464,9 @@
           "start": "0xB63F",
           "length": 143
         }
+      ],
+      "consumers": [
+        "wasm-game/cpp-core/src/screens/result_characters.cpp"
       ]
     }
   ]
