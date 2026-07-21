@@ -12,7 +12,14 @@
       "symbol": "tbl_B097",
       "layout": "player-motion and keeper-class to ball-contact branch selectors",
       "length": 186,
-      "sha256": "1facb6202b1d81198a2a0df7ba34db8a3bf69290208974b80d15d115e1ff9a61"
+      "sha256": "1facb6202b1d81198a2a0df7ba34db8a3bf69290208974b80d15d115e1ff9a61",
+      "source_ranges": [
+        {
+          "bank": "06",
+          "start": "0xB097",
+          "length": 186
+        }
+      ]
     },
     {
       "path": "action/ball-state-ac4d-accd.bin",
@@ -23,7 +30,14 @@
       "symbol": "tbl_AC4D plus contiguous source window",
       "layout": "ball motion state bytes and unchecked pending-shot state window",
       "length": 128,
-      "sha256": "fb37ecef993adf520998d104e0925dfa2a710bb8443f3aa89667af2fd3c57d1c"
+      "sha256": "fb37ecef993adf520998d104e0925dfa2a710bb8443f3aa89667af2fd3c57d1c",
+      "source_ranges": [
+        {
+          "bank": "06",
+          "start": "0xAC4D",
+          "length": 128
+        }
+      ]
     },
     {
       "path": "action/player-action-ac65-ad41.bin",
@@ -34,7 +48,14 @@
       "symbol": "tbl_AC65/off_AC69/off_AC87",
       "layout": "field and score/cutscene player action capability/priority records",
       "length": 220,
-      "sha256": "51bfb667bee62edcaeeac86d07ac24431d7923598898cac2e85c9b88ef87b530"
+      "sha256": "51bfb667bee62edcaeeac86d07ac24431d7923598898cac2e85c9b88ef87b530",
+      "source_ranges": [
+        {
+          "bank": "06",
+          "start": "0xAC65",
+          "length": 220
+        }
+      ]
     },
     {
       "path": "ai/airborne-threshold-948f.bin",
@@ -45,7 +66,14 @@
       "symbol": "tbl_948F",
       "layout": "airborne-ball chase thresholds by defense behavior",
       "length": 4,
-      "sha256": "34acab2f84f03e3fb6e0035785d3446d018635392abe960c70050a7a7e257ddf"
+      "sha256": "34acab2f84f03e3fb6e0035785d3446d018635392abe960c70050a7a7e257ddf",
+      "source_ranges": [
+        {
+          "bank": "03",
+          "start": "0x948F",
+          "length": 4
+        }
+      ]
     },
     {
       "path": "ai/close-owner-threshold-8525.bin",
@@ -56,7 +84,14 @@
       "symbol": "tbl_8525",
       "layout": "close-owner contact thresholds by defense behavior",
       "length": 4,
-      "sha256": "416e3c239e006197a56ee58b66d9c1b30f9366fc37cb55536b0d763f540c8577"
+      "sha256": "416e3c239e006197a56ee58b66d9c1b30f9366fc37cb55536b0d763f540c8577",
+      "source_ranges": [
+        {
+          "bank": "03",
+          "start": "0x8525",
+          "length": 4
+        }
+      ]
     },
     {
       "path": "ai/dead-ball-actions-832e-8339.bin",
@@ -67,7 +102,14 @@
       "symbol": "tbl_832E/tbl_8331/tbl_8334",
       "layout": "throw-in, corner-point and other dead-ball AI action ids",
       "length": 11,
-      "sha256": "eee267e68d266abf12297704b9106c026872e48d596ebad3794051ce3f284e42"
+      "sha256": "eee267e68d266abf12297704b9106c026872e48d596ebad3794051ce3f284e42",
+      "source_ranges": [
+        {
+          "bank": "03",
+          "start": "0x832E",
+          "length": 11
+        }
+      ]
     },
     {
       "path": "ai/direct-formation-86e6-8734.bin",
@@ -78,7 +120,14 @@
       "symbol": "tbl_86E6/off_86EC/off_8704/off_871C",
       "layout": "three formation pointers and four six-object coordinate planes per formation",
       "length": 78,
-      "sha256": "386e62b131587f108a87df36332e66fd5ce054f259fa50b585b2105b2e29f210"
+      "sha256": "386e62b131587f108a87df36332e66fd5ce054f259fa50b585b2105b2e29f210",
+      "source_ranges": [
+        {
+          "bank": "03",
+          "start": "0x86E6",
+          "length": 78
+        }
+      ]
     },
     {
       "path": "ai/direction-mask-thresholds-9aae.bin",
@@ -89,7 +138,14 @@
       "symbol": "tbl_9AAE/tbl_9AB6",
       "layout": "eight direction masks and four behavior thresholds",
       "length": 12,
-      "sha256": "171c4136cc5ac921c8924eebc9670a9a1690427d4cb4c62b3a71d0444b07686e"
+      "sha256": "171c4136cc5ac921c8924eebc9670a9a1690427d4cb4c62b3a71d0444b07686e",
+      "source_ranges": [
+        {
+          "bank": "03",
+          "start": "0x9AAE",
+          "length": 12
+        }
+      ]
     },
     {
       "path": "ai/distance-thresholds-9bc2.bin",
@@ -100,7 +156,14 @@
       "symbol": "tbl_9BC2",
       "layout": "sixteen movement-distance thresholds",
       "length": 16,
-      "sha256": "ecb99df2446a57a0f4dc1f3661cdcb54696096b9e8fbd39b8d62ea57108dbac3"
+      "sha256": "ecb99df2446a57a0f4dc1f3661cdcb54696096b9e8fbd39b8d62ea57108dbac3",
+      "source_ranges": [
+        {
+          "bank": "03",
+          "start": "0x9BC2",
+          "length": 16
+        }
+      ]
     },
     {
       "path": "ai/formation-bucket-a2f2-a2fb.bin",
@@ -111,7 +174,14 @@
       "symbol": "tbl_A2F2",
       "layout": "nine formation-position Y bucket bases",
       "length": 9,
-      "sha256": "9f606fcc25f0eedea0c863672796c6ca9ea3f64f29dbea702913998477a35f3c"
+      "sha256": "9f606fcc25f0eedea0c863672796c6ca9ea3f64f29dbea702913998477a35f3c",
+      "source_ranges": [
+        {
+          "bank": "03",
+          "start": "0xA2F2",
+          "length": 9
+        }
+      ]
     },
     {
       "path": "ai/formation-coordinate-b1f8-b76e.bin",
@@ -122,7 +192,14 @@
       "symbol": "tbl_B1F8/off_B1FE/off_B50A",
       "layout": "team formation selector pointers, 54-entry pointer rows and four-byte XY records",
       "length": 1398,
-      "sha256": "6dd9e1f3c0f701078dd7d2cc5ff1105d16778eda6d31115f08b12fbfd26d3b28"
+      "sha256": "6dd9e1f3c0f701078dd7d2cc5ff1105d16778eda6d31115f08b12fbfd26d3b28",
+      "source_ranges": [
+        {
+          "bank": "03",
+          "start": "0xB1F8",
+          "length": 1398
+        }
+      ]
     },
     {
       "path": "ai/formation-target-b76e-b999.bin",
@@ -133,7 +210,14 @@
       "symbol": "tbl_B76E/off_B7C6..off_B998",
       "layout": "formation/slot/behavior target pointer forest and fallback coordinate rows",
       "length": 555,
-      "sha256": "feaaaf7d9545beaeb6ef5f7c6ccf4ca47e809bc2d285f82e173ff2aabf69ce6b"
+      "sha256": "feaaaf7d9545beaeb6ef5f7c6ccf4ca47e809bc2d285f82e173ff2aabf69ce6b",
+      "source_ranges": [
+        {
+          "bank": "03",
+          "start": "0xB76E",
+          "length": 555
+        }
+      ]
     },
     {
       "path": "ai/goal-reference-90af-90b7.bin",
@@ -144,7 +228,14 @@
       "symbol": "tbl_90AF/tbl_90B0/tbl_90B1/tbl_90B2",
       "layout": "two side-specific four-byte goal reference points",
       "length": 8,
-      "sha256": "348a817854ec6f03a0a531432043c57e34bc0fd04bb3095ee28267eac03e0579"
+      "sha256": "348a817854ec6f03a0a531432043c57e34bc0fd04bb3095ee28267eac03e0579",
+      "source_ranges": [
+        {
+          "bank": "03",
+          "start": "0x90AF",
+          "length": 8
+        }
+      ]
     },
     {
       "path": "ai/goalie-random-threshold-8ac4.bin",
@@ -155,7 +246,14 @@
       "symbol": "tbl_8AC4",
       "layout": "goalie behavior random thresholds",
       "length": 4,
-      "sha256": "b5c959a088c0a4e1ac6214e1dbe79e72980ec1d081b07ae93e14a41a855f65e5"
+      "sha256": "b5c959a088c0a4e1ac6214e1dbe79e72980ec1d081b07ae93e14a41a855f65e5",
+      "source_ranges": [
+        {
+          "bank": "03",
+          "start": "0x8AC4",
+          "length": 4
+        }
+      ]
     },
     {
       "path": "ai/goalie-target-8901-89dd.bin",
@@ -166,7 +264,14 @@
       "symbol": "tbl_8901/off_8915..off_89B5/tbl_89D5..tbl_89DB",
       "layout": "goalie side/behavior pointer forest, target sectors and goal references",
       "length": 220,
-      "sha256": "8c71e03dc4cb18e20fd5d1d08786f8901e5facc95dc9924fbb9d86d613c9201b"
+      "sha256": "8c71e03dc4cb18e20fd5d1d08786f8901e5facc95dc9924fbb9d86d613c9201b",
+      "source_ranges": [
+        {
+          "bank": "03",
+          "start": "0x8901",
+          "length": 220
+        }
+      ]
     },
     {
       "path": "ai/high-ball-angle-window-9372-9382.bin",
@@ -177,7 +282,14 @@
       "symbol": "tbl_9372/loc_9376 opcode window",
       "layout": "angle threshold table plus source bytes reached by the preserved Y=0C read",
       "length": 16,
-      "sha256": "aa6cce81042a2335366e1eaba3579b26144960e99c566bcac712b077e1780bb2"
+      "sha256": "aa6cce81042a2335366e1eaba3579b26144960e99c566bcac712b077e1780bb2",
+      "source_ranges": [
+        {
+          "bank": "03",
+          "start": "0x9372",
+          "length": 16
+        }
+      ]
     },
     {
       "path": "ai/high-ball-threshold-936e.bin",
@@ -188,7 +300,14 @@
       "symbol": "tbl_936E",
       "layout": "high-ball chase thresholds by defense behavior",
       "length": 4,
-      "sha256": "c0ab3dc53378ad62faf1daac3bbd3b01916451883c4a7ffcbddf3182b2fd927b"
+      "sha256": "c0ab3dc53378ad62faf1daac3bbd3b01916451883c4a7ffcbddf3182b2fd927b",
+      "source_ranges": [
+        {
+          "bank": "03",
+          "start": "0x936E",
+          "length": 4
+        }
+      ]
     },
     {
       "path": "ai/keeper-point-952b-9533.bin",
@@ -199,7 +318,14 @@
       "symbol": "tbl_952B/tbl_952C/tbl_952D/tbl_952E",
       "layout": "two four-byte goalkeeper tactical target points",
       "length": 8,
-      "sha256": "a9437f5e6160b67e2cab701b53b3d572b13f910cfc97fdfbb37d88fb25fe26a4"
+      "sha256": "a9437f5e6160b67e2cab701b53b3d572b13f910cfc97fdfbb37d88fb25fe26a4",
+      "source_ranges": [
+        {
+          "bank": "03",
+          "start": "0x952B",
+          "length": 8
+        }
+      ]
     },
     {
       "path": "ai/keeper-pressure-a597-a59b.bin",
@@ -210,7 +336,14 @@
       "symbol": "tbl_A597",
       "layout": "goalkeeper pressure distance thresholds by defense behavior",
       "length": 4,
-      "sha256": "c81b7b2884dba4d46e64f90dcf972e553e684b9c6d0e682347b915c0acc88421"
+      "sha256": "c81b7b2884dba4d46e64f90dcf972e553e684b9c6d0e682347b915c0acc88421",
+      "source_ranges": [
+        {
+          "bank": "03",
+          "start": "0xA597",
+          "length": 4
+        }
+      ]
     },
     {
       "path": "ai/keeper-random-mask-a79e-a7a2.bin",
@@ -221,7 +354,14 @@
       "symbol": "tbl_A79E plus sub_A7A1 opcode byte",
       "layout": "keeper difficulty random masks including the intentional adjacent opcode read",
       "length": 4,
-      "sha256": "7c8a7e2af6f3fb71b616366a50217ae3d823a953c4159f143616c20fdd114dc7"
+      "sha256": "7c8a7e2af6f3fb71b616366a50217ae3d823a953c4159f143616c20fdd114dc7",
+      "source_ranges": [
+        {
+          "bank": "03",
+          "start": "0xA79E",
+          "length": 4
+        }
+      ]
     },
     {
       "path": "ai/nearby-angle-b014.bin",
@@ -232,7 +372,14 @@
       "symbol": "tbl_B014",
       "layout": "nearby-player absolute-axis angle offsets",
       "length": 32,
-      "sha256": "a3fdc9369a4e4526989455083d63a5cc851c935390ab38138971dbf1f71ab3be"
+      "sha256": "a3fdc9369a4e4526989455083d63a5cc851c935390ab38138971dbf1f71ab3be",
+      "source_ranges": [
+        {
+          "bank": "03",
+          "start": "0xB014",
+          "length": 32
+        }
+      ]
     },
     {
       "path": "ai/new-angle-b1ed.bin",
@@ -243,7 +390,14 @@
       "symbol": "tbl_B1ED",
       "layout": "combined XY direction bits to new-angle values",
       "length": 11,
-      "sha256": "32795290f965d01b1ccb6828e7312b27fddaeea93d928d0647b982b09521f852"
+      "sha256": "32795290f965d01b1ccb6828e7312b27fddaeea93d928d0647b982b09521f852",
+      "source_ranges": [
+        {
+          "bank": "03",
+          "start": "0xB1ED",
+          "length": 11
+        }
+      ]
     },
     {
       "path": "ai/object-shadow-offset-91cb-920b.bin",
@@ -254,7 +408,14 @@
       "symbol": "tbl_91CB/tbl_91DB/tbl_91EB/tbl_91FB",
       "layout": "sixteen-sector signed XY offsets for shadowing a selected object",
       "length": 64,
-      "sha256": "96dca7764c68012ab7775e8476ddf9e42c7845781e4a4c84f02e4aa404400353"
+      "sha256": "96dca7764c68012ab7775e8476ddf9e42c7845781e4a4c84f02e4aa404400353",
+      "source_ranges": [
+        {
+          "bank": "03",
+          "start": "0x91CB",
+          "length": 64
+        }
+      ]
     },
     {
       "path": "ai/owner-attack-lane-a587-a589.bin",
@@ -265,7 +426,14 @@
       "symbol": "tbl_A587",
       "layout": "side-specific owner X-high bytes for candidate AI selection",
       "length": 2,
-      "sha256": "9b4fb24edd6d1d8830e272398263cdbf026b97392cc35387b991dc0248a628f9"
+      "sha256": "9b4fb24edd6d1d8830e272398263cdbf026b97392cc35387b991dc0248a628f9",
+      "source_ranges": [
+        {
+          "bank": "03",
+          "start": "0xA587",
+          "length": 2
+        }
+      ]
     },
     {
       "path": "ai/owner-chase-target-84cd.bin",
@@ -276,7 +444,14 @@
       "symbol": "tbl_84CD",
       "layout": "paired teammate object ids for owner-chase AI classes 21 and 22",
       "length": 4,
-      "sha256": "3c42e1213d2c9b28a120ff748644524bb04f1d398de656443b3ab1f0191e9608"
+      "sha256": "3c42e1213d2c9b28a120ff748644524bb04f1d398de656443b3ab1f0191e9608",
+      "source_ranges": [
+        {
+          "bank": "03",
+          "start": "0x84CD",
+          "length": 4
+        }
+      ]
     },
     {
       "path": "ai/owner-offset-9841-985f.bin",
@@ -287,7 +462,14 @@
       "symbol": "tbl_9841/off_9847",
       "layout": "three shared owner-offset pointers and six signed XY offset records",
       "length": 30,
-      "sha256": "e93170f865974b83398dafd8250a14c447da9415f0fe68c0abd34f494957d1e5"
+      "sha256": "e93170f865974b83398dafd8250a14c447da9415f0fe68c0abd34f494957d1e5",
+      "source_ranges": [
+        {
+          "bank": "03",
+          "start": "0x9841",
+          "length": 30
+        }
+      ]
     },
     {
       "path": "ai/owner-pressure-threshold-85a8.bin",
@@ -298,7 +480,14 @@
       "symbol": "tbl_85A8",
       "layout": "owner-pressure action thresholds by defense behavior",
       "length": 4,
-      "sha256": "f3dfd540513814692edee7b7b8efd470d0c15432618878bb90d323cd2422500d"
+      "sha256": "f3dfd540513814692edee7b7b8efd470d0c15432618878bb90d323cd2422500d",
+      "source_ranges": [
+        {
+          "bank": "03",
+          "start": "0x85A8",
+          "length": 4
+        }
+      ]
     },
     {
       "path": "ai/owner-tactical-threshold-9729.bin",
@@ -309,7 +498,14 @@
       "symbol": "tbl_9729",
       "layout": "owner tactical distance thresholds by defense behavior",
       "length": 4,
-      "sha256": "ac8d3b3aa321b970d7d5423ff3ae6b41d0dc522f2a3aea19d3407e2e73116398"
+      "sha256": "ac8d3b3aa321b970d7d5423ff3ae6b41d0dc522f2a3aea19d3407e2e73116398",
+      "source_ranges": [
+        {
+          "bank": "03",
+          "start": "0x9729",
+          "length": 4
+        }
+      ]
     },
     {
       "path": "ai/pass-pressure-a2fb-a301.bin",
@@ -320,7 +516,14 @@
       "symbol": "tbl_A2FB/tbl_A2FF",
       "layout": "four defense-behavior lane thresholds and two attacking-side X-high bytes",
       "length": 6,
-      "sha256": "72aa164177fa0ae519659f00616dbe5784b7c52134fccea33d12f3cb40d9e221"
+      "sha256": "72aa164177fa0ae519659f00616dbe5784b7c52134fccea33d12f3cb40d9e221",
+      "source_ranges": [
+        {
+          "bank": "03",
+          "start": "0xA2FB",
+          "length": 6
+        }
+      ]
     },
     {
       "path": "ai/pass-target-a41b-a47d.bin",
@@ -331,7 +534,14 @@
       "symbol": "tbl_A41B/tbl_A45B/tbl_A45D",
       "layout": "default pass vectors, goal-side bytes and marked-target X offsets",
       "length": 98,
-      "sha256": "6dbc9dc19df45de081a14507d13424dae7d5b2784870b68009f323414ba3b5bf"
+      "sha256": "6dbc9dc19df45de081a14507d13424dae7d5b2784870b68009f323414ba3b5bf",
+      "source_ranges": [
+        {
+          "bank": "06",
+          "start": "0xA41B",
+          "length": 98
+        }
+      ]
     },
     {
       "path": "animation/ball-b371-b429.bin",
@@ -342,7 +552,14 @@
       "symbol": "off_B371_00",
       "layout": "ball animation dispatch pointers and scripts",
       "length": 184,
-      "sha256": "4fa70b239d157255550dac423724bbc699138928152afc53b68917c3bb119470"
+      "sha256": "4fa70b239d157255550dac423724bbc699138928152afc53b68917c3bb119470",
+      "source_ranges": [
+        {
+          "bank": "02",
+          "start": "0xB371",
+          "length": 184
+        }
+      ]
     },
     {
       "path": "animation/ball-end-motion-b272.bin",
@@ -353,7 +570,14 @@
       "symbol": "tbl_B272",
       "layout": "16 ball animation-end motion transitions",
       "length": 16,
-      "sha256": "a5ad8264c54a43fa55be2eb0d8d44329d16c85871b73a3921478bbe6b0a2c76d"
+      "sha256": "a5ad8264c54a43fa55be2eb0d8d44329d16c85871b73a3921478bbe6b0a2c76d",
+      "source_ranges": [
+        {
+          "bank": "02",
+          "start": "0xB272",
+          "length": 16
+        }
+      ]
     },
     {
       "path": "animation/ball-sprite-bank-bf13-bf23.bin",
@@ -364,7 +588,14 @@
       "symbol": "tbl_BF13/tbl_BF1B",
       "layout": "eight animation thresholds followed by eight sprite-bank ids",
       "length": 16,
-      "sha256": "9bceda9f56759c8b5467d8874d712e3b36252d6047ea0ce62976ca62ed8304c7"
+      "sha256": "9bceda9f56759c8b5467d8874d712e3b36252d6047ea0ce62976ca62ed8304c7",
+      "source_ranges": [
+        {
+          "bank": "03",
+          "start": "0xBF13",
+          "length": 16
+        }
+      ]
     },
     {
       "path": "animation/credits-score-motion-bb21-bb2a.bin",
@@ -375,7 +606,14 @@
       "symbol": "tbl_BB21",
       "layout": "three actor motions for each ending score card",
       "length": 9,
-      "sha256": "799d892e0108927d7f4a604c782ffc3821c2f37254d241277597a7a3b056d8f0"
+      "sha256": "799d892e0108927d7f4a604c782ffc3821c2f37254d241277597a7a3b056d8f0",
+      "source_ranges": [
+        {
+          "bank": "02",
+          "start": "0xBB21",
+          "length": 9
+        }
+      ]
     },
     {
       "path": "animation/field-marker-cd1f-cd2f.bin",
@@ -386,7 +624,14 @@
       "symbol": "tbl_CD1F/tbl_CD23/tbl_CD29",
       "layout": "field-marker minimap origins, animation ids and controlled-object selectors",
       "length": 16,
-      "sha256": "01291bc5a3a2e27a5d801a29ec28ae4a9eb8b471fdbdfbc17c8bd1a6ffb8b750"
+      "sha256": "01291bc5a3a2e27a5d801a29ec28ae4a9eb8b471fdbdfbc17c8bd1a6ffb8b750",
+      "source_ranges": [
+        {
+          "bank": "07",
+          "start": "0xCD1F",
+          "length": 16
+        }
+      ]
     },
     {
       "path": "animation/player-a5c6-aa14.bin",
@@ -397,7 +642,14 @@
       "symbol": "off_A5C6",
       "layout": "player animation dispatch pointers and scripts",
       "length": 1102,
-      "sha256": "d7db9be68dce5ed779799b4d08e67ab3a77de8deff70299873fab0950ca102d5"
+      "sha256": "d7db9be68dce5ed779799b4d08e67ab3a77de8deff70299873fab0950ca102d5",
+      "source_ranges": [
+        {
+          "bank": "06",
+          "start": "0xA5C6",
+          "length": 1102
+        }
+      ]
     },
     {
       "path": "animation/player-angle-subtype-a287.bin",
@@ -408,7 +660,14 @@
       "symbol": "tbl_A287",
       "layout": "animation subtypes selected by the high three new-angle bits",
       "length": 8,
-      "sha256": "7436fb7b8ff38c3106062cd8f4d56320e9e0a77554afc7e1cb73c0d88671779a"
+      "sha256": "7436fb7b8ff38c3106062cd8f4d56320e9e0a77554afc7e1cb73c0d88671779a",
+      "source_ranges": [
+        {
+          "bank": "06",
+          "start": "0xA287",
+          "length": 8
+        }
+      ]
     },
     {
       "path": "animation/player-ball-z-subtype-a2cd.bin",
@@ -419,7 +678,14 @@
       "symbol": "tbl_A2CD",
       "layout": "ball/player Z thresholds selected by player action class",
       "length": 4,
-      "sha256": "c3f35ab90907139b3e26a67b021d5e4747efb0fc7a323baadd55d2f7852780ca"
+      "sha256": "c3f35ab90907139b3e26a67b021d5e4747efb0fc7a323baadd55d2f7852780ca",
+      "source_ranges": [
+        {
+          "bank": "06",
+          "start": "0xA2CD",
+          "length": 4
+        }
+      ]
     },
     {
       "path": "animation/player-end-fallback-8bcd.bin",
@@ -430,7 +696,14 @@
       "symbol": "tbl_8BCD",
       "layout": "animation-end fallback motion values",
       "length": 8,
-      "sha256": "18bf979eead834cee409f4ba8c69fc644c507ac5bce244df6c2c0586c31594f7"
+      "sha256": "18bf979eead834cee409f4ba8c69fc644c507ac5bce244df6c2c0586c31594f7",
+      "source_ranges": [
+        {
+          "bank": "06",
+          "start": "0x8BCD",
+          "length": 8
+        }
+      ]
     },
     {
       "path": "animation/player-end-motion-8bd5.bin",
@@ -441,7 +714,14 @@
       "symbol": "tbl_8BD5",
       "layout": "93 animation-end motion transitions",
       "length": 93,
-      "sha256": "9a23eb12d9e3f3fe94d7c60e1c299505067828bf3f18f6ae7e93e7256c0f675a"
+      "sha256": "9a23eb12d9e3f3fe94d7c60e1c299505067828bf3f18f6ae7e93e7256c0f675a",
+      "source_ranges": [
+        {
+          "bank": "06",
+          "start": "0x8BD5",
+          "length": 93
+        }
+      ]
     },
     {
       "path": "animation/player-motion16-side-83bf.bin",
@@ -452,7 +732,14 @@
       "symbol": "tbl_83BF",
       "layout": "two animation-subtype to side-control bytes",
       "length": 2,
-      "sha256": "8509b81230019d2ad970d970f791dfbdc8caf54f5c594fcd327cef9feed206c1"
+      "sha256": "8509b81230019d2ad970d970f791dfbdc8caf54f5c594fcd327cef9feed206c1",
+      "source_ranges": [
+        {
+          "bank": "06",
+          "start": "0x83BF",
+          "length": 2
+        }
+      ]
     },
     {
       "path": "animation/player-motion1a-direction-81a5.bin",
@@ -463,7 +750,14 @@
       "symbol": "tbl_81A5",
       "layout": "two player-X-side to facing bytes",
       "length": 2,
-      "sha256": "085edad400785fca7e7e90b1fac4beb776fc2beee5aa24352d5f39b5d57efcad"
+      "sha256": "085edad400785fca7e7e90b1fac4beb776fc2beee5aa24352d5f39b5d57efcad",
+      "source_ranges": [
+        {
+          "bank": "06",
+          "start": "0x81A5",
+          "length": 2
+        }
+      ]
     },
     {
       "path": "animation/player-order-91f0-924d.bin",
@@ -474,7 +768,14 @@
       "symbol": "tbl_91F0/tbl_91F4/off_9208..off_9244",
       "layout": "player-order actor animation pointer forest and duration/frame scripts",
       "length": 93,
-      "sha256": "7fcf7446deac234f88b89e21d98d32c4e7853e414aa2a6011a8ed39fa52f0197"
+      "sha256": "7fcf7446deac234f88b89e21d98d32c4e7853e414aa2a6011a8ed39fa52f0197",
+      "source_ranges": [
+        {
+          "bank": "05",
+          "start": "0x91F0",
+          "length": 93
+        }
+      ]
     },
     {
       "path": "animation/player-team-subtype-a242.bin",
@@ -485,7 +786,14 @@
       "symbol": "tbl_A242",
       "layout": "animation subtypes selected by team formation slot",
       "length": 6,
-      "sha256": "7a36b48f398dcb75cdb66fd1484fd1b17ab56e818815eaaf7524e0e5fbf05b26"
+      "sha256": "7a36b48f398dcb75cdb66fd1484fd1b17ab56e818815eaaf7524e0e5fbf05b26",
+      "source_ranges": [
+        {
+          "bank": "06",
+          "start": "0xA242",
+          "length": 6
+        }
+      ]
     },
     {
       "path": "animation/prematch-8fe0-8ff9.bin",
@@ -496,7 +804,14 @@
       "symbol": "tbl_8FE0/tbl_8FE2/off_8FEC..off_8FF4",
       "layout": "prematch animation pointer table and duration/frame bytecode",
       "length": 25,
-      "sha256": "d1631b055c497ac2d10970cc883221af5d604ccfc0d80d1cb79962bef0070cbd"
+      "sha256": "d1631b055c497ac2d10970cc883221af5d604ccfc0d80d1cb79962bef0070cbd",
+      "source_ranges": [
+        {
+          "bank": "05",
+          "start": "0x8FE0",
+          "length": 25
+        }
+      ]
     },
     {
       "path": "animation/splash-juggle-af60-af6a.bin",
@@ -507,7 +822,14 @@
       "symbol": "tbl_AF60",
       "layout": "five attract-scene Z-threshold and direction pairs",
       "length": 10,
-      "sha256": "2c3bef1b3303c3f6051c72e3a0e2e76a327ca0ee3149de796bf82d7c5042069c"
+      "sha256": "2c3bef1b3303c3f6051c72e3a0e2e76a327ca0ee3149de796bf82d7c5042069c",
+      "source_ranges": [
+        {
+          "bank": "02",
+          "start": "0xAF60",
+          "length": 10
+        }
+      ]
     },
     {
       "path": "animation/splash-logo-ae29.bin",
@@ -518,7 +840,14 @@
       "symbol": "tbl_AE29",
       "layout": "10 animation/timer pairs",
       "length": 20,
-      "sha256": "a5de360b039913a80631645f6cc5a7f5985cd873e8952d2ae2cdfab7d0e48d43"
+      "sha256": "a5de360b039913a80631645f6cc5a7f5985cd873e8952d2ae2cdfab7d0e48d43",
+      "source_ranges": [
+        {
+          "bank": "02",
+          "start": "0xAE29",
+          "length": 20
+        }
+      ]
     },
     {
       "path": "animation/splash-scene-motion-adfd-ae01.bin",
@@ -529,7 +858,14 @@
       "symbol": "tbl_ADFD",
       "layout": "Kunio attract-scene entry motions",
       "length": 4,
-      "sha256": "766235a9527103753566afe2081f145784cc7cb6febd31a4a3dc5c2057d4c81b"
+      "sha256": "766235a9527103753566afe2081f145784cc7cb6febd31a4a3dc5c2057d4c81b",
+      "source_ranges": [
+        {
+          "bank": "02",
+          "start": "0xADFD",
+          "length": 4
+        }
+      ]
     },
     {
       "path": "animation/splash-title-bounce-b06f.bin",
@@ -540,7 +876,14 @@
       "symbol": "tbl_B06F",
       "layout": "title football bounce animation records",
       "length": 28,
-      "sha256": "afba0ce4182c52c2b4b0579a08f6b8092603936c456f0a58e8da5bd34e345f6f"
+      "sha256": "afba0ce4182c52c2b4b0579a08f6b8092603936c456f0a58e8da5bd34e345f6f",
+      "source_ranges": [
+        {
+          "bank": "02",
+          "start": "0xB06F",
+          "length": 28
+        }
+      ]
     },
     {
       "path": "animation/sprite-renderer-82c6-af8d.bin",
@@ -551,7 +894,14 @@
       "symbol": "tbl_82C6..off_AF8D",
       "layout": "bank04 face tiles, object palettes, group/frame pointers and shared metasprite arrays",
       "length": 11463,
-      "sha256": "18daba398e8ebf3014766a8e399e79a89c931d0f5ea3005f842108aafe4451ab"
+      "sha256": "18daba398e8ebf3014766a8e399e79a89c931d0f5ea3005f842108aafe4451ab",
+      "source_ranges": [
+        {
+          "bank": "04",
+          "start": "0x82C6",
+          "length": 11463
+        }
+      ]
     },
     {
       "path": "animation/super-be0c-bf79.bin",
@@ -562,7 +912,14 @@
       "symbol": "tbl_BE0C",
       "layout": "special-shot animation dispatch pointers and scripts",
       "length": 365,
-      "sha256": "12e0726faf6edb2a8138499275629fce3cfea3ccd9cc934951b20b4d419163e2"
+      "sha256": "12e0726faf6edb2a8138499275629fce3cfea3ccd9cc934951b20b4d419163e2",
+      "source_ranges": [
+        {
+          "bank": "04",
+          "start": "0xBE0C",
+          "length": 365
+        }
+      ]
     },
     {
       "path": "animation/victory-bytecode-b95a-ba66.bin",
@@ -573,7 +930,14 @@
       "symbol": "off_B95A..off_BA61",
       "layout": "address-indexed victory animation bytecode",
       "length": 268,
-      "sha256": "5c3a8e44222d92d4bfbfdee16d85ac27c5d790a8551ade6380e8cc44e0ae9467"
+      "sha256": "5c3a8e44222d92d4bfbfdee16d85ac27c5d790a8551ade6380e8cc44e0ae9467",
+      "source_ranges": [
+        {
+          "bank": "02",
+          "start": "0xB95A",
+          "length": 268
+        }
+      ]
     },
     {
       "path": "animation/victory-motion-end-b8b2-b8dd.bin",
@@ -584,7 +948,14 @@
       "symbol": "tbl_B8B2",
       "layout": "43 victory motion-end transitions",
       "length": 43,
-      "sha256": "b4d4432ae8134c03700511348342eebeb01a51f6870eb7da899349a2360f5231"
+      "sha256": "b4d4432ae8134c03700511348342eebeb01a51f6870eb7da899349a2360f5231",
+      "source_ranges": [
+        {
+          "bank": "02",
+          "start": "0xB8B2",
+          "length": 43
+        }
+      ]
     },
     {
       "path": "animation/victory-paired-motion-b8dd-b8e5.bin",
@@ -595,7 +966,14 @@
       "symbol": "tbl_B8DD",
       "layout": "four paired victory motion transitions",
       "length": 8,
-      "sha256": "0bc09b8dc54727018a5fbfd7c64bac6c731a7b2e33bdaeabf9db173d0d5af767"
+      "sha256": "0bc09b8dc54727018a5fbfd7c64bac6c731a7b2e33bdaeabf9db173d0d5af767",
+      "source_ranges": [
+        {
+          "bank": "02",
+          "start": "0xB8DD",
+          "length": 8
+        }
+      ]
     },
     {
       "path": "animation/victory-pointers-b904-b95a.bin",
@@ -606,7 +984,14 @@
       "symbol": "tbl_B904",
       "layout": "43 little-endian victory animation pointers",
       "length": 86,
-      "sha256": "1cc3d3dcd7ccf84ed07f85d1835de68ecf0a0f51b4e21343ecf8543c3d7fbdbd"
+      "sha256": "1cc3d3dcd7ccf84ed07f85d1835de68ecf0a0f51b4e21343ecf8543c3d7fbdbd",
+      "source_ranges": [
+        {
+          "bank": "02",
+          "start": "0xB904",
+          "length": 86
+        }
+      ]
     },
     {
       "path": "audio/dpcm.bin",
@@ -639,7 +1024,14 @@
       "symbol": "off_EA1A",
       "layout": "37 eight-byte background upload records",
       "length": 296,
-      "sha256": "efffdb72c144011df1cc399681e5d8fbe54934e37e09ea6810a99eba60eca8ca"
+      "sha256": "efffdb72c144011df1cc399681e5d8fbe54934e37e09ea6810a99eba60eca8ca",
+      "source_ranges": [
+        {
+          "bank": "07",
+          "start": "0xEA1A",
+          "length": 296
+        }
+      ]
     },
     {
       "path": "background/upload-shared-player-y-speed-high-e828-e9f8.bin",
@@ -653,6 +1045,24 @@
       "sha256": "7f73d3f04e1981b9881d2849fd958ce1c8e493a0a405ec5acb3e3d5c6dc41866"
     },
     {
+      "path": "camera/field-boundary-c873-c87b.bin",
+      "category": "camera",
+      "source": "src/bank_FF.asm:C873",
+      "bank": "07",
+      "address": "0xC873",
+      "symbol": "tbl_C873..tbl_C878",
+      "layout": "left/right camera limits and signed eight-pixel correction words",
+      "length": 8,
+      "sha256": "e1dd4eadb0f31fd2f972cd1b1f40aeb11f79a088fc7076fe39a1ed722702c400",
+      "source_ranges": [
+        {
+          "bank": "07",
+          "start": "0xC873",
+          "length": 8
+        }
+      ]
+    },
+    {
       "path": "collision/boxes-b643-b7ba.bin",
       "category": "collision",
       "source": "src/bank_06.asm:B643",
@@ -661,7 +1071,14 @@
       "symbol": "off_B643/off_B65C/off_B6BE/off_B706..off_B7B5",
       "layout": "subtype/frame pointer forests and five-byte collision boxes",
       "length": 375,
-      "sha256": "287e6f93be43e042558c6561a4ae72495cf59d9197e2490f1f7bbff64265fcc1"
+      "sha256": "287e6f93be43e042558c6561a4ae72495cf59d9197e2490f1f7bbff64265fcc1",
+      "source_ranges": [
+        {
+          "bank": "06",
+          "start": "0xB643",
+          "length": 375
+        }
+      ]
     },
     {
       "path": "collision/impact-speed-bc3c-bc64.bin",
@@ -672,7 +1089,14 @@
       "symbol": "tbl_BC3C/tbl_BC4C/tbl_BC5C",
       "layout": "collision Z/Y impulse pairs and X inversion/shift controls",
       "length": 40,
-      "sha256": "8a2c14db93dc413015c24ad589feedfed703e112505ffd9648f9e31c005fef20"
+      "sha256": "8a2c14db93dc413015c24ad589feedfed703e112505ffd9648f9e31c005fef20",
+      "source_ranges": [
+        {
+          "bank": "06",
+          "start": "0xBC3C",
+          "length": 40
+        }
+      ]
     },
     {
       "path": "collision/opposite-contact-9e6b-9e71.bin",
@@ -683,7 +1107,14 @@
       "symbol": "tbl_9E6B/tbl_9E6D",
       "layout": "opposite-player goal-line X values and formation-script variants",
       "length": 6,
-      "sha256": "849e38fa9117dd7aa0a3f0a830e51b21c803a2dd18fa370d4d975b1cbef90f5f"
+      "sha256": "849e38fa9117dd7aa0a3f0a830e51b21c803a2dd18fa370d4d975b1cbef90f5f",
+      "source_ranges": [
+        {
+          "bank": "06",
+          "start": "0x9E6B",
+          "length": 6
+        }
+      ]
     },
     {
       "path": "collision/opposite-contact-effects-9e9d-9ea5.bin",
@@ -694,7 +1125,14 @@
       "symbol": "tbl_9E9D/tbl_9E9E/tbl_9E9F/tbl_9EA0",
       "layout": "opposite-player contact damage, HP bonus and sound records",
       "length": 8,
-      "sha256": "dbfa3d134a293a658752080fd259dd9ebdf4975fd197f1d0aed94d1927e908e1"
+      "sha256": "dbfa3d134a293a658752080fd259dd9ebdf4975fd197f1d0aed94d1927e908e1",
+      "source_ranges": [
+        {
+          "bank": "06",
+          "start": "0x9E9D",
+          "length": 8
+        }
+      ]
     },
     {
       "path": "collision/selectors-b53b-b643.bin",
@@ -705,7 +1143,14 @@
       "symbol": "tbl_B53B/off_B551/off_B60B/off_B639",
       "layout": "contact priority and player/ball/weather collision selectors",
       "length": 264,
-      "sha256": "d6fafbdf524a65767ac76c8081e37e1b212c6dd7278f735c1401cf5e76f32af2"
+      "sha256": "d6fafbdf524a65767ac76c8081e37e1b212c6dd7278f735c1401cf5e76f32af2",
+      "source_ranges": [
+        {
+          "bank": "06",
+          "start": "0xB53B",
+          "length": 264
+        }
+      ]
     },
     {
       "path": "collision/super-ball-contact-b030-b044.bin",
@@ -716,7 +1161,14 @@
       "symbol": "tbl_B030/tbl_B03C/tbl_B040",
       "layout": "super-ball damage/reaction/sound records and keeper defense thresholds",
       "length": 20,
-      "sha256": "0bdee31fcbe4745b028101533ce649aeba6bdf03d64b9afdd6a131b2c979a585"
+      "sha256": "0bdee31fcbe4745b028101533ce649aeba6bdf03d64b9afdd6a131b2c979a585",
+      "source_ranges": [
+        {
+          "bank": "06",
+          "start": "0xB030",
+          "length": 20
+        }
+      ]
     },
     {
       "path": "collision/weather-motion-b2f9-b301.bin",
@@ -727,7 +1179,14 @@
       "symbol": "tbl_B2F9",
       "layout": "weather-effect collision actions for players and ball",
       "length": 8,
-      "sha256": "42c4dddd1af4267820635de5a2d2646209a51a6f6c2fd55c30bdf41e05bd69c2"
+      "sha256": "42c4dddd1af4267820635de5a2d2646209a51a6f6c2fd55c30bdf41e05bd69c2",
+      "source_ranges": [
+        {
+          "bank": "06",
+          "start": "0xB2F9",
+          "length": 8
+        }
+      ]
     },
     {
       "path": "compatibility/host-kickoff-defaults-v1.bin",
@@ -749,7 +1208,14 @@
       "symbol": "tbl_B09D",
       "layout": "15 little-endian u16 handler addresses",
       "length": 30,
-      "sha256": "66049f1de559e482ab236c56075a019155c7e5c70e7925f26542f0ab35d6bede"
+      "sha256": "66049f1de559e482ab236c56075a019155c7e5c70e7925f26542f0ab35d6bede",
+      "source_ranges": [
+        {
+          "bank": "02",
+          "start": "0xB09D",
+          "length": 30
+        }
+      ]
     },
     {
       "path": "dispatch/ball-object-motion-8caf.bin",
@@ -760,7 +1226,14 @@
       "symbol": "tbl_8CAF",
       "layout": "25 little-endian live ball-object handler addresses",
       "length": 50,
-      "sha256": "e89742cb1161340bfbb98710b35a07c26bb4ece3aa11ceb77ffe12b86ea7f11d"
+      "sha256": "e89742cb1161340bfbb98710b35a07c26bb4ece3aa11ceb77ffe12b86ea7f11d",
+      "source_ranges": [
+        {
+          "bank": "06",
+          "start": "0x8CAF",
+          "length": 50
+        }
+      ]
     },
     {
       "path": "dispatch/bot-ai-8359.bin",
@@ -771,7 +1244,14 @@
       "symbol": "tbl_8359",
       "layout": "44 little-endian u16 handler addresses",
       "length": 88,
-      "sha256": "e158144908816df2e32d9c6383b257ddffaf4b7c18ce349c733154086d36af52"
+      "sha256": "e158144908816df2e32d9c6383b257ddffaf4b7c18ce349c733154086d36af52",
+      "source_ranges": [
+        {
+          "bank": "03",
+          "start": "0x8359",
+          "length": 88
+        }
+      ]
     },
     {
       "path": "dispatch/player-main-motion-803f.bin",
@@ -782,7 +1262,14 @@
       "symbol": "tbl_803F",
       "layout": "93 little-endian u16 handler addresses",
       "length": 186,
-      "sha256": "1ac5b2a8dfb63832622ddda1f708424a2b4cf759bce28821cebc4055a443d996"
+      "sha256": "1ac5b2a8dfb63832622ddda1f708424a2b4cf759bce28821cebc4055a443d996",
+      "source_ranges": [
+        {
+          "bank": "06",
+          "start": "0x803F",
+          "length": 186
+        }
+      ]
     },
     {
       "path": "dispatch/player-motion-z-select-8a02.bin",
@@ -793,7 +1280,14 @@
       "symbol": "tbl_8A02/tbl_8A03",
       "layout": "Z-height threshold plus two selected motions",
       "length": 3,
-      "sha256": "1a0f55215777730387a83e1a66a25bb2eb37c6558d5640825e12483493bade66"
+      "sha256": "1a0f55215777730387a83e1a66a25bb2eb37c6558d5640825e12483493bade66",
+      "source_ranges": [
+        {
+          "bank": "06",
+          "start": "0x8A02",
+          "length": 3
+        }
+      ]
     },
     {
       "path": "dispatch/team-order-8df5-8eb5.bin",
@@ -804,7 +1298,14 @@
       "symbol": "tbl_8DF5/off_8E15/off_8E35/off_8E55/off_8E75/off_8E95",
       "layout": "sixteen team-to-table pointers and five sixteen-entry action-pointer rows",
       "length": 192,
-      "sha256": "1f5978b5eebcb3829dd29fae9b6ec9db55f72b6dfffc5632a3a4e84247a63a19"
+      "sha256": "1f5978b5eebcb3829dd29fae9b6ec9db55f72b6dfffc5632a3a4e84247a63a19",
+      "source_ranges": [
+        {
+          "bank": "03",
+          "start": "0x8DF5",
+          "length": 192
+        }
+      ]
     },
     {
       "path": "dispatch/victory-motion-b6ef-b745.bin",
@@ -815,7 +1316,14 @@
       "symbol": "tbl_B6EF",
       "layout": "43 little-endian victory motion handlers",
       "length": 86,
-      "sha256": "d1cc01b3ca85c83c2e39f26ecb91aaf5a53ad9e29ba34bdf3cef8a99a5ee679e"
+      "sha256": "d1cc01b3ca85c83c2e39f26ecb91aaf5a53ad9e29ba34bdf3cef8a99a5ee679e",
+      "source_ranges": [
+        {
+          "bank": "02",
+          "start": "0xB6EF",
+          "length": 86
+        }
+      ]
     },
     {
       "path": "field/bank01-address-image-8000-c000.bin",
@@ -826,7 +1334,14 @@
       "symbol": "bank_01 address image",
       "layout": "complete bank_01 CPU address image used by the field surface pointer traversal",
       "length": 16384,
-      "sha256": "b157d2a9149096d542ce3fe80a87990f4ded831266e9ff9696927b6a0195e311"
+      "sha256": "b157d2a9149096d542ce3fe80a87990f4ded831266e9ff9696927b6a0195e311",
+      "source_ranges": [
+        {
+          "bank": "01",
+          "start": "0x8000",
+          "length": 16384
+        }
+      ]
     },
     {
       "path": "field/bank02-address-image-8000-c000.bin",
@@ -837,7 +1352,14 @@
       "symbol": "bank_02 address image",
       "layout": "complete bank_02 CPU address image selected by ram_номер_prg_банка for field surface traversal",
       "length": 16384,
-      "sha256": "0730ab4281edb6524edbdf543ab0a3eacd5b77ff61ebb46f568264e2f94dbe73"
+      "sha256": "0730ab4281edb6524edbdf543ab0a3eacd5b77ff61ebb46f568264e2f94dbe73",
+      "source_ranges": [
+        {
+          "bank": "02",
+          "start": "0x8000",
+          "length": 16384
+        }
+      ]
     },
     {
       "path": "field/goal-particles-dddb-de0b.bin",
@@ -848,7 +1370,14 @@
       "symbol": "tbl_DDDB/tbl_DDE7/tbl_DDF3/tbl_DDFF",
       "layout": "twelve goal-particle X, Y, gravity and tile rows",
       "length": 48,
-      "sha256": "ad24966ce5d8ed55721810249a4360685bb2e58ef2e64786ee1fd26c1feca722"
+      "sha256": "ad24966ce5d8ed55721810249a4360685bb2e58ef2e64786ee1fd26c1feca722",
+      "source_ranges": [
+        {
+          "bank": "07",
+          "start": "0xDDDB",
+          "length": 48
+        }
+      ]
     },
     {
       "path": "field/surface-bcc8-bd38.bin",
@@ -859,7 +1388,14 @@
       "symbol": "tbl_BCC8..tbl_BD19",
       "layout": "surface profiles, controller rows, wetness and team formation data",
       "length": 112,
-      "sha256": "c24037646742d7e4cc8b94267368074701df827c122a35c7ee1bc68b23c8660c"
+      "sha256": "c24037646742d7e4cc8b94267368074701df827c122a35c7ee1bc68b23c8660c",
+      "source_ranges": [
+        {
+          "bank": "05",
+          "start": "0xBCC8",
+          "length": 112
+        }
+      ]
     },
     {
       "path": "field/tornado-anchor-ba1d-ba2d.bin",
@@ -870,7 +1406,14 @@
       "symbol": "tbl_BA1D/tbl_BA25",
       "layout": "eight camera-relative X offsets followed by eight Y offsets",
       "length": 16,
-      "sha256": "561398299bdce549a6ca2f3d457ea76c853ddfdd5204f7d3f222312a2bf19dea"
+      "sha256": "561398299bdce549a6ca2f3d457ea76c853ddfdd5204f7d3f222312a2bf19dea",
+      "source_ranges": [
+        {
+          "bank": "01",
+          "start": "0xBA1D",
+          "length": 16
+        }
+      ]
     },
     {
       "path": "field/tornado-flash-bb2d-bb3d.bin",
@@ -881,7 +1424,14 @@
       "symbol": "tbl_BB2D/tbl_BB35",
       "layout": "eight sprite-palette flash bytes followed by eight field-palette bytes",
       "length": 16,
-      "sha256": "bc2fe178c0c3e3be1dcf6689d61e284beccd0bf9f03ed34409155d652e59c501"
+      "sha256": "bc2fe178c0c3e3be1dcf6689d61e284beccd0bf9f03ed34409155d652e59c501",
+      "source_ranges": [
+        {
+          "bank": "01",
+          "start": "0xBB2D",
+          "length": 16
+        }
+      ]
     },
     {
       "path": "field/weather-ba8e-bb47.bin",
@@ -892,7 +1442,14 @@
       "symbol": "tbl_BA8E..tbl_BB33",
       "layout": "continent, surface and weather selector pointer forest",
       "length": 185,
-      "sha256": "fd65d81b45fcf934e7d977fd36069915efc066bd57892ca9cd14365a04e5e11d"
+      "sha256": "fd65d81b45fcf934e7d977fd36069915efc066bd57892ca9cd14365a04e5e11d",
+      "source_ranges": [
+        {
+          "bank": "05",
+          "start": "0xBA8E",
+          "length": 185
+        }
+      ]
     },
     {
       "path": "field/weather-event-threshold-bc80-bc84.bin",
@@ -903,7 +1460,14 @@
       "symbol": "tbl_BC80",
       "layout": "lightning and tornado random thresholds by option intensity",
       "length": 4,
-      "sha256": "ae393e123798f67867297c1075441135b63fa2c7a83c30f4b9dcc3b096b0c238"
+      "sha256": "ae393e123798f67867297c1075441135b63fa2c7a83c30f4b9dcc3b096b0c238",
+      "source_ranges": [
+        {
+          "bank": "03",
+          "start": "0xBC80",
+          "length": 4
+        }
+      ]
     },
     {
       "path": "field/weather-lightning-dca5-dcb1.bin",
@@ -914,7 +1478,14 @@
       "symbol": "tbl_DCA5",
       "layout": "twelve lightning particle initial-state bytes",
       "length": 12,
-      "sha256": "a34d0eb6f950ac116384a0317720d56414d5eb8ea8173bc3ea6cd8eb30d773d9"
+      "sha256": "a34d0eb6f950ac116384a0317720d56414d5eb8ea8173bc3ea6cd8eb30d773d9",
+      "source_ranges": [
+        {
+          "bank": "07",
+          "start": "0xDCA5",
+          "length": 12
+        }
+      ]
     },
     {
       "path": "field/weather-pull-force-b44e-b46e.bin",
@@ -925,7 +1496,14 @@
       "symbol": "tbl_B44E/tbl_B44F",
       "layout": "sixteen little-endian attraction forces by distance, object and state",
       "length": 32,
-      "sha256": "7a3312c8704a1e907a3790fc79e3b6488fd429204d26b3c684ce53b3816d1f66"
+      "sha256": "7a3312c8704a1e907a3790fc79e3b6488fd429204d26b3c684ce53b3816d1f66",
+      "source_ranges": [
+        {
+          "bank": "04",
+          "start": "0xB44E",
+          "length": 32
+        }
+      ]
     },
     {
       "path": "field/weather-rain-code-stream-d891-d991.bin",
@@ -936,7 +1514,14 @@
       "symbol": "tbl_D891/sub_D891 byte stream",
       "layout": "256 source bytes intentionally indexed by the rain NMI routine",
       "length": 256,
-      "sha256": "22ac6d24e4f8b94d4973b65385ff7d25f975184f985cbad91f2fb19e806a5081"
+      "sha256": "22ac6d24e4f8b94d4973b65385ff7d25f975184f985cbad91f2fb19e806a5081",
+      "source_ranges": [
+        {
+          "bank": "07",
+          "start": "0xD891",
+          "length": 256
+        }
+      ]
     },
     {
       "path": "field/weather-tornado-da46-da81.bin",
@@ -947,7 +1532,14 @@
       "symbol": "tbl_DA46/tbl_DA52/tbl_DA5E/tbl_DA6A/tbl_DA76",
       "layout": "tornado X chains, initial Y, tile and phase-offset tables",
       "length": 59,
-      "sha256": "e8331d149da1b5296dbe55c39b8e88d687985c212d54799697dd9bd64550a8dc"
+      "sha256": "e8331d149da1b5296dbe55c39b8e88d687985c212d54799697dd9bd64550a8dc",
+      "source_ranges": [
+        {
+          "bank": "07",
+          "start": "0xDA46",
+          "length": 59
+        }
+      ]
     },
     {
       "path": "field/weather-wind-bb7a-bb84.bin",
@@ -958,7 +1550,14 @@
       "symbol": "tbl_BB7A",
       "layout": "wind strength bytes selected by rain/wind option and RNG sign",
       "length": 10,
-      "sha256": "e9eb27303041ea207c885a88b72db15d56c88c0b15374cbf5242d26dfa892540"
+      "sha256": "e9eb27303041ea207c885a88b72db15d56c88c0b15374cbf5242d26dfa892540",
+      "source_ranges": [
+        {
+          "bank": "05",
+          "start": "0xBB7A",
+          "length": 10
+        }
+      ]
     },
     {
       "path": "field/wind-vector-b48e-b4b2.bin",
@@ -969,7 +1568,14 @@
       "symbol": "tbl_B48E/tbl_B492",
       "layout": "wind strength bands and eight signed XY direction vectors",
       "length": 36,
-      "sha256": "57ec946dd157a975400a957c3de35df7515d2f0d944b61283b8e595e83e36686"
+      "sha256": "57ec946dd157a975400a957c3de35df7515d2f0d944b61283b8e595e83e36686",
+      "source_ranges": [
+        {
+          "bank": "04",
+          "start": "0xB48E",
+          "length": 36
+        }
+      ]
     },
     {
       "path": "formation/camera-bda7-bdb9.bin",
@@ -980,7 +1586,14 @@
       "symbol": "tbl_BDA7",
       "layout": "nine little-endian initial camera X values by formation and side",
       "length": 18,
-      "sha256": "3de4eddbad35396c447e0718329bd1ed7871618584bf9f0e74e827c53647693a"
+      "sha256": "3de4eddbad35396c447e0718329bd1ed7871618584bf9f0e74e827c53647693a",
+      "source_ranges": [
+        {
+          "bank": "00",
+          "start": "0xBDA7",
+          "length": 18
+        }
+      ]
     },
     {
       "path": "formation/match-object-bdc9-bde8.bin",
@@ -991,7 +1604,14 @@
       "symbol": "tbl_BDC9/tbl_BDD6/tbl_BDE3",
       "layout": "player/ball metasprite groups, initial motions and five field-marker motions",
       "length": 31,
-      "sha256": "5ef2d8d951509fbae4c961f2ce2cbceee730a86aa144d35ae3caeafdd26894df"
+      "sha256": "5ef2d8d951509fbae4c961f2ce2cbceee730a86aa144d35ae3caeafdd26894df",
+      "source_ranges": [
+        {
+          "bank": "00",
+          "start": "0xBDC9",
+          "length": 31
+        }
+      ]
     },
     {
       "path": "formation/match-start-bde8-bef6.bin",
@@ -1002,7 +1622,14 @@
       "symbol": "tbl_BDE8/off_BE16..off_BEDA",
       "layout": "eight match-start and set-piece layout pointers plus seven-object coordinate rows",
       "length": 270,
-      "sha256": "ae7a1d9e4791ccbbcd2f700a983eb8e1b1a087962fe65e7e5529698ae0d25318"
+      "sha256": "ae7a1d9e4791ccbbcd2f700a983eb8e1b1a087962fe65e7e5529698ae0d25318",
+      "source_ranges": [
+        {
+          "bank": "00",
+          "start": "0xBDE8",
+          "length": 270
+        }
+      ]
     },
     {
       "path": "formation/saved-player-preference-bf98-bfab.bin",
@@ -1013,7 +1640,14 @@
       "symbol": "tbl_BF98 plus sub_BFAA opcode byte",
       "layout": "eighteen formation preference bytes plus the intentional adjacent opcode read",
       "length": 19,
-      "sha256": "56c9aca7b4620cc3b9ccd733cd10965f90d09212a5f0f28c951649d0d7aac2fd"
+      "sha256": "56c9aca7b4620cc3b9ccd733cd10965f90d09212a5f0f28c951649d0d7aac2fd",
+      "source_ranges": [
+        {
+          "bank": "00",
+          "start": "0xBF98",
+          "length": 19
+        }
+      ]
     },
     {
       "path": "input/controlled-action-b727-b850.bin",
@@ -1024,7 +1658,14 @@
       "symbol": "tbl_B727/tbl_B737",
       "layout": "direction map plus controlled-action pointer forest",
       "length": 297,
-      "sha256": "b7a770bad1db3278d27c57aad4143b26bc9faa1dd4f77791a5ed674a00b1d47f"
+      "sha256": "b7a770bad1db3278d27c57aad4143b26bc9faa1dd4f77791a5ed674a00b1d47f",
+      "source_ranges": [
+        {
+          "bank": "04",
+          "start": "0xB727",
+          "length": 297
+        }
+      ]
     },
     {
       "path": "input/controlled-owner-action-b9f5-ba1b.bin",
@@ -1035,7 +1676,14 @@
       "symbol": "tbl_B9F5/off_BA05/off_BA10",
       "layout": "owner-context action pointer table and eleven-byte action rows",
       "length": 38,
-      "sha256": "f27c0ee3170d7807dcfd084ab7caebb365389f3b2a1516fe334593c34de7786b"
+      "sha256": "f27c0ee3170d7807dcfd084ab7caebb365389f3b2a1516fe334593c34de7786b",
+      "source_ranges": [
+        {
+          "bank": "04",
+          "start": "0xB9F5",
+          "length": 38
+        }
+      ]
     },
     {
       "path": "input/controlled-owner-angle-b8a8-b8ac.bin",
@@ -1046,7 +1694,14 @@
       "symbol": "tbl_B8A8/loc_B8AB opcode",
       "layout": "three owner vertical-angle bytes plus the intentional unchecked fourth opcode byte",
       "length": 4,
-      "sha256": "bf2bee2885f09271873deb9342ea5b99dff6cf57e79c133438997f2e8b245efc"
+      "sha256": "bf2bee2885f09271873deb9342ea5b99dff6cf57e79c133438997f2e8b245efc",
+      "source_ranges": [
+        {
+          "bank": "04",
+          "start": "0xB8A8",
+          "length": 4
+        }
+      ]
     },
     {
       "path": "input/controlled-player-bdb9-bdc9.bin",
@@ -1057,7 +1712,14 @@
       "symbol": "tbl_BDB9",
       "layout": "four controller/player assignment rows selected by mode bits",
       "length": 16,
-      "sha256": "0f28b2a5a54a02132d5c49f2efbee802b8bd14b7052cada209943be365fef3d4"
+      "sha256": "0f28b2a5a54a02132d5c49f2efbee802b8bd14b7052cada209943be365fef3d4",
+      "source_ranges": [
+        {
+          "bank": "00",
+          "start": "0xBDB9",
+          "length": 16
+        }
+      ]
     },
     {
       "path": "input/hidden-skill-sequence-cbc7-cbd6.bin",
@@ -1068,7 +1730,14 @@
       "symbol": "tbl_CBC7",
       "layout": "fifteen A/B press bytes for the hidden-skill unlock",
       "length": 15,
-      "sha256": "d596e16e523d9bca56b095d023486b74acb63ee7e88be27449435300dfbadc99"
+      "sha256": "d596e16e523d9bca56b095d023486b74acb63ee7e88be27449435300dfbadc99",
+      "source_ranges": [
+        {
+          "bank": "07",
+          "start": "0xCBC7",
+          "length": 15
+        }
+      ]
     },
     {
       "path": "input/hidden-skill-unlocked-tiles-cb92-cbae.bin",
@@ -1090,7 +1759,14 @@
       "symbol": "ram_0680 tables/tbl_9FF3/tbl_A003/tbl_A007",
       "layout": "pass-command action, mask, fallback and held-direction data",
       "length": 196,
-      "sha256": "7917e5557cdb76b0431305e6489000e4565337c2138b3c08691337a83285ba46"
+      "sha256": "7917e5557cdb76b0431305e6489000e4565337c2138b3c08691337a83285ba46",
+      "source_ranges": [
+        {
+          "bank": "03",
+          "start": "0x9F53",
+          "length": 196
+        }
+      ]
     },
     {
       "path": "input/pass-command-lane-9d2a-9d2c.bin",
@@ -1101,7 +1777,32 @@
       "symbol": "tbl_9D2A",
       "layout": "side-specific target X-high bytes for pass-command control adjustment",
       "length": 2,
-      "sha256": "9b4fb24edd6d1d8830e272398263cdbf026b97392cc35387b991dc0248a628f9"
+      "sha256": "9b4fb24edd6d1d8830e272398263cdbf026b97392cc35387b991dc0248a628f9",
+      "source_ranges": [
+        {
+          "bank": "03",
+          "start": "0x9D2A",
+          "length": 2
+        }
+      ]
+    },
+    {
+      "path": "input/repeat-thresholds-fba9-fbab.bin",
+      "category": "input",
+      "source": "src/bank_FF.asm:FBA9",
+      "bank": "07",
+      "address": "0xFBA9",
+      "symbol": "tbl_FBA9/tbl_FBAA",
+      "layout": "action and direction command-repeat frame thresholds",
+      "length": 2,
+      "sha256": "e4c4dc8820db4972223043f69514cd223b23ace6817c14a6dfc6118dd7c15d75",
+      "source_ranges": [
+        {
+          "bank": "07",
+          "start": "0xFBA9",
+          "length": 2
+        }
+      ]
     },
     {
       "path": "input/team-command-baa1-baf9.bin",
@@ -1112,7 +1813,14 @@
       "symbol": "tbl_BAA1/off_BAA9..off_BAE5",
       "layout": "four team-command pointers and twenty action bytes per team class",
       "length": 88,
-      "sha256": "f5476aa52d8bb87a6e365640a17d6b9cc028c014b3e04f5adb31df4365c2b08d"
+      "sha256": "f5476aa52d8bb87a6e365640a17d6b9cc028c014b3e04f5adb31df4365c2b08d",
+      "source_ranges": [
+        {
+          "bank": "03",
+          "start": "0xBAA1",
+          "length": 88
+        }
+      ]
     },
     {
       "path": "menu/background-816e-817e.bin",
@@ -1123,7 +1831,14 @@
       "symbol": "tbl_816E",
       "layout": "sixteen background image ids selected by the menu screen subtype",
       "length": 16,
-      "sha256": "e6b82045163d7ee34032ea0fcd848229d13006375320be43801ae02a0cb28f0b"
+      "sha256": "e6b82045163d7ee34032ea0fcd848229d13006375320be43801ae02a0cb28f0b",
+      "source_ranges": [
+        {
+          "bank": "05",
+          "start": "0x816E",
+          "length": 16
+        }
+      ]
     },
     {
       "path": "menu/bracket-initial-b5d4-b5e6.bin",
@@ -1134,7 +1849,14 @@
       "symbol": "tbl_B5D4",
       "layout": "three six-team tournament bracket seed rows",
       "length": 18,
-      "sha256": "683f965f95a814b541022e831857ba8b6710cee8be8d2b8cc569d4cc267d9b63"
+      "sha256": "683f965f95a814b541022e831857ba8b6710cee8be8d2b8cc569d4cc267d9b63",
+      "source_ranges": [
+        {
+          "bank": "05",
+          "start": "0xB5D4",
+          "length": 18
+        }
+      ]
     },
     {
       "path": "menu/bracket-pointers-b7c6-b80e.bin",
@@ -1145,7 +1867,14 @@
       "symbol": "tbl_B7C6/tbl_B7C8/tbl_B7CA",
       "layout": "twelve interleaved triples of little-endian bracket pointers",
       "length": 72,
-      "sha256": "12645d36a924bcc53a8d58971a4e9a4d1f076f357136683d893a50eb440499bb"
+      "sha256": "12645d36a924bcc53a8d58971a4e9a4d1f076f357136683d893a50eb440499bb",
+      "source_ranges": [
+        {
+          "bank": "05",
+          "start": "0xB7C6",
+          "length": 72
+        }
+      ]
     },
     {
       "path": "menu/bracket-tile-base-b744-b746.bin",
@@ -1156,7 +1885,14 @@
       "symbol": "tbl_B744",
       "layout": "little-endian tournament bracket tile-data base pointer",
       "length": 2,
-      "sha256": "70075f9ab6d8e0a52507ab1e568ed6decca1ba72496527a2c13dc73f11f80bbd"
+      "sha256": "70075f9ab6d8e0a52507ab1e568ed6decca1ba72496527a2c13dc73f11f80bbd",
+      "source_ranges": [
+        {
+          "bank": "05",
+          "start": "0xB744",
+          "length": 2
+        }
+      ]
     },
     {
       "path": "menu/control-position-b07c-b0a8.bin",
@@ -1167,7 +1903,14 @@
       "symbol": "tbl_B07C/tbl_B084/tbl_B085/tbl_B086",
       "layout": "eight signed control-position deltas followed by twelve packed three-byte command rows",
       "length": 44,
-      "sha256": "536f1428e89fa419cfe5753656c55a062b874e9cdf8d0f2372db9a08a475d280"
+      "sha256": "536f1428e89fa419cfe5753656c55a062b874e9cdf8d0f2372db9a08a475d280",
+      "source_ranges": [
+        {
+          "bank": "05",
+          "start": "0xB07C",
+          "length": 44
+        }
+      ]
     },
     {
       "path": "menu/credits-attributes-bcd0-bd00.bin",
@@ -1178,7 +1921,14 @@
       "symbol": "tbl_BCD0/tbl_BCE0/tbl_BCF0",
       "layout": "three sixteen-byte ending-card attribute rows",
       "length": 48,
-      "sha256": "52ad88b5c601151a75a6c6fc8d4b6d3aae65ec2153587d38aaa225871a6f8495"
+      "sha256": "52ad88b5c601151a75a6c6fc8d4b6d3aae65ec2153587d38aaa225871a6f8495",
+      "source_ranges": [
+        {
+          "bank": "02",
+          "start": "0xBCD0",
+          "length": 48
+        }
+      ]
     },
     {
       "path": "menu/credits-scenes-beec-bfa6.bin",
@@ -1189,7 +1939,14 @@
       "symbol": "tbl_BEEC/off_BEFA..off_BF90",
       "layout": "seven little-endian scene pointers followed by fixed five-object parser memory, including the two trailing FF sentinels consumed by scene 6",
       "length": 186,
-      "sha256": "dc694f217af444ec598d1c34e19a468885bcdf6db7298696512481f4d9170cc8"
+      "sha256": "dc694f217af444ec598d1c34e19a468885bcdf6db7298696512481f4d9170cc8",
+      "source_ranges": [
+        {
+          "bank": "02",
+          "start": "0xBEEC",
+          "length": 186
+        }
+      ]
     },
     {
       "path": "menu/credits-text-b9b1-bb13.bin",
@@ -1200,7 +1957,14 @@
       "symbol": "_off053_B9B1_36/_off053_BA26_37/_off053_BA9C_38",
       "layout": "three contiguous F5-terminated final-credit text scripts",
       "length": 354,
-      "sha256": "a397bb30a915328f5e9be7ae18441672796caba48255d7dd3a9b5465930bca38"
+      "sha256": "a397bb30a915328f5e9be7ae18441672796caba48255d7dd3a9b5465930bca38",
+      "source_ranges": [
+        {
+          "bank": "00",
+          "start": "0xB9B1",
+          "length": 354
+        }
+      ]
     },
     {
       "path": "menu/credits-text-pointers-b186-b18c.bin",
@@ -1211,7 +1975,14 @@
       "symbol": "tbl_B11A entries 36-38",
       "layout": "three little-endian final-credit text pointers",
       "length": 6,
-      "sha256": "d556c4bc20566521768a28be66b05814a3d5e14e1bcf1601c8e6b5a653e21a57"
+      "sha256": "d556c4bc20566521768a28be66b05814a3d5e14e1bcf1601c8e6b5a653e21a57",
+      "source_ranges": [
+        {
+          "bank": "00",
+          "start": "0xB186",
+          "length": 6
+        }
+      ]
     },
     {
       "path": "menu/formation-address-a050-a0e0.bin",
@@ -1222,7 +1993,14 @@
       "symbol": "tbl_A050/tbl_A09A/tbl_A0D7",
       "layout": "initial control options, formation marker PPU addresses and palette ids",
       "length": 144,
-      "sha256": "2e8bb28d53153cbd06f05d86d49556bbce95abd565af071d4eeabe8af8f5f323"
+      "sha256": "2e8bb28d53153cbd06f05d86d49556bbce95abd565af071d4eeabe8af8f5f323",
+      "source_ranges": [
+        {
+          "bank": "05",
+          "start": "0xA050",
+          "length": 144
+        }
+      ]
     },
     {
       "path": "menu/formation-control-9cde-9d1f.bin",
@@ -1233,7 +2011,14 @@
       "symbol": "tbl_9CDE/tbl_9D07/tbl_9D08",
       "layout": "control-configuration bitfield selectors, masks and values",
       "length": 65,
-      "sha256": "ca41f8e344d2d56ea8267536789219f946e64a6f1c350cb31c9bcadb4a0c308a"
+      "sha256": "ca41f8e344d2d56ea8267536789219f946e64a6f1c350cb31c9bcadb4a0c308a",
+      "source_ranges": [
+        {
+          "bank": "05",
+          "start": "0x9CDE",
+          "length": 65
+        }
+      ]
     },
     {
       "path": "menu/formation-navigation-9b20-9be2.bin",
@@ -1244,7 +2029,14 @@
       "symbol": "sub_9B1D pointer list/off_9B38..off_9BCA",
       "layout": "formation-screen coordinate/navigation pointer forest and all six rows",
       "length": 194,
-      "sha256": "5ebd9e8fbf4040ecafe21c36e63c0ec4d1db536c1c6fc65f4c4811a6a74a803c"
+      "sha256": "5ebd9e8fbf4040ecafe21c36e63c0ec4d1db536c1c6fc65f4c4811a6a74a803c",
+      "source_ranges": [
+        {
+          "bank": "05",
+          "start": "0x9B20",
+          "length": 194
+        }
+      ]
     },
     {
       "path": "menu/formation-objects-9dbe-9feb.bin",
@@ -1255,7 +2047,14 @@
       "symbol": "tbl_9DBE/tbl_9EC5/tbl_9EDB/tbl_9EF3/tbl_9EF6/tbl_9F08/tbl_9F1A/tbl_9F2E/tbl_9F3A/tbl_9F8B",
       "layout": "formation markers, names, actor layout, player mapping and control highlights",
       "length": 557,
-      "sha256": "1d11d752dd61a5c220a878102dbf71cafea02faff369ac05fa0bfe7453aa08f2"
+      "sha256": "1d11d752dd61a5c220a878102dbf71cafea02faff369ac05fa0bfe7453aa08f2",
+      "source_ranges": [
+        {
+          "bank": "05",
+          "start": "0x9DBE",
+          "length": 557
+        }
+      ]
     },
     {
       "path": "menu/formation-team-overlay-98a8-98b8.bin",
@@ -1266,7 +2065,14 @@
       "symbol": "tbl_98A8",
       "layout": "team-specific formation-screen overlay background ids",
       "length": 16,
-      "sha256": "988f8eaf1f7f9348557c7ba0f450225fa45092fd2b4da61c67f011b7b3f805b3"
+      "sha256": "988f8eaf1f7f9348557c7ba0f450225fa45092fd2b4da61c67f011b7b3f805b3",
+      "source_ranges": [
+        {
+          "bank": "05",
+          "start": "0x98A8",
+          "length": 16
+        }
+      ]
     },
     {
       "path": "menu/match-settings-cursor-94ae-955d.bin",
@@ -1277,7 +2083,14 @@
       "symbol": "tbl_94AE/tbl_94B8/sub_94C2/off_94ED..off_9555",
       "layout": "settings-state transitions plus pointer-selected navigation and cursor rows",
       "length": 175,
-      "sha256": "6b0824b3931637f51c44575eaa52ba241bde87c78e7168b9a256794c023f5573"
+      "sha256": "6b0824b3931637f51c44575eaa52ba241bde87c78e7168b9a256794c023f5573",
+      "source_ranges": [
+        {
+          "bank": "05",
+          "start": "0x94AE",
+          "length": 175
+        }
+      ]
     },
     {
       "path": "menu/match-settings-highlight-96e7-97c3.bin",
@@ -1288,7 +2101,14 @@
       "symbol": "tbl_96E7/tbl_96F7/off_970B..off_97A3",
       "layout": "settings-row PPU addresses, pattern pointers and highlight bytes",
       "length": 220,
-      "sha256": "9d6fd318a21606a9041e030da45815c4529b5c806c8bfaf61637ff4b93f1f2fd"
+      "sha256": "9d6fd318a21606a9041e030da45815c4529b5c806c8bfaf61637ff4b93f1f2fd",
+      "source_ranges": [
+        {
+          "bank": "05",
+          "start": "0x96E7",
+          "length": 220
+        }
+      ]
     },
     {
       "path": "menu/match-settings-option-959f-95a5.bin",
@@ -1299,7 +2119,14 @@
       "symbol": "tbl_959F",
       "layout": "surface-wetness high nibble to visible condition option",
       "length": 6,
-      "sha256": "9558845d2c92c9d90b7958edce94a4cb7142b4da0f8f4f2df98dac22852f2cff"
+      "sha256": "9558845d2c92c9d90b7958edce94a4cb7142b4da0f8f4f2df98dac22852f2cff",
+      "source_ranges": [
+        {
+          "bank": "05",
+          "start": "0x959F",
+          "length": 6
+        }
+      ]
     },
     {
       "path": "menu/match-settings-wetness-962e-9632.bin",
@@ -1310,7 +2137,14 @@
       "symbol": "tbl_962E",
       "layout": "visible condition option to packed surface-wetness high nibble",
       "length": 4,
-      "sha256": "61253f535f8ae5143f0c3ddf3eea475e14d276adf460c784c0e16660dace14b0"
+      "sha256": "61253f535f8ae5143f0c3ddf3eea475e14d276adf460c784c0e16660dace14b0",
+      "source_ranges": [
+        {
+          "bank": "05",
+          "start": "0x962E",
+          "length": 4
+        }
+      ]
     },
     {
       "path": "menu/meeting-auto-sounds-aa33-aa38.bin",
@@ -1321,7 +2155,14 @@
       "symbol": "tbl_AA33",
       "layout": "five automatic-instruction sound request ids",
       "length": 5,
-      "sha256": "79df3c7f8b6d59ba47abe581de7eff24cdf5ea82963c42310f933771d6946109"
+      "sha256": "79df3c7f8b6d59ba47abe581de7eff24cdf5ea82963c42310f933771d6946109",
+      "source_ranges": [
+        {
+          "bank": "05",
+          "start": "0xAA33",
+          "length": 5
+        }
+      ]
     },
     {
       "path": "menu/meeting-effect-ab88-ab90.bin",
@@ -1332,7 +2173,14 @@
       "symbol": "tbl_AB88",
       "layout": "meeting player-state to text-effect script bases",
       "length": 8,
-      "sha256": "d49f65c606b2e51328790352e1f7f9ff7f6f5f6a80a3014018f46cc06edc3a7b"
+      "sha256": "d49f65c606b2e51328790352e1f7f9ff7f6f5f6a80a3014018f46cc06edc3a7b",
+      "source_ranges": [
+        {
+          "bank": "05",
+          "start": "0xAB88",
+          "length": 8
+        }
+      ]
     },
     {
       "path": "menu/meeting-hidden-cursor-stack-0104-011c.bin",
@@ -1354,7 +2202,14 @@
       "symbol": "off_AC09/off_AC1D/off_AC4D/off_AC5D/off_AC67/off_AC7F",
       "layout": "main/player/automatic navigation rows followed by interleaved cursor coordinates",
       "length": 126,
-      "sha256": "fdeceb4cb43619812c1b79d70b991ad948180281fd13532cae94a7646dd312ac"
+      "sha256": "fdeceb4cb43619812c1b79d70b991ad948180281fd13532cae94a7646dd312ac",
+      "source_ranges": [
+        {
+          "bank": "05",
+          "start": "0xAC09",
+          "length": 126
+        }
+      ]
     },
     {
       "path": "menu/meeting-option-rows-adc2-ae22.bin",
@@ -1365,7 +2220,14 @@
       "symbol": "tbl_ADC2",
       "layout": "twelve fixed-width individual-instruction menu rows",
       "length": 96,
-      "sha256": "c9e5a787dd9b7a3888eab05392835e4b805d22bdd0565d96b5dd9cd910a83c59"
+      "sha256": "c9e5a787dd9b7a3888eab05392835e4b805d22bdd0565d96b5dd9cd910a83c59",
+      "source_ranges": [
+        {
+          "bank": "05",
+          "start": "0xADC2",
+          "length": 96
+        }
+      ]
     },
     {
       "path": "menu/meeting-parameters-b157-b1ff.bin",
@@ -1376,7 +2238,14 @@
       "symbol": "tbl_B157/tbl_B1B7/tbl_B1E7",
       "layout": "player parameter tiles, group rows and twelve PPU destination addresses",
       "length": 168,
-      "sha256": "cdc323eb9bd7aebe19bab72c00c1731d59cdcce6ac82e398c771fa5f70451a27"
+      "sha256": "cdc323eb9bd7aebe19bab72c00c1731d59cdcce6ac82e398c771fa5f70451a27",
+      "source_ranges": [
+        {
+          "bank": "05",
+          "start": "0xB157",
+          "length": 168
+        }
+      ]
     },
     {
       "path": "menu/meeting-pointer-window-abf1-ac1d.bin",
@@ -1387,7 +2256,14 @@
       "symbol": "sub_ABEE inline words plus off_AC09",
       "layout": "eleven unchecked four-byte pointer records selected by option counter 0-10",
       "length": 44,
-      "sha256": "c8520375716d5d0a613dc909290921e31271931976c21a28a8374dc436e6cd2c"
+      "sha256": "c8520375716d5d0a613dc909290921e31271931976c21a28a8374dc436e6cd2c",
+      "source_ranges": [
+        {
+          "bank": "05",
+          "start": "0xABF1",
+          "length": 44
+        }
+      ]
     },
     {
       "path": "menu/meeting-random-text-a93c-a940.bin",
@@ -1398,7 +2274,14 @@
       "symbol": "tbl_A93C",
       "layout": "four frame-selected meeting text script ids",
       "length": 4,
-      "sha256": "34acab2f84f03e3fb6e0035785d3446d018635392abe960c70050a7a7e257ddf"
+      "sha256": "34acab2f84f03e3fb6e0035785d3446d018635392abe960c70050a7a7e257ddf",
+      "source_ranges": [
+        {
+          "bank": "05",
+          "start": "0xA93C",
+          "length": 4
+        }
+      ]
     },
     {
       "path": "menu/meeting-return-a959-a964.bin",
@@ -1409,7 +2292,14 @@
       "symbol": "tbl_A959",
       "layout": "meeting substate-to-main option restoration values",
       "length": 11,
-      "sha256": "833e7e642787090f6512c56a2595486a4b9f755e6dbc7022dc8b59df78e5d08f"
+      "sha256": "833e7e642787090f6512c56a2595486a4b9f755e6dbc7022dc8b59df78e5d08f",
+      "source_ranges": [
+        {
+          "bank": "05",
+          "start": "0xA959",
+          "length": 11
+        }
+      ]
     },
     {
       "path": "menu/meeting-text-b3ea-b9b1.bin",
@@ -1420,7 +2310,14 @@
       "symbol": "_off053_B3EA_0D.._off053_B97C_35",
       "layout": "forty-one contiguous F5-terminated meeting text scripts",
       "length": 1479,
-      "sha256": "03569b1f7a1effbf711b49f17bc62d5f16b3725930f077bd96a403e6578a921d"
+      "sha256": "03569b1f7a1effbf711b49f17bc62d5f16b3725930f077bd96a403e6578a921d",
+      "source_ranges": [
+        {
+          "bank": "00",
+          "start": "0xB3EA",
+          "length": 1479
+        }
+      ]
     },
     {
       "path": "menu/meeting-text-pointers-b134-b186.bin",
@@ -1431,7 +2328,14 @@
       "symbol": "tbl_B11A entries 0D-35",
       "layout": "little-endian text-effect pointers for meeting script ids 0D-35",
       "length": 82,
-      "sha256": "d9fecab36cfbfebbae4698bf28d66902a1690c943122f0c8f291539ea88ce152"
+      "sha256": "d9fecab36cfbfebbae4698bf28d66902a1690c943122f0c8f291539ea88ce152",
+      "source_ranges": [
+        {
+          "bank": "00",
+          "start": "0xB134",
+          "length": 82
+        }
+      ]
     },
     {
       "path": "menu/mode-player-count-8687.bin",
@@ -1442,7 +2346,14 @@
       "symbol": "tbl_8687/tbl_8688",
       "layout": "interleaved game-mode bits and controller counts",
       "length": 8,
-      "sha256": "13b961b494e12e3b848370c68fea6dafae2ef2f3525fea68229b5a891ed3d1ab"
+      "sha256": "13b961b494e12e3b848370c68fea6dafae2ef2f3525fea68229b5a891ed3d1ab",
+      "source_ranges": [
+        {
+          "bank": "05",
+          "start": "0x8687",
+          "length": 8
+        }
+      ]
     },
     {
       "path": "menu/mode-selection-8596-860c.bin",
@@ -1453,7 +2364,14 @@
       "symbol": "sub_8593 pointer list/off_85AA..off_85F8",
       "layout": "mode-selection coordinate/navigation pointers and rows, including cross-label reads",
       "length": 118,
-      "sha256": "553dec0cbe1e3338d46799794e83965c8bed7cdea3181427857e3b3331ae9e51"
+      "sha256": "553dec0cbe1e3338d46799794e83965c8bed7cdea3181427857e3b3331ae9e51",
+      "source_ranges": [
+        {
+          "bank": "05",
+          "start": "0x8596",
+          "length": 118
+        }
+      ]
     },
     {
       "path": "menu/music-selection-a673-a6d1.bin",
@@ -1464,7 +2382,14 @@
       "symbol": "sub_A670 pointer list/off_A67B/off_A69F/tbl_A6C9",
       "layout": "music-menu navigation, nine cursor coordinates and option-to-track ids",
       "length": 94,
-      "sha256": "56a2c520520848ac34ab953f23f43390d68071aa9b804004ef58231bcabb33bf"
+      "sha256": "56a2c520520848ac34ab953f23f43390d68071aa9b804004ef58231bcabb33bf",
+      "source_ranges": [
+        {
+          "bank": "05",
+          "start": "0xA673",
+          "length": 94
+        }
+      ]
     },
     {
       "path": "menu/opponent-grid-87df-882f.bin",
@@ -1475,7 +2400,14 @@
       "symbol": "sub_87DC pointer list/off_87E7/off_8817",
       "layout": "opponent-grid navigation and twelve cursor coordinate pairs",
       "length": 80,
-      "sha256": "351619675983087892812ea9a58879fa0b21abe1fd7df89108adf33d10c7a04c"
+      "sha256": "351619675983087892812ea9a58879fa0b21abe1fd7df89108adf33d10c7a04c",
+      "source_ranges": [
+        {
+          "bank": "05",
+          "start": "0x87DF",
+          "length": 80
+        }
+      ]
     },
     {
       "path": "menu/opponent-highlight-892b-8947.bin",
@@ -1486,7 +2418,14 @@
       "symbol": "tbl_892B/off_8933..off_893C/tbl_893F",
       "layout": "four upload pointers, destination records and attribute pairs",
       "length": 28,
-      "sha256": "a4801f9c2557dedfb3d2c1c678e8e6d083e2db362b1845b3fb0d28dc451e6641"
+      "sha256": "a4801f9c2557dedfb3d2c1c678e8e6d083e2db362b1845b3fb0d28dc451e6641",
+      "source_ranges": [
+        {
+          "bank": "05",
+          "start": "0x892B",
+          "length": 28
+        }
+      ]
     },
     {
       "path": "menu/player-count-8698.bin",
@@ -1497,7 +2436,14 @@
       "symbol": "tbl_8698",
       "layout": "controller count selected by player-mode menu option",
       "length": 8,
-      "sha256": "e85d2c57ff6de87f7d804e14d6498c983b5f330e9986f4d77d297fb156d7ee48"
+      "sha256": "e85d2c57ff6de87f7d804e14d6498c983b5f330e9986f4d77d297fb156d7ee48",
+      "source_ranges": [
+        {
+          "bank": "05",
+          "start": "0x8698",
+          "length": 8
+        }
+      ]
     },
     {
       "path": "menu/player-count-option-865b.bin",
@@ -1508,7 +2454,14 @@
       "symbol": "tbl_865B",
       "layout": "menu option selected by game mode and controller count",
       "length": 16,
-      "sha256": "f4dbbb3d9ea7f32421f25d3a9cd5f3a85bb9ba73755326c5561117b3decf3332"
+      "sha256": "f4dbbb3d9ea7f32421f25d3a9cd5f3a85bb9ba73755326c5561117b3decf3332",
+      "source_ranges": [
+        {
+          "bank": "05",
+          "start": "0x865B",
+          "length": 16
+        }
+      ]
     },
     {
       "path": "menu/player-order-actors-9184-9194.bin",
@@ -1519,7 +2472,14 @@
       "symbol": "tbl_9184/tbl_9190/tbl_9191",
       "layout": "score/side actor motions and two actor coordinate columns",
       "length": 16,
-      "sha256": "23397e80b07bb87772ce9b01853ed545e9a0ae3cdc3d836537c01eb71a87ccdd"
+      "sha256": "23397e80b07bb87772ce9b01853ed545e9a0ae3cdc3d836537c01eb71a87ccdd",
+      "source_ranges": [
+        {
+          "bank": "05",
+          "start": "0x9184",
+          "length": 16
+        }
+      ]
     },
     {
       "path": "menu/player-order-cursor-window-90ee-91ee.bin",
@@ -1530,7 +2490,14 @@
       "symbol": "off_90EE_00 through sub_91D5 opcode tail",
       "layout": "256-byte unchecked cursor-address window; option FF aliases opcode bytes at 91EC/91ED",
       "length": 256,
-      "sha256": "a1e1378947e606ed738abdf4bb7458ac984813e090ca57623281de005c5ca6c8"
+      "sha256": "a1e1378947e606ed738abdf4bb7458ac984813e090ca57623281de005c5ca6c8",
+      "source_ranges": [
+        {
+          "bank": "05",
+          "start": "0x90EE",
+          "length": 256
+        }
+      ]
     },
     {
       "path": "menu/player-order-navigation-90ca-90fc.bin",
@@ -1541,7 +2508,14 @@
       "symbol": "sub_90C7 pointer list/off_90D2/off_90EE",
       "layout": "player-order cursor navigation and seven interleaved cursor coordinates",
       "length": 50,
-      "sha256": "d99f82dc8dd5a7e690b05ad56c02dfcbc9b98767598a7d9230b27c4c62ec9735"
+      "sha256": "d99f82dc8dd5a7e690b05ad56c02dfcbc9b98767598a7d9230b27c4c62ec9735",
+      "source_ranges": [
+        {
+          "bank": "05",
+          "start": "0x90CA",
+          "length": 50
+        }
+      ]
     },
     {
       "path": "menu/player-order-route-92bf-92cd.bin",
@@ -1552,7 +2526,14 @@
       "symbol": "tbl_92BF",
       "layout": "player-order destination subtype selected by option and difficulty mode",
       "length": 14,
-      "sha256": "3455896a43a8ac43136b7b8a30ba01b56bb04ddbe67b91e3841ec01a40c9c34d"
+      "sha256": "3455896a43a8ac43136b7b8a30ba01b56bb04ddbe67b91e3841ec01a40c9c34d",
+      "source_ranges": [
+        {
+          "bank": "05",
+          "start": "0x92BF",
+          "length": 14
+        }
+      ]
     },
     {
       "path": "menu/player-order-team-name-9313-935d.bin",
@@ -1563,7 +2544,14 @@
       "symbol": "tbl_9313/off_9333..off_9357",
       "layout": "team-name pointer forest and six-byte labels including team-0F opcode alias",
       "length": 74,
-      "sha256": "b06f494f19875adfc1de35f3cad1d6e5eb8236848748b491073ad7d26ef384d8"
+      "sha256": "b06f494f19875adfc1de35f3cad1d6e5eb8236848748b491073ad7d26ef384d8",
+      "source_ranges": [
+        {
+          "bank": "05",
+          "start": "0x9313",
+          "length": 74
+        }
+      ]
     },
     {
       "path": "menu/player-profile-a43c-a576.bin",
@@ -1574,7 +2562,14 @@
       "symbol": "tbl_A43C/tbl_A490/tbl_A492",
       "layout": "twelve seven-byte profile records, description pointer and nineteen twelve-byte description rows",
       "length": 314,
-      "sha256": "eaaa3938e25832806b3c61c572f5f7cba86065f864d76d9c98ee0c2661e53d5d"
+      "sha256": "eaaa3938e25832806b3c61c572f5f7cba86065f864d76d9c98ee0c2661e53d5d",
+      "source_ranges": [
+        {
+          "bank": "05",
+          "start": "0xA43C",
+          "length": 314
+        }
+      ]
     },
     {
       "path": "menu/player-profile-text-b18e-b3ea.bin",
@@ -1585,7 +2580,14 @@
       "symbol": "_off053_B18E_01.._off053_B3BA_0C",
       "layout": "twelve contiguous F5-terminated player-profile text scripts",
       "length": 604,
-      "sha256": "c3da63563f922552b32c9cb050a1c67594aed96a3b271cfa74a72c62f9d49f7b"
+      "sha256": "c3da63563f922552b32c9cb050a1c67594aed96a3b271cfa74a72c62f9d49f7b",
+      "source_ranges": [
+        {
+          "bank": "00",
+          "start": "0xB18E",
+          "length": 604
+        }
+      ]
     },
     {
       "path": "menu/player-profile-text-pointers-b11a-b134.bin",
@@ -1596,7 +2598,14 @@
       "symbol": "tbl_B11A",
       "layout": "little-endian text-effect pointers for script ids 00-0C",
       "length": 26,
-      "sha256": "e23205bfffce1c7fa978ff784402082dbbeee360eab7c3c2544adf7113e23e4e"
+      "sha256": "e23205bfffce1c7fa978ff784402082dbbeee360eab7c3c2544adf7113e23e4e",
+      "source_ranges": [
+        {
+          "bank": "00",
+          "start": "0xB11A",
+          "length": 26
+        }
+      ]
     },
     {
       "path": "menu/postmatch-display-init-b2f0.bin",
@@ -1618,7 +2627,14 @@
       "symbol": "tbl_B3DC",
       "layout": "post-match destination subtype selected by result route",
       "length": 2,
-      "sha256": "d26b715881de3752c4e857a13e1e3d00d65ff80c57cdfcb81bc2753cfc8f7a41"
+      "sha256": "d26b715881de3752c4e857a13e1e3d00d65ff80c57cdfcb81bc2753cfc8f7a41",
+      "source_ranges": [
+        {
+          "bank": "05",
+          "start": "0xB3DC",
+          "length": 2
+        }
+      ]
     },
     {
       "path": "menu/prematch-preview-layout-8d69-8dbb.bin",
@@ -1629,7 +2645,14 @@
       "symbol": "tbl_8D69/off_8D73/off_8D85/off_8D97/off_8DA9",
       "layout": "five preview-layout pointers followed by four eighteen-byte rows",
       "length": 82,
-      "sha256": "26d8e5effdbae1ee7f330816784eca564485103597908903b9197bed3c1ff19b"
+      "sha256": "26d8e5effdbae1ee7f330816784eca564485103597908903b9197bed3c1ff19b",
+      "source_ranges": [
+        {
+          "bank": "05",
+          "start": "0x8D69",
+          "length": 82
+        }
+      ]
     },
     {
       "path": "menu/prematch-screen-8712-871a.bin",
@@ -1640,7 +2663,14 @@
       "symbol": "tbl_8712/tbl_8713",
       "layout": "four interleaved screen and subtype destinations selected by mode bits",
       "length": 8,
-      "sha256": "a982593ff0b9fd2721d9b1cf632ce5b3d76644bb991c19105a016767b31420df"
+      "sha256": "a982593ff0b9fd2721d9b1cf632ce5b3d76644bb991c19105a016767b31420df",
+      "source_ranges": [
+        {
+          "bank": "05",
+          "start": "0x8712",
+          "length": 8
+        }
+      ]
     },
     {
       "path": "menu/result-pointer-b3ae-b3b2.bin",
@@ -1651,7 +2681,14 @@
       "symbol": "off_B3AE",
       "layout": "four result-menu pointer bytes copied to zero page 002C-002F",
       "length": 4,
-      "sha256": "722795ac33fa6de54d23e87bf3826f1df4c1c668e2f1d2a12d0330e84ca02354"
+      "sha256": "722795ac33fa6de54d23e87bf3826f1df4c1c668e2f1d2a12d0330e84ca02354",
+      "source_ranges": [
+        {
+          "bank": "05",
+          "start": "0xB3AE",
+          "length": 4
+        }
+      ]
     },
     {
       "path": "menu/result-supporter-patches-b4f4-b55c.bin",
@@ -1662,7 +2699,14 @@
       "symbol": "off_B4F4..off_B554",
       "layout": "thirteen eight-byte supporter patch-address patterns",
       "length": 104,
-      "sha256": "3e82c7d3ce08aa1ad76ed9d400386fdca281c07fd6a986f6187fbc438da72ec4"
+      "sha256": "3e82c7d3ce08aa1ad76ed9d400386fdca281c07fd6a986f6187fbc438da72ec4",
+      "source_ranges": [
+        {
+          "bank": "01",
+          "start": "0xB4F4",
+          "length": 104
+        }
+      ]
     },
     {
       "path": "menu/result-supporter-tiles-b935-b955.bin",
@@ -1673,7 +2717,14 @@
       "symbol": "tbl_B935/tbl_B945",
       "layout": "two sixteen-byte supporter tile groups",
       "length": 32,
-      "sha256": "26e59a378c4293b166cea6588f9c231c2b218f40f63c84a71cf735515cee7853"
+      "sha256": "26e59a378c4293b166cea6588f9c231c2b218f40f63c84a71cf735515cee7853",
+      "source_ranges": [
+        {
+          "bank": "01",
+          "start": "0xB935",
+          "length": 32
+        }
+      ]
     },
     {
       "path": "menu/splash-blink-aee5-aef7.bin",
@@ -1684,7 +2735,14 @@
       "symbol": "tbl_AEE5",
       "layout": "PUSH START blink tile row",
       "length": 18,
-      "sha256": "dc1ad90ec11f13682b045a4eee3d32f761c8ef8961e2e676c522ed13e3f1a87a"
+      "sha256": "dc1ad90ec11f13682b045a4eee3d32f761c8ef8961e2e676c522ed13e3f1a87a",
+      "source_ranges": [
+        {
+          "bank": "02",
+          "start": "0xAEE5",
+          "length": 18
+        }
+      ]
     },
     {
       "path": "menu/splash-logo-attributes-ab48-ab78.bin",
@@ -1695,7 +2753,14 @@
       "symbol": "tbl_AB48",
       "layout": "twelve four-byte logo attribute rows",
       "length": 48,
-      "sha256": "d0db7dd60fe749d180d6669666ffa515e237acba2ed0ed08bd1bc56f2926d0c6"
+      "sha256": "d0db7dd60fe749d180d6669666ffa515e237acba2ed0ed08bd1bc56f2926d0c6",
+      "source_ranges": [
+        {
+          "bank": "02",
+          "start": "0xAB48",
+          "length": 48
+        }
+      ]
     },
     {
       "path": "menu/statusbar-attributes-e608-e610.bin",
@@ -1706,7 +2771,14 @@
       "symbol": "tbl_E608",
       "layout": "first eight statusbar attribute bytes",
       "length": 8,
-      "sha256": "ca282e9851403493b900504f9cd1ac2a14771142d0405b23c54812442cb2decf"
+      "sha256": "ca282e9851403493b900504f9cd1ac2a14771142d0405b23c54812442cb2decf",
+      "source_ranges": [
+        {
+          "bank": "07",
+          "start": "0xE608",
+          "length": 8
+        }
+      ]
     },
     {
       "path": "menu/statusbar-base-tiles-e610-e6f0.bin",
@@ -1717,7 +2789,14 @@
       "symbol": "tbl_E610",
       "layout": "seven 32-tile statusbar nametable rows",
       "length": 224,
-      "sha256": "051b1540929315f59e09f711d71030496ad6b0b4ef92c267ecbfb006c9d3355c"
+      "sha256": "051b1540929315f59e09f711d71030496ad6b0b4ef92c267ecbfb006c9d3355c",
+      "source_ranges": [
+        {
+          "bank": "07",
+          "start": "0xE610",
+          "length": 224
+        }
+      ]
     },
     {
       "path": "menu/statusbar-command-ab88-ad4f.bin",
@@ -1728,18 +2807,32 @@
       "symbol": "tbl_AB88/off_AC0A..off_AD4A",
       "layout": "65 command pointers and shared five-tile command rows",
       "length": 455,
-      "sha256": "a5973093f9a51881e5419e7c02e38e91088be7347561fdee9988623ad466fc9b"
+      "sha256": "a5973093f9a51881e5419e7c02e38e91088be7347561fdee9988623ad466fc9b",
+      "source_ranges": [
+        {
+          "bank": "03",
+          "start": "0xAB88",
+          "length": 455
+        }
+      ]
     },
     {
-      "path": "menu/statusbar-layout-ab66-ab88.bin",
+      "path": "menu/statusbar-layout-ab4b-ab88.bin",
       "category": "menu",
-      "source": "src/bank_03.asm:AB66",
+      "source": "src/bank_03.asm:AB4B",
       "bank": "03",
-      "address": "0xAB66",
-      "symbol": "tbl_AB66/tbl_AB6F/tbl_AB7C/tbl_AB80",
-      "layout": "command icons, side-buffer destinations, upload addresses and control glyphs",
-      "length": 34,
-      "sha256": "2aab3e06c379542e6166e0463ec2212eea277e9293074f7c5bc4940004534d9a"
+      "address": "0xAB4B",
+      "symbol": "tbl_AB4B/tbl_AB63/tbl_AB66/tbl_AB6F/tbl_AB7C/tbl_AB80",
+      "layout": "name offsets, fixed suffix, command icons, side-buffer destinations, upload addresses and control glyphs",
+      "length": 61,
+      "sha256": "996d0e8a9c9553a660eef9c7701dae875fcd21c9bffb204eef998cd0df805aca",
+      "source_ranges": [
+        {
+          "bank": "03",
+          "start": "0xAB4B",
+          "length": 61
+        }
+      ]
     },
     {
       "path": "menu/statusbar-player-ad4f-ae17.bin",
@@ -1750,7 +2843,14 @@
       "symbol": "tbl_AD4F/off_AD6F..off_ADFF",
       "layout": "sixteen player-HUD pointers and shared two-byte player records",
       "length": 200,
-      "sha256": "533045efafd60a43198e6eacc8845dc34f5472fadcda8ad98d0afcfe2409b4be"
+      "sha256": "533045efafd60a43198e6eacc8845dc34f5472fadcda8ad98d0afcfe2409b4be",
+      "source_ranges": [
+        {
+          "bank": "03",
+          "start": "0xAD4F",
+          "length": 200
+        }
+      ]
     },
     {
       "path": "menu/statusbar-rosters-c080-c244.bin",
@@ -1761,7 +2861,14 @@
       "symbol": "tbl_C080/off_C0A0..off_C208",
       "layout": "sixteen roster pointers and shared five-tile player names",
       "length": 452,
-      "sha256": "15f892ff0dcbbb06d60e115166073ef7c09fdb09707cfb9fd01f5887ace2f834"
+      "sha256": "15f892ff0dcbbb06d60e115166073ef7c09fdb09707cfb9fd01f5887ace2f834",
+      "source_ranges": [
+        {
+          "bank": "07",
+          "start": "0xC080",
+          "length": 452
+        }
+      ]
     },
     {
       "path": "menu/statusbar-wind-e153-e15b.bin",
@@ -1772,7 +2879,14 @@
       "symbol": "tbl_E153",
       "layout": "eight wind-direction HUD tile ids",
       "length": 8,
-      "sha256": "053cd7ab76a795efeebf5576c1855fd238410081fd6d942ef0851ba0542874ba"
+      "sha256": "053cd7ab76a795efeebf5576c1855fd238410081fd6d942ef0851ba0542874ba",
+      "source_ranges": [
+        {
+          "bank": "07",
+          "start": "0xE153",
+          "length": 8
+        }
+      ]
     },
     {
       "path": "menu/team-preview-navigation-8c7e-8cc6.bin",
@@ -1783,7 +2897,14 @@
       "symbol": "off_8C7E/off_8CAE",
       "layout": "twelve-option two-controller navigation and interleaved cursor coordinates",
       "length": 72,
-      "sha256": "eae34f2f893c03804b748770741c14c803e80e790bfff37b9189d209e3b4a5ae"
+      "sha256": "eae34f2f893c03804b748770741c14c803e80e790bfff37b9189d209e3b4a5ae",
+      "source_ranges": [
+        {
+          "bank": "05",
+          "start": "0x8C7E",
+          "length": 72
+        }
+      ]
     },
     {
       "path": "menu/tournament-record-row-8a7d-8aa4.bin",
@@ -1805,7 +2926,14 @@
       "symbol": "tbl_A23B/tbl_A24B/tbl_A251/tbl_A279",
       "layout": "weather icon, wind direction/text and lightning/tornado summary tiles",
       "length": 70,
-      "sha256": "906b4ce06a70cd2d64bebbf4dbd3d60d815dd4f1eacf84e7ec9025dc910ed294"
+      "sha256": "906b4ce06a70cd2d64bebbf4dbd3d60d815dd4f1eacf84e7ec9025dc910ed294",
+      "source_ranges": [
+        {
+          "bank": "05",
+          "start": "0xA23B",
+          "length": 70
+        }
+      ]
     },
     {
       "path": "palette/background-d2fb.bin",
@@ -1816,7 +2944,14 @@
       "symbol": "tbl_D2FB",
       "layout": "74 records x 2 variants x 4 colours",
       "length": 592,
-      "sha256": "cc41ac41d7317ed58594d62b7d3469cc8cb8e0a98f4cbb722b30062f81d91fa7"
+      "sha256": "cc41ac41d7317ed58594d62b7d3469cc8cb8e0a98f4cbb722b30062f81d91fa7",
+      "source_ranges": [
+        {
+          "bank": "07",
+          "start": "0xD2FB",
+          "length": 756
+        }
+      ]
     },
     {
       "path": "palette/brightness-d0cb-d0d5.bin",
@@ -1827,7 +2962,14 @@
       "symbol": "tbl_D0CB/tbl_D0D0",
       "layout": "five fade-in brightness values followed by five fade-out values",
       "length": 10,
-      "sha256": "97c6712b3b57037ce0065b55e9dbd6b2843dd352a26c454510e5c3c63103911b"
+      "sha256": "97c6712b3b57037ce0065b55e9dbd6b2843dd352a26c454510e5c3c63103911b",
+      "source_ranges": [
+        {
+          "bank": "07",
+          "start": "0xD0CB",
+          "length": 10
+        }
+      ]
     },
     {
       "path": "palette/prematch-team-8faf-8fcf.bin",
@@ -1838,7 +2980,14 @@
       "symbol": "tbl_8FAF/tbl_8FB0",
       "layout": "sixteen interleaved team background palette and CHR bank pairs",
       "length": 32,
-      "sha256": "609318eb1c5526610bf736013ded90f4386fd7808480948e849b7976b2d3bc9c"
+      "sha256": "609318eb1c5526610bf736013ded90f4386fd7808480948e849b7976b2d3bc9c",
+      "source_ranges": [
+        {
+          "bank": "05",
+          "start": "0x8FAF",
+          "length": 32
+        }
+      ]
     },
     {
       "path": "palette/prematch-team-bdd6-bdf6.bin",
@@ -1849,7 +2998,14 @@
       "symbol": "tbl_BDD6/tbl_BDD7",
       "layout": "two interleaved prematch character palette ids per team",
       "length": 32,
-      "sha256": "0c66621d4b73eb0784ec09b4d77d83e68bed521d1124b6a20b891ecd7833a37c"
+      "sha256": "0c66621d4b73eb0784ec09b4d77d83e68bed521d1124b6a20b891ecd7833a37c",
+      "source_ranges": [
+        {
+          "bank": "05",
+          "start": "0xBDD6",
+          "length": 32
+        }
+      ]
     },
     {
       "path": "palette/splash-logo-ab40.bin",
@@ -1860,7 +3016,14 @@
       "symbol": "tbl_AB40",
       "layout": "logo background palette-number sequence",
       "length": 8,
-      "sha256": "ffe676085cba4ceee003a8e873b08535950f24f6b736919d5b8f3dcd76fe58e6"
+      "sha256": "ffe676085cba4ceee003a8e873b08535950f24f6b736919d5b8f3dcd76fe58e6",
+      "source_ranges": [
+        {
+          "bank": "02",
+          "start": "0xAB40",
+          "length": 8
+        }
+      ]
     },
     {
       "path": "palette/sprite-d1b7.bin",
@@ -1871,7 +3034,32 @@
       "symbol": "tbl_D1B7",
       "layout": "54 flattened four-byte palettes",
       "length": 216,
-      "sha256": "01cd69db0287cf2a187d571db30a4d4de64c09c259523c78106788bb7af6c34d"
+      "sha256": "01cd69db0287cf2a187d571db30a4d4de64c09c259523c78106788bb7af6c34d",
+      "source_ranges": [
+        {
+          "bank": "07",
+          "start": "0xD1B7",
+          "length": 324
+        }
+      ]
+    },
+    {
+      "path": "position/animation-priority-bounds-ec85-ec8f.bin",
+      "category": "position",
+      "source": "src/bank_FF.asm:EC85",
+      "bank": "07",
+      "address": "0xEC85",
+      "symbol": "tbl_EC85..tbl_EC8E",
+      "layout": "five little-endian ball visibility and animation-priority bounds",
+      "length": 10,
+      "sha256": "a0b1cadef5ab69a7874b8f1aa40bfc912e08ba6660b00cf4227b4070d60cc939",
+      "source_ranges": [
+        {
+          "bank": "07",
+          "start": "0xEC85",
+          "length": 10
+        }
+      ]
     },
     {
       "path": "position/ball-owner-b07c-b204.bin",
@@ -1882,7 +3070,14 @@
       "symbol": "tbl_B07C",
       "layout": "motion/subtype pointer forest and XYZ frame offsets",
       "length": 392,
-      "sha256": "49bc2587209aee330724722c81d68b81ee4868c074afa694942a2a1fae2763f9"
+      "sha256": "49bc2587209aee330724722c81d68b81ee4868c074afa694942a2a1fae2763f9",
+      "source_ranges": [
+        {
+          "bank": "04",
+          "start": "0xB07C",
+          "length": 392
+        }
+      ]
     },
     {
       "path": "position/credits-score-coordinates-bb2a-bb3c.bin",
@@ -1893,7 +3088,32 @@
       "symbol": "tbl_BB2A/tbl_BB2B",
       "layout": "three interleaved actor XY pairs for each ending score card",
       "length": 18,
-      "sha256": "c44bf52d3eb1b9e263eaf32e511cdf876fab4a3550417fac348c7f573177b121"
+      "sha256": "c44bf52d3eb1b9e263eaf32e511cdf876fab4a3550417fac348c7f573177b121",
+      "source_ranges": [
+        {
+          "bank": "02",
+          "start": "0xBB2A",
+          "length": 18
+        }
+      ]
+    },
+    {
+      "path": "position/result-character-bounds-bb89-bb99.bin",
+      "category": "position",
+      "source": "src/bank_06.asm:BB89",
+      "bank": "06",
+      "address": "0xBB89",
+      "symbol": "tbl_BB89..tbl_BB97",
+      "layout": "eight little-endian X/Y/Z result-character boundary words",
+      "length": 16,
+      "sha256": "1de77894675e7ddcae7cc36a80a4f587ae2a48f75d06612ea7acbd4e26e443c6",
+      "source_ranges": [
+        {
+          "bank": "06",
+          "start": "0xBB89",
+          "length": 16
+        }
+      ]
     },
     {
       "path": "set-piece/dead-ball-bf7e-bfb2.bin",
@@ -1904,7 +3124,14 @@
       "symbol": "tbl_BF7E/tbl_BF8E/tbl_BFAE",
       "layout": "dead-ball owner, passer XY and throw-in Y tables",
       "length": 52,
-      "sha256": "ab84110c06435e2e168771f3e17c6e66aa3d90ae6ec9e86cc482fc3359e14452"
+      "sha256": "ab84110c06435e2e168771f3e17c6e66aa3d90ae6ec9e86cc482fc3359e14452",
+      "source_ranges": [
+        {
+          "bank": "01",
+          "start": "0xBF7E",
+          "length": 52
+        }
+      ]
     },
     {
       "path": "set-piece/goal-script-bd53-bd6a.bin",
@@ -1915,7 +3142,14 @@
       "symbol": "tbl_BD53/tbl_BD67",
       "layout": "goal-weather and boundary-script selector bytes with source gap",
       "length": 23,
-      "sha256": "900bc3856df42d37270d960bd940d99f4de3106e8193bfc03e8f30ed9de66401"
+      "sha256": "900bc3856df42d37270d960bd940d99f4de3106e8193bfc03e8f30ed9de66401",
+      "source_ranges": [
+        {
+          "bank": "06",
+          "start": "0xBD53",
+          "length": 23
+        }
+      ]
     },
     {
       "path": "special/super-hp-bd0f-bd4a.bin",
@@ -1926,7 +3160,14 @@
       "symbol": "tbl_BD0F/tbl_BD12",
       "layout": "special-shot HP bonuses and team/player special-shot records",
       "length": 59,
-      "sha256": "b9e86a13471859fdcf4a7c857578cc3e1c0a811afcf89db4d02b199de1724253"
+      "sha256": "b9e86a13471859fdcf4a7c857578cc3e1c0a811afcf89db4d02b199de1724253",
+      "source_ranges": [
+        {
+          "bank": "04",
+          "start": "0xBD0F",
+          "length": 59
+        }
+      ]
     },
     {
       "path": "special/super-launch-sound-bc5f-bc62.bin",
@@ -1937,7 +3178,14 @@
       "symbol": "tbl_BC5F",
       "layout": "launch sound ids by special-shot class",
       "length": 3,
-      "sha256": "9292656868d6b7d5d039f2fade522257ff83ecd9c7d0743d21ae91a27b5dff52"
+      "sha256": "9292656868d6b7d5d039f2fade522257ff83ecd9c7d0743d21ae91a27b5dff52",
+      "source_ranges": [
+        {
+          "bank": "04",
+          "start": "0xBC5F",
+          "length": 3
+        }
+      ]
     },
     {
       "path": "special/super-reference-x-bc7d-bc7f.bin",
@@ -1948,7 +3196,14 @@
       "symbol": "tbl_BC7D",
       "layout": "dynamic action-timer reference X",
       "length": 2,
-      "sha256": "46cc6a8cb5bcc0120f98b84c71699b2ac5b90cb34a781ae2a83305fa98cd8e67"
+      "sha256": "46cc6a8cb5bcc0120f98b84c71699b2ac5b90cb34a781ae2a83305fa98cd8e67",
+      "source_ranges": [
+        {
+          "bank": "04",
+          "start": "0xBC7D",
+          "length": 2
+        }
+      ]
     },
     {
       "path": "special/super-select-bb0e-bb1e.bin",
@@ -1959,7 +3214,14 @@
       "symbol": "tbl_BB0E/tbl_BB16",
       "layout": "goal-X thresholds and field-band special-shot ids",
       "length": 16,
-      "sha256": "08ab674ed78bcb0da90661830082db5480bab58aa4f72f530aeb2e0b73b0fec1"
+      "sha256": "08ab674ed78bcb0da90661830082db5480bab58aa4f72f530aeb2e0b73b0fec1",
+      "source_ranges": [
+        {
+          "bank": "04",
+          "start": "0xBB0E",
+          "length": 16
+        }
+      ]
     },
     {
       "path": "special/super-target-bbba-bbec.bin",
@@ -1970,7 +3232,14 @@
       "symbol": "tbl_BBBA/tbl_BBC0/tbl_BBC8",
       "layout": "target Y thresholds, goal X targets and target-Y pointer forest",
       "length": 50,
-      "sha256": "cf087ab1e805e938adc99970103914cb37c3186b9e41a9fa54291becfe11a01e"
+      "sha256": "cf087ab1e805e938adc99970103914cb37c3186b9e41a9fa54291becfe11a01e",
+      "source_ranges": [
+        {
+          "bank": "04",
+          "start": "0xBBBA",
+          "length": 50
+        }
+      ]
     },
     {
       "path": "special/super-timer-subtype-bd5e-bdc0.bin",
@@ -1981,7 +3250,14 @@
       "symbol": "tbl_BD5E/tbl_BD68",
       "layout": "action timers and interleaved next-number/subtype records",
       "length": 98,
-      "sha256": "63d5afc2d6c7ca13b6e021eb9b98cf31fe303b637f4df7ced839625bdea72f4e"
+      "sha256": "63d5afc2d6c7ca13b6e021eb9b98cf31fe303b637f4df7ced839625bdea72f4e",
+      "source_ranges": [
+        {
+          "bank": "04",
+          "start": "0xBD5E",
+          "length": 98
+        }
+      ]
     },
     {
       "path": "special/super-z-threshold-bdd7-bde4.bin",
@@ -1992,7 +3268,14 @@
       "symbol": "tbl_BDD7/tbl_BDDD/loc_BDE3 opcode",
       "layout": "two Z-threshold rows plus intentional unchecked opcode byte",
       "length": 13,
-      "sha256": "2c8797e6c544187d4bd06ec979a0499c12d1be1534418f853c5d946f7e965237"
+      "sha256": "2c8797e6c544187d4bd06ec979a0499c12d1be1534418f853c5d946f7e965237",
+      "source_ranges": [
+        {
+          "bank": "04",
+          "start": "0xBDD7",
+          "length": 13
+        }
+      ]
     },
     {
       "path": "speed/ai-distance-a4c6.bin",
@@ -2003,7 +3286,14 @@
       "symbol": "tbl_A4C6",
       "layout": "9 little-endian AI target speeds by distance",
       "length": 18,
-      "sha256": "4b2b077272a4fa3fc5d4dc063a5b733a6a2016fcd8eafccc330079aed9676990"
+      "sha256": "4b2b077272a4fa3fc5d4dc063a5b733a6a2016fcd8eafccc330079aed9676990",
+      "source_ranges": [
+        {
+          "bank": "06",
+          "start": "0xA4C6",
+          "length": 18
+        }
+      ]
     },
     {
       "path": "speed/angle-unit-vectors-f8e7.bin",
@@ -2014,7 +3304,14 @@
       "symbol": "tbl_F8E7/tbl_F907/tbl_F928/tbl_F949",
       "layout": "angle ratio and normalized three-component vector tables",
       "length": 131,
-      "sha256": "1dd9ecbfc99f731d7878848e3f09517add5f7b526e40c6bc0be6fa040116664e"
+      "sha256": "1dd9ecbfc99f731d7878848e3f09517add5f7b526e40c6bc0be6fa040116664e",
+      "source_ranges": [
+        {
+          "bank": "07",
+          "start": "0xF8E7",
+          "length": 131
+        }
+      ]
     },
     {
       "path": "speed/ball-angle-vector-9435.bin",
@@ -2025,7 +3322,14 @@
       "symbol": "tbl_9435",
       "layout": "16 signed XY unit vectors, four bytes each",
       "length": 64,
-      "sha256": "af59e18d54e4ab7ff228ba2c9e051ace4b625eb7f1bd562dc67ab2db1815c9c4"
+      "sha256": "af59e18d54e4ab7ff228ba2c9e051ace4b625eb7f1bd562dc67ab2db1815c9c4",
+      "source_ranges": [
+        {
+          "bank": "06",
+          "start": "0x9435",
+          "length": 64
+        }
+      ]
     },
     {
       "path": "speed/ball-animation-rate-96d0.bin",
@@ -2036,7 +3340,14 @@
       "symbol": "tbl_96D0/tbl_96D5",
       "layout": "five magnitude thresholds followed by five frame delays",
       "length": 10,
-      "sha256": "354b0fbbf5f56f350a9fab654a4d544145512528ea037f861aa062673b3d420f"
+      "sha256": "354b0fbbf5f56f350a9fab654a4d544145512528ea037f861aa062673b3d420f",
+      "source_ranges": [
+        {
+          "bank": "06",
+          "start": "0x96D0",
+          "length": 10
+        }
+      ]
     },
     {
       "path": "speed/ball-damping-9afc.bin",
@@ -2047,7 +3358,14 @@
       "symbol": "tbl_9AFC",
       "layout": "28 little-endian damping values",
       "length": 56,
-      "sha256": "76a732509227514a00e5eef6230446a55e54b345fcb66607175125a83312b81e"
+      "sha256": "76a732509227514a00e5eef6230446a55e54b345fcb66607175125a83312b81e",
+      "source_ranges": [
+        {
+          "bank": "06",
+          "start": "0x9AFC",
+          "length": 56
+        }
+      ]
     },
     {
       "path": "speed/ball-decay-factor-95eb.bin",
@@ -2058,7 +3376,14 @@
       "symbol": "tbl_95EB",
       "layout": "15 dry/wet XY decay factors",
       "length": 30,
-      "sha256": "8f42879b3649a88b01cb72b277f7b6ad49574e15db0a25d725a134c400f036e6"
+      "sha256": "8f42879b3649a88b01cb72b277f7b6ad49574e15db0a25d725a134c400f036e6",
+      "source_ranges": [
+        {
+          "bank": "06",
+          "start": "0x95EB",
+          "length": 30
+        }
+      ]
     },
     {
       "path": "speed/ball-gravity-94d7.bin",
@@ -2069,7 +3394,14 @@
       "symbol": "tbl_94D7",
       "layout": "little-endian gravity shared by object-ball launches",
       "length": 2,
-      "sha256": "8509b81230019d2ad970d970f791dfbdc8caf54f5c594fcd327cef9feed206c1"
+      "sha256": "8509b81230019d2ad970d970f791dfbdc8caf54f5c594fcd327cef9feed206c1",
+      "source_ranges": [
+        {
+          "bank": "06",
+          "start": "0x94D7",
+          "length": 2
+        }
+      ]
     },
     {
       "path": "speed/ball-motion07-angle-b164.bin",
@@ -2080,7 +3412,14 @@
       "symbol": "tbl_B164",
       "layout": "ball motion 07 current-angle values",
       "length": 16,
-      "sha256": "cf2c8ed7ac89250faccea666ac92ea1b0531e49e4a9c9920c6ec96d332132866"
+      "sha256": "cf2c8ed7ac89250faccea666ac92ea1b0531e49e4a9c9920c6ec96d332132866",
+      "source_ranges": [
+        {
+          "bank": "02",
+          "start": "0xB164",
+          "length": 16
+        }
+      ]
     },
     {
       "path": "speed/ball-owner-x-accel-9837.bin",
@@ -2091,7 +3430,14 @@
       "symbol": "tbl_9837",
       "layout": "four little-endian owner-follow X accelerations",
       "length": 8,
-      "sha256": "b5d531e54751f944e12e5c54fe7c69177768375df188d004418e9cd1aebae4bf"
+      "sha256": "b5d531e54751f944e12e5c54fe7c69177768375df188d004418e9cd1aebae4bf",
+      "source_ranges": [
+        {
+          "bank": "06",
+          "start": "0x9837",
+          "length": 8
+        }
+      ]
     },
     {
       "path": "speed/ball-owner-x-offset-982f.bin",
@@ -2102,7 +3448,14 @@
       "symbol": "tbl_982F",
       "layout": "four little-endian owner-relative X offsets",
       "length": 8,
-      "sha256": "7103485e7711044bfc8ff79f6e9ba1d193fda070635249227d5a014825d5f2a9"
+      "sha256": "7103485e7711044bfc8ff79f6e9ba1d193fda070635249227d5a014825d5f2a9",
+      "source_ranges": [
+        {
+          "bank": "06",
+          "start": "0x982F",
+          "length": 8
+        }
+      ]
     },
     {
       "path": "speed/ball-owner-y-adjust-971f.bin",
@@ -2113,7 +3466,14 @@
       "symbol": "tbl_971F",
       "layout": "eight little-endian owner-angle Y adjustments",
       "length": 16,
-      "sha256": "e7ebb6c0dbfb80d810fb3a24c260eee6f8f26a062951f7ffcfb7cf7c2eff2a33"
+      "sha256": "e7ebb6c0dbfb80d810fb3a24c260eee6f8f26a062951f7ffcfb7cf7c2eff2a33",
+      "source_ranges": [
+        {
+          "bank": "06",
+          "start": "0x971F",
+          "length": 16
+        }
+      ]
     },
     {
       "path": "speed/ball-surface-rebound-90ca.bin",
@@ -2124,7 +3484,14 @@
       "symbol": "tbl_90CA",
       "layout": "dry and wet vertical rebound subtrahends for four surfaces",
       "length": 16,
-      "sha256": "fde6405939d9750857038d2dab814a580e6f1c22b891262b439b058ddb8e1e90"
+      "sha256": "fde6405939d9750857038d2dab814a580e6f1c22b891262b439b058ddb8e1e90",
+      "source_ranges": [
+        {
+          "bank": "06",
+          "start": "0x90CA",
+          "length": 16
+        }
+      ]
     },
     {
       "path": "speed/ball-vector-9a57.bin",
@@ -2135,7 +3502,14 @@
       "symbol": "tbl_9A57",
       "layout": "8 signed XY vectors, four bytes each",
       "length": 32,
-      "sha256": "f360f098a83ca499c07e647130ccf0b487e89d3e47eebf6ee62498f327ef7efb"
+      "sha256": "f360f098a83ca499c07e647130ccf0b487e89d3e47eebf6ee62498f327ef7efb",
+      "source_ranges": [
+        {
+          "bank": "06",
+          "start": "0x9A57",
+          "length": 32
+        }
+      ]
     },
     {
       "path": "speed/ball-z-launch-94bf.bin",
@@ -2146,7 +3520,14 @@
       "symbol": "tbl_94BF",
       "layout": "six dry/wet little-endian vertical-speed pairs",
       "length": 24,
-      "sha256": "9d39683bf3c41858e752a92aee41ccb12aabb8c8d341567bb176d5ac858a850b"
+      "sha256": "9d39683bf3c41858e752a92aee41ccb12aabb8c8d341567bb176d5ac858a850b",
+      "source_ranges": [
+        {
+          "bank": "06",
+          "start": "0x94BF",
+          "length": 24
+        }
+      ]
     },
     {
       "path": "speed/object-speed-caps-a1d8.bin",
@@ -2157,7 +3538,32 @@
       "symbol": "tbl_A1D8/tbl_A1E0",
       "layout": "signed player and football XY speed-cap words",
       "length": 16,
-      "sha256": "e677c2e205b1234923f61491615ef9d0a5c25ea7fbf80779aadab8e65ac86acb"
+      "sha256": "e677c2e205b1234923f61491615ef9d0a5c25ea7fbf80779aadab8e65ac86acb",
+      "source_ranges": [
+        {
+          "bank": "06",
+          "start": "0xA1D8",
+          "length": 16
+        }
+      ]
+    },
+    {
+      "path": "speed/pass-vertical-cap-a5a6.bin",
+      "category": "speed",
+      "source": "src/bank_06.asm:A5A6",
+      "bank": "06",
+      "address": "0xA5A6",
+      "symbol": "tbl_A5A6",
+      "layout": "maximum pass-arc vertical speed high byte",
+      "length": 1,
+      "sha256": "c555eab45d08845ae9f10d452a99bfcb06f74a50b988fe7e48dd323789b88ee3",
+      "source_ranges": [
+        {
+          "bank": "06",
+          "start": "0xA5A6",
+          "length": 1
+        }
+      ]
     },
     {
       "path": "speed/player-angle-acceleration-a167.bin",
@@ -2168,7 +3574,14 @@
       "symbol": "tbl_A167/tbl_A168/tbl_A169/tbl_A16A",
       "layout": "eight signed XY acceleration vectors selected by new angle",
       "length": 32,
-      "sha256": "1e38a14e8a22ef8be9e83bf721380b6acb638643265fa04f2787ecf87a09867e"
+      "sha256": "1e38a14e8a22ef8be9e83bf721380b6acb638643265fa04f2787ecf87a09867e",
+      "source_ranges": [
+        {
+          "bank": "06",
+          "start": "0xA167",
+          "length": 32
+        }
+      ]
     },
     {
       "path": "speed/player-angle-quantize-861b.bin",
@@ -2179,7 +3592,14 @@
       "symbol": "tbl_861B",
       "layout": "sixteen canonical launch angles after direction folding",
       "length": 16,
-      "sha256": "996a7a5d10bc385de1cb7d9b9afdf64d32427ad1dd6f85228613004a7ca3728f"
+      "sha256": "996a7a5d10bc385de1cb7d9b9afdf64d32427ad1dd6f85228613004a7ca3728f",
+      "source_ranges": [
+        {
+          "bank": "06",
+          "start": "0x861B",
+          "length": 16
+        }
+      ]
     },
     {
       "path": "speed/player-motion-mask-99bc-99e8.bin",
@@ -2190,7 +3610,14 @@
       "symbol": "tbl_99BC/tbl_99E0",
       "layout": "nine rows of four player speed masks and dry/wet surface penalties",
       "length": 44,
-      "sha256": "fbfee64209785302fd686971d1b6961cf918e18f6ae5c55a8a34bcc8c011a70a"
+      "sha256": "fbfee64209785302fd686971d1b6961cf918e18f6ae5c55a8a34bcc8c011a70a",
+      "source_ranges": [
+        {
+          "bank": "06",
+          "start": "0x99BC",
+          "length": 44
+        }
+      ]
     },
     {
       "path": "speed/player-motion-surface-ce40.bin",
@@ -2201,7 +3628,14 @@
       "symbol": "tbl_CE40",
       "layout": "motion and raised-surface selector for player Z bounce speed",
       "length": 96,
-      "sha256": "ff30d7b833feb1d1ad261ef2f19defd26d5065d0a9206a833f3edfc2652fa356"
+      "sha256": "ff30d7b833feb1d1ad261ef2f19defd26d5065d0a9206a833f3edfc2652fa356",
+      "source_ranges": [
+        {
+          "bank": "07",
+          "start": "0xCE40",
+          "length": 96
+        }
+      ]
     },
     {
       "path": "speed/player-motion21-angle-8498.bin",
@@ -2212,7 +3646,14 @@
       "symbol": "tbl_8498",
       "layout": "motion 21 direction/new-angle canonical angle map",
       "length": 16,
-      "sha256": "cf2c8ed7ac89250faccea666ac92ea1b0531e49e4a9c9920c6ec96d332132866"
+      "sha256": "cf2c8ed7ac89250faccea666ac92ea1b0531e49e4a9c9920c6ec96d332132866",
+      "source_ranges": [
+        {
+          "bank": "06",
+          "start": "0x8498",
+          "length": 16
+        }
+      ]
     },
     {
       "path": "speed/player-motion25-angle-86e5-86ea.bin",
@@ -2223,7 +3664,14 @@
       "symbol": "tbl_86E5/tbl_86E9",
       "layout": "motion 25 per-subtype turn deltas and initial angle bits",
       "length": 5,
-      "sha256": "aa1233a36cca2f3b2d7987940124652227186f62b0123cb6d28ba5d213ccec71"
+      "sha256": "aa1233a36cca2f3b2d7987940124652227186f62b0123cb6d28ba5d213ccec71",
+      "source_ranges": [
+        {
+          "bank": "06",
+          "start": "0x86E5",
+          "length": 5
+        }
+      ]
     },
     {
       "path": "speed/player-subtype-angle-8abc.bin",
@@ -2234,7 +3682,14 @@
       "symbol": "tbl_8ABC",
       "layout": "two horizontal launch angles selected by animation subtype",
       "length": 2,
-      "sha256": "085edad400785fca7e7e90b1fac4beb776fc2beee5aa24352d5f39b5d57efcad"
+      "sha256": "085edad400785fca7e7e90b1fac4beb776fc2beee5aa24352d5f39b5d57efcad",
+      "source_ranges": [
+        {
+          "bank": "06",
+          "start": "0x8ABC",
+          "length": 2
+        }
+      ]
     },
     {
       "path": "speed/player-surface-z-thresholds-cdc7.bin",
@@ -2245,7 +3700,14 @@
       "symbol": "tbl_CDC7/tbl_CDC9",
       "layout": "raised-surface Z thresholds and clamp coordinates",
       "length": 4,
-      "sha256": "03d486b57b7bcc3fb24018fdad58d09a65902a2d566ae2a9ba0b1307a00611ca"
+      "sha256": "03d486b57b7bcc3fb24018fdad58d09a65902a2d566ae2a9ba0b1307a00611ca",
+      "source_ranges": [
+        {
+          "bank": "07",
+          "start": "0xCDC7",
+          "length": 4
+        }
+      ]
     },
     {
       "path": "speed/player-z-bounce-ce30.bin",
@@ -2256,7 +3718,14 @@
       "symbol": "tbl_CE30",
       "layout": "8 little-endian player surface bounce speeds",
       "length": 16,
-      "sha256": "b0f65444d3a45b3dcb6a4689e062ecb1b1ad8fa063b4437a8eac1cc30e41dfa7"
+      "sha256": "b0f65444d3a45b3dcb6a4689e062ecb1b1ad8fa063b4437a8eac1cc30e41dfa7",
+      "source_ranges": [
+        {
+          "bank": "07",
+          "start": "0xCE30",
+          "length": 16
+        }
+      ]
     },
     {
       "path": "speed/prematch-object-8f6d-8f73.bin",
@@ -2267,7 +3736,14 @@
       "symbol": "tbl_8F6D/tbl_8F6E",
       "layout": "three little-endian X speeds for prematch motions 02-04",
       "length": 6,
-      "sha256": "c7cbf2044940e01b036ae3233aca41fe3427fccfc3e400f3e279ab8d045c72e8"
+      "sha256": "c7cbf2044940e01b036ae3233aca41fe3427fccfc3e400f3e279ab8d045c72e8",
+      "source_ranges": [
+        {
+          "bank": "05",
+          "start": "0x8F6D",
+          "length": 6
+        }
+      ]
     },
     {
       "path": "speed/special-shot-bd4a.bin",
@@ -2278,7 +3754,14 @@
       "symbol": "tbl_BD4A",
       "layout": "special-shot XY and Z speed records",
       "length": 20,
-      "sha256": "6eb1f976989f32812039952185ec47c7ca881004c45277bebcca7e57d2a87a3e"
+      "sha256": "6eb1f976989f32812039952185ec47c7ca881004c45277bebcca7e57d2a87a3e",
+      "source_ranges": [
+        {
+          "bank": "04",
+          "start": "0xBD4A",
+          "length": 20
+        }
+      ]
     },
     {
       "path": "speed/z-speed-9b7b.bin",
@@ -2289,7 +3772,14 @@
       "symbol": "tbl_9B7B",
       "layout": "12 little-endian vertical speeds",
       "length": 24,
-      "sha256": "85f49ced399d6219d4e6167bf9b9bde35a07143072686b22c3eb36996822cf52"
+      "sha256": "85f49ced399d6219d4e6167bf9b9bde35a07143072686b22c3eb36996822cf52",
+      "source_ranges": [
+        {
+          "bank": "06",
+          "start": "0x9B7B",
+          "length": 24
+        }
+      ]
     },
     {
       "path": "team/japan-player-names-c0a0-c0dc.bin",
@@ -2300,7 +3790,14 @@
       "symbol": "off_C0A0_00",
       "layout": "twelve fixed-width five-byte Japan player-name rows",
       "length": 60,
-      "sha256": "42be59defcd85804ebf89fa5cda3321e4db30ec4af30ed9647e8b2a20860fa46"
+      "sha256": "42be59defcd85804ebf89fa5cda3321e4db30ec4af30ed9647e8b2a20860fa46",
+      "source_ranges": [
+        {
+          "bank": "07",
+          "start": "0xC0A0",
+          "length": 60
+        }
+      ]
     },
     {
       "path": "team/music-by-group-a6d1.bin",
@@ -2311,7 +3808,14 @@
       "symbol": "tbl_A6D1",
       "layout": "field music ids by opponent continent group",
       "length": 5,
-      "sha256": "a346d349e9dbb44ebab2d81d8bdfdc726e1b193fe593ef893df94c10b2b92e7a"
+      "sha256": "a346d349e9dbb44ebab2d81d8bdfdc726e1b193fe593ef893df94c10b2b92e7a",
+      "source_ranges": [
+        {
+          "bank": "05",
+          "start": "0xA6D1",
+          "length": 5
+        }
+      ]
     },
     {
       "path": "team/opponent-select-89f9.bin",
@@ -2322,7 +3826,14 @@
       "symbol": "tbl_89F9/tbl_89FA",
       "layout": "12 interleaved team/status-index pairs",
       "length": 24,
-      "sha256": "ee596b22fc6be8385d466f833d0bed843a4c5a7e4e152781c00929eaf2ee263b"
+      "sha256": "ee596b22fc6be8385d466f833d0bed843a4c5a7e4e152781c00929eaf2ee263b",
+      "source_ranges": [
+        {
+          "bank": "05",
+          "start": "0x89F9",
+          "length": 24
+        }
+      ]
     },
     {
       "path": "team/player-order-visual-bdd6-be16.bin",
@@ -2333,7 +3844,14 @@
       "symbol": "tbl_BDD6/tbl_BDF6",
       "layout": "per-team sprite palettes plus interleaved sprite-bank/portrait-bank ids",
       "length": 64,
-      "sha256": "f182d3f5b45f3b4ca579047ccddbc0e6b21859b78b244209aed2bfeb9df1012c"
+      "sha256": "f182d3f5b45f3b4ca579047ccddbc0e6b21859b78b244209aed2bfeb9df1012c",
+      "source_ranges": [
+        {
+          "bank": "05",
+          "start": "0xBDD6",
+          "length": 64
+        }
+      ]
     },
     {
       "path": "team/player-profile-bcfc-be88.bin",
@@ -2344,7 +3862,14 @@
       "symbol": "tbl_BCFC/tbl_BD00/tbl_BD18/off_BD38..off_BE70",
       "layout": "captain HP bonuses, formation control rows and sixteen team player-profile pointers",
       "length": 396,
-      "sha256": "1ec5f921d70bb90b59cf334e1d2d853b6e6b307fdf85b265181e4feb0dbf0e34"
+      "sha256": "1ec5f921d70bb90b59cf334e1d2d853b6e6b307fdf85b265181e4feb0dbf0e34",
+      "source_ranges": [
+        {
+          "bank": "01",
+          "start": "0xBCFC",
+          "length": 396
+        }
+      ]
     },
     {
       "path": "team/prematch-character-8ea4-8ee5.bin",
@@ -2355,7 +3880,14 @@
       "symbol": "tbl_8EA4/tbl_8EB3/tbl_8EC3/tbl_8ED5",
       "layout": "continent motion/palettes, team animations/palettes and four display-object coordinates",
       "length": 65,
-      "sha256": "1fbab98e1d5dc8ac07216bdb18bd95986fd98545faed10eb11513fafc4250a98"
+      "sha256": "1fbab98e1d5dc8ac07216bdb18bd95986fd98545faed10eb11513fafc4250a98",
+      "source_ranges": [
+        {
+          "bank": "05",
+          "start": "0x8EA4",
+          "length": 65
+        }
+      ]
     },
     {
       "path": "team/prematch-face-pointers-be16-be34.bin",
@@ -2366,7 +3898,14 @@
       "symbol": "tbl_BE16/off_BE1C/off_BE22/off_BE28",
       "layout": "three face-row pointers followed by the source face-id rows",
       "length": 30,
-      "sha256": "a1c8494ae2116688ca9d91bb1b8125b2571110707eddd21af41ec324569baec5"
+      "sha256": "a1c8494ae2116688ca9d91bb1b8125b2571110707eddd21af41ec324569baec5",
+      "source_ranges": [
+        {
+          "bank": "05",
+          "start": "0xBE16",
+          "length": 30
+        }
+      ]
     },
     {
       "path": "team/prematch-object-order-8efb-8eff.bin",
@@ -2377,7 +3916,14 @@
       "symbol": "tbl_8EFB",
       "layout": "four object ids dispatched by the prematch display loop",
       "length": 4,
-      "sha256": "1c3e10f801e15f2c5f4d1446711566a913e2c7dd1769056b7e0230c765b5ecfc"
+      "sha256": "1c3e10f801e15f2c5f4d1446711566a913e2c7dd1769056b7e0230c765b5ecfc",
+      "source_ranges": [
+        {
+          "bank": "05",
+          "start": "0x8EFB",
+          "length": 4
+        }
+      ]
     },
     {
       "path": "team/prematch-sprite-banks-bdf6-be16.bin",
@@ -2388,7 +3934,14 @@
       "symbol": "tbl_BDF6/tbl_BDF7",
       "layout": "two interleaved prematch character sprite-bank ids per team",
       "length": 32,
-      "sha256": "ed637bd09953a53010fc5effecad48903793525a13ecef3082aee613fea54775"
+      "sha256": "ed637bd09953a53010fc5effecad48903793525a13ecef3082aee613fea54775",
+      "source_ranges": [
+        {
+          "bank": "05",
+          "start": "0xBDF6",
+          "length": 32
+        }
+      ]
     },
     {
       "path": "team/preview-option-team-8cfe-8d0a.bin",
@@ -2399,7 +3952,14 @@
       "symbol": "tbl_8CFE",
       "layout": "twelve preview option values mapped to original team ids",
       "length": 12,
-      "sha256": "466f05376bb9dbf2033af951785a6f0da79afc61b465d522cf03ad1aadd76690"
+      "sha256": "466f05376bb9dbf2033af951785a6f0da79afc61b465d522cf03ad1aadd76690",
+      "source_ranges": [
+        {
+          "bank": "05",
+          "start": "0x8CFE",
+          "length": 12
+        }
+      ]
     },
     {
       "path": "team/preview-position-8b7c-8b80.bin",
@@ -2410,7 +3970,14 @@
       "symbol": "tbl_8B7C/tbl_8B7D",
       "layout": "two interleaved XY positions for the team preview characters",
       "length": 4,
-      "sha256": "2e2c6ce4f414375eacd06751ed0c2293fb28b9e1c3e5d69b3791b0bd5a7828b5"
+      "sha256": "2e2c6ce4f414375eacd06751ed0c2293fb28b9e1c3e5d69b3791b0bd5a7828b5",
+      "source_ranges": [
+        {
+          "bank": "05",
+          "start": "0x8B7C",
+          "length": 4
+        }
+      ]
     },
     {
       "path": "team/right-field-bef6-bf06.bin",
@@ -2421,7 +3988,14 @@
       "symbol": "tbl_BEF6",
       "layout": "right-side field flag bits selected by team id",
       "length": 16,
-      "sha256": "9377c26e63716bba16f71292f5330c100b19d56cb7cd3afb1ef091c72d6a4c6e"
+      "sha256": "9377c26e63716bba16f71292f5330c100b19d56cb7cd3afb1ef091c72d6a4c6e",
+      "source_ranges": [
+        {
+          "bank": "00",
+          "start": "0xBEF6",
+          "length": 16
+        }
+      ]
     },
     {
       "path": "team/saved-player-rules-bf1f-bf2b.bin",
@@ -2432,7 +4006,14 @@
       "symbol": "tbl_BF1F",
       "layout": "twelve saved-player progression rule bytes",
       "length": 12,
-      "sha256": "a784171d184aac7f0ed08a54ac495081d020946663b329267d7d06612771b5c8"
+      "sha256": "a784171d184aac7f0ed08a54ac495081d020946663b329267d7d06612771b5c8",
+      "source_ranges": [
+        {
+          "bank": "00",
+          "start": "0xBF1F",
+          "length": 12
+        }
+      ]
     },
     {
       "path": "team/score-scene-b501-b53d.bin",
@@ -2443,7 +4024,14 @@
       "symbol": "tbl_B501/tbl_B511/tbl_B52D",
       "layout": "score-scene face ids plus four little-endian XY coordinate records",
       "length": 60,
-      "sha256": "6240ce09c5dbf336a8496703f8750f23c216cd83b16259a9b6f1fb52470edc12"
+      "sha256": "6240ce09c5dbf336a8496703f8750f23c216cd83b16259a9b6f1fb52470edc12",
+      "source_ranges": [
+        {
+          "bank": "02",
+          "start": "0xB501",
+          "length": 60
+        }
+      ]
     },
     {
       "path": "team/tournament-code-window-b9c4-b9e4.bin",
@@ -2454,7 +4042,14 @@
       "symbol": "tbl_B9C4/sub_B9C4 opcode window",
       "layout": "thirty-two executable bytes intentionally reused by tournament obfuscation",
       "length": 32,
-      "sha256": "adc625b3d0eadb28211bbd5c082689720e3e3ea352909016d515bada799ceb3b"
+      "sha256": "adc625b3d0eadb28211bbd5c082689720e3e3ea352909016d515bada799ceb3b",
+      "source_ranges": [
+        {
+          "bank": "05",
+          "start": "0xB9C4",
+          "length": 32
+        }
+      ]
     },
     {
       "path": "team/tournament-progress-b465-b47c.bin",
@@ -2465,7 +4060,14 @@
       "symbol": "tbl_B465/tbl_B469/tbl_B46C",
       "layout": "win marks, difficulty masks and sixteen opponent progress values",
       "length": 23,
-      "sha256": "da6e1ea4f4653b9cef82ffc40735aad9d399038860d0e95e3ddddef0702bd9a1"
+      "sha256": "da6e1ea4f4653b9cef82ffc40735aad9d399038860d0e95e3ddddef0702bd9a1",
+      "source_ranges": [
+        {
+          "bank": "05",
+          "start": "0xB465",
+          "length": 23
+        }
+      ]
     },
     {
       "path": "team/tournament-status-b989-b98d.bin",
@@ -2476,7 +4078,14 @@
       "symbol": "tbl_B989",
       "layout": "decoded tournament status high bits",
       "length": 4,
-      "sha256": "a0576a84273077d100611e300d64401ebb7a9da95b31082e3f2f54cfb36fdb40"
+      "sha256": "a0576a84273077d100611e300d64401ebb7a9da95b31082e3f2f54cfb36fdb40",
+      "source_ranges": [
+        {
+          "bank": "05",
+          "start": "0xB989",
+          "length": 4
+        }
+      ]
     },
     {
       "path": "team/victory-japan-face-b511-b51d.bin",
@@ -2487,7 +4096,14 @@
       "symbol": "tbl_B511",
       "layout": "Japan player-number to face ids",
       "length": 12,
-      "sha256": "1eb1d5df467c3a4b6aaf9603b4787e0a2ff8d3026d651833133ce33dda1ce4e6"
+      "sha256": "1eb1d5df467c3a4b6aaf9603b4787e0a2ff8d3026d651833133ce33dda1ce4e6",
+      "source_ranges": [
+        {
+          "bank": "02",
+          "start": "0xB511",
+          "length": 12
+        }
+      ]
     },
     {
       "path": "team/victory-records-b63f-b6ce.bin",
@@ -2498,7 +4114,14 @@
       "symbol": "tbl_B63F..tbl_B6C3",
       "layout": "thirteen compact eleven-byte victory actor records",
       "length": 143,
-      "sha256": "8f1d83f5eb6789fc9a0135bf8306ef47a91b5a95280d67f872e04e5130834faf"
+      "sha256": "8f1d83f5eb6789fc9a0135bf8306ef47a91b5a95280d67f872e04e5130834faf",
+      "source_ranges": [
+        {
+          "bank": "02",
+          "start": "0xB63F",
+          "length": 143
+        }
+      ]
     },
     {
       "path": "timing/field-nmi-cycle-model-v1.bin",

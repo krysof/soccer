@@ -674,7 +674,7 @@ async function loadCppCoreData(api) {
 }
 async function loadWasm() {
   const filename = "soccer_core_cpp.wasm";
-  const relative = "../soccer_core_cpp.23c824e6.wasm";
+  const relative = "../soccer_core_cpp.5d45c2b0.wasm";
   const response = await fetchCoreResponse(filename, assetUrl(relative), rootAssetUrl(filename));
   const bytes = await response.arrayBuffer();
   const result = await WebAssembly.instantiate(bytes, {});
