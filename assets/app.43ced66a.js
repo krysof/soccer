@@ -65,6 +65,7 @@ const releaseVersionMeta = document.querySelector('meta[name="soccer-release-ver
 const app = document.querySelector("#app");
 const gameWrap = document.querySelector(".game-wrap");
 const touchControls = document.querySelector("#touchControls");
+let leftControls = document.querySelector("#leftControls");
 const stick = document.querySelector("#stick");
 const knob = document.querySelector("#knob");
 const btnKick = document.querySelector("#btnKick");
@@ -108,13 +109,24 @@ function verifyCoreReleaseMetadata(api) {
   document.body.dataset.coreReleaseVersion = `${coreDate}.${coreRevision}`;
 }
 function enforceControllerOutsideGame() {
-  if (touchControls.parentElement !== app || touchControls.previousElementSibling !== gameWrap) {
-    gameWrap.insertAdjacentElement("afterend", touchControls);
+  if (!leftControls) {
+    leftControls = document.createElement("div");
+    leftControls.id = "leftControls";
+    leftControls.className = "left-controls";
+    leftControls.setAttribute("aria-label", "左侧方向控制区");
   }
+  if (stick.parentElement !== leftControls) leftControls.append(stick);
+  if (leftControls.parentElement !== touchControls) touchControls.prepend(leftControls);
+  if (gameWrap.parentElement !== touchControls) touchControls.insertBefore(gameWrap, document.querySelector(".buttons"));
   touchControls.dataset.surface = "outside-game";
-  touchControls.style.setProperty("position", "static", "important");
-  touchControls.style.setProperty("inset", "auto", "important");
-  touchControls.style.setProperty("transform", "none", "important");
+  gameWrap.dataset.surface = "game";
+  const rotated = isPortraitGameLayout();
+  touchControls.dataset.orientation = rotated ? "portrait-rotated" : "landscape";
+  document.documentElement.classList.toggle("portrait-game-layout", rotated);
+}
+function isPortraitGameLayout() {
+  return window.matchMedia("(orientation: portrait)").matches
+    && (window.matchMedia("(pointer: coarse)").matches || window.innerWidth <= 900);
 }
 enforceControllerOutsideGame();
 window.addEventListener("resize", enforceControllerOutsideGame, { passive: true });
@@ -449,14 +461,18 @@ function updateStick(event) {
   const cy = rect.top + rect.height / 2;
   const max = rect.width * 0.34;
   const point = eventClientPoint(event);
-  let dx = point.x - cx;
-  let dy = point.y - cy;
+  const screenDx = point.x - cx;
+  const screenDy = point.y - cy;
+  let dx = isPortraitGameLayout() ? screenDy : screenDx;
+  let dy = isPortraitGameLayout() ? -screenDx : screenDy;
   const len = Math.hypot(dx, dy);
   if (len > max) { dx = dx / len * max; dy = dy / len * max; }
   const fixedAxisX = Math.abs(dx) < max * 0.16 ? 0 : Math.sign(dx);
   const fixedAxisY = Math.abs(dy) < max * 0.16 ? 0 : Math.sign(dy);
-  const relDx = point.x - touch.originX;
-  const relDy = point.y - touch.originY;
+  const screenRelDx = point.x - touch.originX;
+  const screenRelDy = point.y - touch.originY;
+  const relDx = isPortraitGameLayout() ? screenRelDy : screenRelDx;
+  const relDy = isPortraitGameLayout() ? -screenRelDx : screenRelDy;
   const relDead = Math.max(10, rect.width * 0.08);
   const relAxisX = Math.abs(relDx) < relDead ? 0 : Math.sign(relDx);
   const relAxisY = Math.abs(relDy) < relDead ? 0 : Math.sign(relDy);
@@ -467,18 +483,18 @@ function updateStick(event) {
 }
 function shouldStartFallbackStick(target, clientX, clientY) {
   if (target?.closest?.(".touch-btn")) return false;
+  if (target?.closest?.(".game-wrap")) return false;
   if (target?.closest?.("#stick")) return true;
-  const panelRect = touchControls.getBoundingClientRect();
+  const leftRect = leftControls.getBoundingClientRect();
   const stickRect = stick.getBoundingClientRect();
   const pad = Math.max(24, stickRect.width * 0.20);
-  const inControllerPanel =
-    clientX >= panelRect.left && clientX <= panelRect.right &&
-    clientY >= panelRect.top && clientY <= panelRect.bottom;
+  const inLeftControllerArea =
+    clientX >= leftRect.left && clientX <= leftRect.right &&
+    clientY >= leftRect.top && clientY <= leftRect.bottom;
   const inExpandedStick =
     clientX >= stickRect.left - pad && clientX <= stickRect.right + pad &&
     clientY >= stickRect.top - pad && clientY <= stickRect.bottom + pad;
-  const inLeftControllerArea = clientX <= panelRect.left + panelRect.width * 0.48;
-  return inControllerPanel && (inExpandedStick || inLeftControllerArea);
+  return inExpandedStick || inLeftControllerArea;
 }
 function beginStickPointer(event, captureElement = stick) {
   event.preventDefault();
@@ -707,7 +723,7 @@ async function loadCppCoreData(api) {
 }
 async function loadWasm() {
   const filename = "soccer_core_cpp.wasm";
-  const relative = "../soccer_core_cpp.850bfe4c.wasm";
+  const relative = "../soccer_core_cpp.4a159550.wasm";
   const response = await fetchCoreResponse(filename, assetUrl(relative), rootAssetUrl(filename));
   const bytes = await response.arrayBuffer();
   const result = await WebAssembly.instantiate(bytes, {});
