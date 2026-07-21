@@ -1498,39 +1498,210 @@
       ]
     },
     {
-      "path": "field/bank01-address-image-8000-c000.bin",
+      "path": "field/attribute-map-bank01.bin",
       "category": "field",
-      "source": "src/bank_01.asm:8000",
+      "source": "src/bank_01.asm:801C",
       "bank": "01",
-      "address": "0x8000",
-      "symbol": "bank_01 address image",
-      "layout": "complete bank_01 CPU address image used by the field surface pointer traversal",
-      "length": 16384,
-      "sha256": "b157d2a9149096d542ce3fe80a87990f4ded831266e9ff9696927b6a0195e311",
+      "address": "0x801C",
+      "symbol": "reachable field layout pointer forest",
+      "layout": "FSM1 sparse u16-address spans containing reachable attribute root words, screen pointers and 64-byte attribute planes",
+      "length": 1171,
+      "sha256": "e00cf2b7739dafcb282e195ece9805fe7461941d1472303db119f8482d3c79c2",
       "source_ranges": [
         {
           "bank": "01",
-          "start": "0x8000",
-          "length": 16384
+          "start": "0x801C",
+          "length": 4
+        },
+        {
+          "bank": "01",
+          "start": "0x8054",
+          "length": 48
+        },
+        {
+          "bank": "01",
+          "start": "0x8904",
+          "length": 64
+        },
+        {
+          "bank": "01",
+          "start": "0x8A24",
+          "length": 64
+        },
+        {
+          "bank": "01",
+          "start": "0x8F65",
+          "length": 64
+        },
+        {
+          "bank": "01",
+          "start": "0x9268",
+          "length": 64
+        },
+        {
+          "bank": "01",
+          "start": "0x9ECD",
+          "length": 64
+        },
+        {
+          "bank": "01",
+          "start": "0x9F6D",
+          "length": 64
+        },
+        {
+          "bank": "01",
+          "start": "0xA29B",
+          "length": 64
+        },
+        {
+          "bank": "01",
+          "start": "0xA397",
+          "length": 64
+        },
+        {
+          "bank": "01",
+          "start": "0xA504",
+          "length": 64
+        },
+        {
+          "bank": "01",
+          "start": "0xA725",
+          "length": 64
+        },
+        {
+          "bank": "01",
+          "start": "0xAA54",
+          "length": 64
+        },
+        {
+          "bank": "01",
+          "start": "0xAAF4",
+          "length": 64
+        },
+        {
+          "bank": "01",
+          "start": "0xACE2",
+          "length": 64
+        },
+        {
+          "bank": "01",
+          "start": "0xAD82",
+          "length": 81
+        },
+        {
+          "bank": "01",
+          "start": "0xAF8E",
+          "length": 64
+        },
+        {
+          "bank": "01",
+          "start": "0xB079",
+          "length": 64
         }
+      ],
+      "consumers": [
+        "soccer::build_statusbar_and_scrolling_field_column"
       ]
     },
     {
-      "path": "field/bank02-address-image-8000-c000.bin",
+      "path": "field/attribute-map-bank02.bin",
       "category": "field",
-      "source": "src/bank_02.asm:8000",
+      "source": "src/bank_02.asm:801C",
       "bank": "02",
-      "address": "0x8000",
-      "symbol": "bank_02 address image",
-      "layout": "complete bank_02 CPU address image selected by ram_номер_prg_банка for field surface traversal",
-      "length": 16384,
-      "sha256": "0730ab4281edb6524edbdf543ab0a3eacd5b77ff61ebb46f568264e2f94dbe73",
+      "address": "0x801C",
+      "symbol": "reachable field layout pointer forest",
+      "layout": "FSM1 sparse u16-address spans containing reachable attribute root words, screen pointers and 64-byte attribute planes",
+      "length": 1111,
+      "sha256": "603848af1ce8075123be95a8d9831448e0391597140190b87d509faabd60c3b5",
       "source_ranges": [
         {
           "bank": "02",
-          "start": "0x8000",
-          "length": 16384
+          "start": "0x801C",
+          "length": 2
+        },
+        {
+          "bank": "02",
+          "start": "0x8044",
+          "length": 32
+        },
+        {
+          "bank": "02",
+          "start": "0x863F",
+          "length": 64
+        },
+        {
+          "bank": "02",
+          "start": "0x8B80",
+          "length": 64
+        },
+        {
+          "bank": "02",
+          "start": "0x8CE5",
+          "length": 64
+        },
+        {
+          "bank": "02",
+          "start": "0x9047",
+          "length": 64
+        },
+        {
+          "bank": "02",
+          "start": "0x91F2",
+          "length": 107
+        },
+        {
+          "bank": "02",
+          "start": "0x9286",
+          "length": 64
+        },
+        {
+          "bank": "02",
+          "start": "0x939D",
+          "length": 64
+        },
+        {
+          "bank": "02",
+          "start": "0x99E8",
+          "length": 64
+        },
+        {
+          "bank": "02",
+          "start": "0xA012",
+          "length": 64
+        },
+        {
+          "bank": "02",
+          "start": "0xA123",
+          "length": 64
+        },
+        {
+          "bank": "02",
+          "start": "0xA342",
+          "length": 64
+        },
+        {
+          "bank": "02",
+          "start": "0xA3E1",
+          "length": 64
+        },
+        {
+          "bank": "02",
+          "start": "0xA4D3",
+          "length": 64
+        },
+        {
+          "bank": "02",
+          "start": "0xA897",
+          "length": 64
+        },
+        {
+          "bank": "02",
+          "start": "0xA9D1",
+          "length": 64
         }
+      ],
+      "consumers": [
+        "soccer::build_statusbar_and_scrolling_field_column"
       ]
     },
     {
@@ -1567,6 +1738,220 @@
           "start": "0xBCC8",
           "length": 112
         }
+      ]
+    },
+    {
+      "path": "field/surface-tile-map-bank01.bin",
+      "category": "field",
+      "source": "src/bank_01.asm:8014",
+      "bank": "01",
+      "address": "0x8014",
+      "symbol": "reachable field layout pointer forest",
+      "layout": "FSM1 sparse u16-address spans containing reachable surface/tile root words, screen/row pointer forests and 32-byte tile rows",
+      "length": 11502,
+      "sha256": "8b39ab0965cff3a9e537bf0ec1c5cc178fb7318fbc5bdc955f6e922bfe275bb5",
+      "source_ranges": [
+        {
+          "bank": "01",
+          "start": "0x8014",
+          "length": 4
+        },
+        {
+          "bank": "01",
+          "start": "0x8024",
+          "length": 48
+        },
+        {
+          "bank": "01",
+          "start": "0x8084",
+          "length": 2176
+        },
+        {
+          "bank": "01",
+          "start": "0x8944",
+          "length": 224
+        },
+        {
+          "bank": "01",
+          "start": "0x8A64",
+          "length": 1281
+        },
+        {
+          "bank": "01",
+          "start": "0x8FA5",
+          "length": 707
+        },
+        {
+          "bank": "01",
+          "start": "0x92A8",
+          "length": 3109
+        },
+        {
+          "bank": "01",
+          "start": "0x9F0D",
+          "length": 96
+        },
+        {
+          "bank": "01",
+          "start": "0x9FAD",
+          "length": 750
+        },
+        {
+          "bank": "01",
+          "start": "0xA2DB",
+          "length": 188
+        },
+        {
+          "bank": "01",
+          "start": "0xA3D7",
+          "length": 301
+        },
+        {
+          "bank": "01",
+          "start": "0xA544",
+          "length": 481
+        },
+        {
+          "bank": "01",
+          "start": "0xA765",
+          "length": 751
+        },
+        {
+          "bank": "01",
+          "start": "0xAA94",
+          "length": 96
+        },
+        {
+          "bank": "01",
+          "start": "0xAB34",
+          "length": 430
+        },
+        {
+          "bank": "01",
+          "start": "0xAD22",
+          "length": 96
+        },
+        {
+          "bank": "01",
+          "start": "0xAD93",
+          "length": 32
+        },
+        {
+          "bank": "01",
+          "start": "0xADD3",
+          "length": 443
+        },
+        {
+          "bank": "01",
+          "start": "0xAFCE",
+          "length": 171
+        },
+        {
+          "bank": "01",
+          "start": "0xB099",
+          "length": 32
+        }
+      ],
+      "consumers": [
+        "soccer::probe_field_surface",
+        "soccer::build_statusbar_and_scrolling_field_column"
+      ]
+    },
+    {
+      "path": "field/surface-tile-map-bank02.bin",
+      "category": "field",
+      "source": "src/bank_02.asm:8024",
+      "bank": "02",
+      "address": "0x8024",
+      "symbol": "reachable field layout pointer forest",
+      "layout": "FSM1 sparse u16-address spans containing reachable surface/tile root words, screen/row pointer forests and 32-byte tile rows",
+      "length": 9884,
+      "sha256": "394c115070501d17b58439075d742afa0e87f35b2a399a1767d07b5abbf1e7bf",
+      "source_ranges": [
+        {
+          "bank": "02",
+          "start": "0x8024",
+          "length": 32
+        },
+        {
+          "bank": "02",
+          "start": "0x8064",
+          "length": 1499
+        },
+        {
+          "bank": "02",
+          "start": "0x867F",
+          "length": 1295
+        },
+        {
+          "bank": "02",
+          "start": "0x8BA8",
+          "length": 317
+        },
+        {
+          "bank": "02",
+          "start": "0x8D25",
+          "length": 802
+        },
+        {
+          "bank": "02",
+          "start": "0x9071",
+          "length": 385
+        },
+        {
+          "bank": "02",
+          "start": "0x924B",
+          "length": 62
+        },
+        {
+          "bank": "02",
+          "start": "0x92C6",
+          "length": 216
+        },
+        {
+          "bank": "02",
+          "start": "0x93BC",
+          "length": 1580
+        },
+        {
+          "bank": "02",
+          "start": "0x9A28",
+          "length": 1514
+        },
+        {
+          "bank": "02",
+          "start": "0xA052",
+          "length": 209
+        },
+        {
+          "bank": "02",
+          "start": "0xA163",
+          "length": 479
+        },
+        {
+          "bank": "02",
+          "start": "0xA382",
+          "length": 96
+        },
+        {
+          "bank": "02",
+          "start": "0xA421",
+          "length": 178
+        },
+        {
+          "bank": "02",
+          "start": "0xA513",
+          "length": 900
+        },
+        {
+          "bank": "02",
+          "start": "0xA8D7",
+          "length": 250
+        }
+      ],
+      "consumers": [
+        "soccer::probe_field_surface",
+        "soccer::build_statusbar_and_scrolling_field_column"
       ]
     },
     {
