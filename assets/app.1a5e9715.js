@@ -153,6 +153,20 @@ const touch = {
   lastBits: 0,
   lastPackedBits: 0,
 };
+const runtimeLifecycle = {
+  paused: document.hidden,
+  userStarted: false,
+  gamepadsNeedNeutral: false,
+  pauseCount: 0,
+  resumeCount: 0,
+  clockResetSerial: 0,
+  videoFramesAdvanced: 0,
+  lastAdvanceBurst: 0,
+  maxAdvanceBurst: 0,
+  lastPauseReason: document.hidden ? "initial-hidden" : "",
+  resetClock: null,
+};
+let wakeLockSentinel = null;
 const originalAssets = {
   chr: null,
   chrAlt: null,
@@ -388,29 +402,43 @@ function setTouchButton(button, prop) {
     touch[pointerProp] = null;
     deactivate();
   };
+  const cancel = (event) => {
+    up(event);
+    touch[latchProp] = 0;
+  };
   button.addEventListener("pointerdown", down);
   button.addEventListener("pointerup", up);
-  button.addEventListener("pointercancel", up);
+  button.addEventListener("pointercancel", cancel);
   button.addEventListener("lostpointercapture", (event) => {
     if (event.pointerType === "touch") return;
     up(event);
   });
   for (const name of ["pointerup", "pointercancel"]) {
     window.addEventListener(name, (event) => {
-      if (touch[pointerProp] === event.pointerId) up(event);
+      if (touch[pointerProp] === event.pointerId) {
+        if (name === "pointercancel") cancel(event);
+        else up(event);
+      }
     });
   }
   button.addEventListener("touchstart", (event) => { event.preventDefault(); activate(); }, { passive: false });
   button.addEventListener("touchend", (event) => { event.preventDefault(); deactivate(); }, { passive: false });
-  button.addEventListener("touchcancel", (event) => { event.preventDefault(); deactivate(); }, { passive: false });
+  button.addEventListener("touchcancel", (event) => {
+    event.preventDefault();
+    deactivate();
+    touch[latchProp] = 0;
+  }, { passive: false });
 }
 setTouchButton(btnKick, "kick");
 setTouchButton(btnSprint, "sprint");
 setTouchButton(btnStart, "start");
 setTouchButton(btnSelect, "select");
 function ensureAudio() {
+  markUserInteraction();
   if (sfx.ctx) {
-    if (sfx.ctx.state === "suspended") sfx.ctx.resume?.();
+    if (!runtimeLifecycle.paused && sfx.ctx.state === "suspended") {
+      Promise.resolve(sfx.ctx.resume?.()).catch(() => {});
+    }
     wasmNesApu.attachAudioContext(sfx.ctx);
     return sfx.ctx;
   }
@@ -605,6 +633,11 @@ for (const element of [stick, touchControls, document, window]) {
   element.addEventListener("touchcancel", endStickTouch, { passive: false, capture: true });
 }
 function inputBits() {
+  if (runtimeLifecycle.paused) {
+    touch.lastBits = 0;
+    touch.lastPackedBits = 0;
+    return 0;
+  }
   let bits = 0;
   if (keys.has("ArrowUp") || keys.has("KeyW") || touch.axisY < 0) bits |= INPUT.UP;
   if (keys.has("ArrowDown") || keys.has("KeyS") || touch.axisY > 0) bits |= INPUT.DOWN;
@@ -617,11 +650,21 @@ function inputBits() {
   touch.lastBits = bits;
   const pads = typeof navigator.getGamepads === "function" ? navigator.getGamepads() : [];
   let packed = bits & 0xFF;
+  const padBitsBySlot = [];
+  let anyPadBits = false;
   for (let slot = 0; slot < 4; slot += 1) {
     const pad = pads?.[slot];
-    if (!pad || pad.connected === false) continue;
-    const padBits = standardGamepadInputBits(pad);
-    packed = (packed | ((padBits & 0xFF) << (slot * 8))) >>> 0;
+    const padBits = (!pad || pad.connected === false) ? 0 : standardGamepadInputBits(pad);
+    padBitsBySlot[slot] = padBits;
+    anyPadBits ||= padBits !== 0;
+  }
+  if (runtimeLifecycle.gamepadsNeedNeutral && !anyPadBits) {
+    runtimeLifecycle.gamepadsNeedNeutral = false;
+  }
+  if (!runtimeLifecycle.gamepadsNeedNeutral) {
+    for (let slot = 0; slot < 4; slot += 1) {
+      packed = (packed | ((padBitsBySlot[slot] & 0xFF) << (slot * 8))) >>> 0;
+    }
   }
   touch.lastPackedBits = packed;
   return packed;
@@ -655,6 +698,153 @@ function consumeTapLatchesAfterSoftwareFrame() {
   if (keyTapLatch.sprint > 0) keyTapLatch.sprint -= 1;
   if (keyTapLatch.start > 0) keyTapLatch.start -= 1;
   if (keyTapLatch.select > 0) keyTapLatch.select -= 1;
+}
+const lifecyclePauseReasons = new Set(document.hidden ? ["visibility"] : []);
+function clearAllHostInput() {
+  keys.clear();
+  keyTapLatch.kick = 0;
+  keyTapLatch.sprint = 0;
+  keyTapLatch.start = 0;
+  keyTapLatch.select = 0;
+  resetRequested = false;
+  resetStick();
+  for (const prop of ["kick", "sprint", "start", "select"]) {
+    touch[prop] = false;
+    touch[`${prop}Pointer`] = null;
+    touch[`${prop}LatchTicks`] = 0;
+  }
+  touch.lastBits = 0;
+  touch.lastPackedBits = 0;
+  for (const button of [btnKick, btnSprint, btnStart, btnSelect]) {
+    button.classList.remove("active");
+  }
+  runtimeLifecycle.gamepadsNeedNeutral = true;
+}
+async function releaseWakeLock() {
+  const sentinel = wakeLockSentinel;
+  wakeLockSentinel = null;
+  document.body.dataset.wakeLock = "released";
+  if (!sentinel) return;
+  try { await sentinel.release?.(); } catch {}
+}
+async function requestWakeLock() {
+  if (!runtimeLifecycle.userStarted || runtimeLifecycle.paused || document.hidden
+      || !navigator.wakeLock?.request) return false;
+  if (wakeLockSentinel && !wakeLockSentinel.released) return true;
+  try {
+    const sentinel = await navigator.wakeLock.request("screen");
+    wakeLockSentinel = sentinel;
+    document.body.dataset.wakeLock = "held";
+    sentinel.addEventListener?.("release", () => {
+      if (wakeLockSentinel === sentinel) {
+        wakeLockSentinel = null;
+        document.body.dataset.wakeLock = "released";
+      }
+    }, { once: true });
+    return true;
+  } catch (_error) {
+    document.body.dataset.wakeLock = "unavailable";
+    return false;
+  }
+}
+async function requestLandscapeOrientationLock() {
+  if (!document.fullscreenElement || !screen.orientation?.lock) return false;
+  try {
+    await screen.orientation.lock("landscape");
+    document.body.dataset.orientationLock = "landscape";
+    return true;
+  } catch (_error) {
+    document.body.dataset.orientationLock = "unavailable";
+    return false;
+  }
+}
+function markUserInteraction() {
+  runtimeLifecycle.userStarted = true;
+  void requestWakeLock();
+  void requestLandscapeOrientationLock();
+}
+function pauseRuntime(reason) {
+  lifecyclePauseReasons.add(reason);
+  const transitioned = !runtimeLifecycle.paused;
+  runtimeLifecycle.paused = true;
+  runtimeLifecycle.lastPauseReason = reason;
+  clearAllHostInput();
+  runtimeLifecycle.resetClock?.();
+  if (transitioned) runtimeLifecycle.pauseCount += 1;
+  if (sfx.ctx?.state === "running") Promise.resolve(sfx.ctx.suspend?.()).catch(() => {});
+  void releaseWakeLock();
+  document.body.dataset.runtimePaused = "true";
+}
+function resumeRuntime(reason) {
+  lifecyclePauseReasons.delete(reason);
+  if (document.hidden) lifecyclePauseReasons.add("visibility");
+  else lifecyclePauseReasons.delete("visibility");
+  if (lifecyclePauseReasons.size !== 0) return;
+  const transitioned = runtimeLifecycle.paused;
+  runtimeLifecycle.paused = false;
+  if (transitioned) {
+    clearAllHostInput();
+    runtimeLifecycle.resetClock?.();
+    runtimeLifecycle.resumeCount += 1;
+  }
+  enforceControllerOutsideGame();
+  if (runtimeLifecycle.userStarted && sfx.ctx?.state === "suspended") {
+    Promise.resolve(sfx.ctx.resume?.())
+      .then(() => wasmNesApu.attachAudioContext(sfx.ctx))
+      .catch(() => {});
+  }
+  void requestWakeLock();
+  void requestLandscapeOrientationLock();
+  document.body.dataset.runtimePaused = "false";
+}
+document.addEventListener("visibilitychange", () => {
+  if (document.hidden) pauseRuntime("visibility");
+  else resumeRuntime("visibility");
+});
+window.addEventListener("pagehide", () => pauseRuntime("pagehide"));
+window.addEventListener("pageshow", () => resumeRuntime("pagehide"));
+document.addEventListener("freeze", () => pauseRuntime("freeze"));
+document.addEventListener("resume", () => resumeRuntime("freeze"));
+window.addEventListener("blur", () => pauseRuntime("blur"));
+window.addEventListener("focus", () => resumeRuntime("blur"));
+document.addEventListener("fullscreenchange", () => {
+  enforceControllerOutsideGame();
+  void requestLandscapeOrientationLock();
+});
+window.visualViewport?.addEventListener("resize", enforceControllerOutsideGame, { passive: true });
+const preventGamePageDefault = (event) => event.preventDefault();
+for (const name of ["gesturestart", "gesturechange", "gestureend"]) {
+  document.addEventListener(name, preventGamePageDefault, { passive: false, capture: true });
+}
+for (const name of ["dblclick", "selectstart", "dragstart", "contextmenu"]) {
+  app.addEventListener(name, preventGamePageDefault, { capture: true });
+}
+window.addEventListener("wheel", (event) => {
+  if (event.ctrlKey || event.metaKey) event.preventDefault();
+}, { passive: false, capture: true });
+window.addEventListener("keydown", (event) => {
+  if (!(event.ctrlKey || event.metaKey)) return;
+  if (["Equal", "Minus", "Digit0", "NumpadAdd", "NumpadSubtract", "Numpad0"].includes(event.code)) {
+    event.preventDefault();
+  }
+}, { capture: true });
+if (DEBUG) {
+  window.__soccerLifecycle = () => ({
+    paused: runtimeLifecycle.paused,
+    userStarted: runtimeLifecycle.userStarted,
+    gamepadsNeedNeutral: runtimeLifecycle.gamepadsNeedNeutral,
+    pauseCount: runtimeLifecycle.pauseCount,
+    resumeCount: runtimeLifecycle.resumeCount,
+    clockResetSerial: runtimeLifecycle.clockResetSerial,
+    videoFramesAdvanced: runtimeLifecycle.videoFramesAdvanced,
+    lastAdvanceBurst: runtimeLifecycle.lastAdvanceBurst,
+    maxAdvanceBurst: runtimeLifecycle.maxAdvanceBurst,
+    lastPauseReason: runtimeLifecycle.lastPauseReason,
+    pauseReasons: Array.from(lifecyclePauseReasons),
+    wakeLock: document.body.dataset.wakeLock || "idle",
+    orientationLock: document.body.dataset.orientationLock || "idle",
+    audioState: sfx.ctx?.state || "none",
+  });
 }
 function fnv1aBytes(bytes) {
   let value = 0x811c9dc5;
@@ -723,7 +913,7 @@ async function loadCppCoreData(api) {
 }
 async function loadWasm() {
   const filename = "soccer_core_cpp.wasm";
-  const relative = "../soccer_core_cpp.4a159550.wasm";
+  const relative = "../soccer_core_cpp.13f80262.wasm";
   const response = await fetchCoreResponse(filename, assetUrl(relative), rootAssetUrl(filename));
   const bytes = await response.arrayBuffer();
   const result = await WebAssembly.instantiate(bytes, {});
@@ -3932,6 +4122,13 @@ async function main() {
   }
   let last = performance.now();
   let acc = 0;
+  runtimeLifecycle.resetClock = () => {
+    last = performance.now();
+    acc = 0;
+    runtimeLifecycle.lastAdvanceBurst = 0;
+    runtimeLifecycle.clockResetSerial += 1;
+  };
+  document.body.dataset.runtimePaused = runtimeLifecycle.paused ? "true" : "false";
   const ntscRateNumerator = api.platform_ntsc_video_rate_numerator();
   const ntscRateDenominator = api.platform_ntsc_video_rate_denominator();
   const stepMs = 1000 * ntscRateDenominator / ntscRateNumerator;
@@ -3940,6 +4137,7 @@ async function main() {
   const advanceInputVideoFrame = () => {
     const bits = inputBits();
     const ranSoftwareFrame = advanceVideoFrame(bits);
+    runtimeLifecycle.videoFramesAdvanced += 1;
     wasmNesApu.advanceFrame();
     if (wasmNesApu.claimsAudio) {
       drainOriginalSoundEvents(api, (soundId) => wasmNesApu.handleSoundEvent(soundId));
@@ -3951,13 +4149,24 @@ async function main() {
   };
   if (DEBUG) window.__soccerAdvanceInputVideoFrame = advanceInputVideoFrame;
   function frame(now) {
+    if (runtimeLifecycle.paused || document.hidden) {
+      if (document.hidden && !runtimeLifecycle.paused) pauseRuntime("visibility");
+      last = now;
+      acc = 0;
+      runtimeLifecycle.lastAdvanceBurst = 0;
+      requestAnimationFrame(frame);
+      return;
+    }
     if (resetRequested) {
       api.game_init();
       wasmNesApu.reset();
       resetRequested = false;
     }
     acc += now - last; last = now; acc = Math.min(acc, stepMs * 8);
-    while (acc >= stepMs) { advanceInputVideoFrame(); acc -= stepMs; }
+    let burst = 0;
+    while (acc >= stepMs) { advanceInputVideoFrame(); acc -= stepMs; burst += 1; }
+    runtimeLifecycle.lastAdvanceBurst = burst;
+    runtimeLifecycle.maxAdvanceBurst = Math.max(runtimeLifecycle.maxAdvanceBurst, burst);
     render(api);
     updateSfx(api);
     requestAnimationFrame(frame);
