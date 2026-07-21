@@ -270,7 +270,7 @@ const originalAssets = {
     key: "",
   },
   statusbar: {
-    manifest: null,
+    api: null,
   },
   result: {
     manifest: null,
@@ -1084,7 +1084,7 @@ function loadOriginalSpriteRendererFromBin(api) {
 }
 async function loadWasm() {
   const filename = DEBUG ? "soccer_core_cpp.wasm" : "soccer_core_cpp_production.wasm";
-  const relative = DEBUG ? "../strict-tests.7f8890b1.wasm" : "../soccer_core_cpp.89b286da.wasm";
+  const relative = DEBUG ? "../strict-tests.39739232.wasm" : "../soccer_core_cpp.2b5ca7c6.wasm";
   const response = await fetchCoreResponse(filename, assetUrl(relative), rootAssetUrl(filename));
   const bytes = await response.arrayBuffer();
   const result = await WebAssembly.instantiate(bytes, {});
@@ -1494,106 +1494,20 @@ function originalMinimapStatusbarActive(api) {
 function originalFieldFullScreenActive(api) {
   return (api.original_screen_number?.() & 0xFF) === 0x00;
 }
-function originalStatusbarPlayerRecord(manifest, team, playerNumber) {
-  const rawName = manifest.roster_name_tiles?.[team & 0x0F]?.[Math.min(playerNumber & 0xFF, 0x0B)]
-    || [0xFF, 0xFF, 0xFF, 0xFF, 0xFF];
-  const markers = new Array(5).fill(0xFA);
-  const glyphs = new Array(5).fill(0xFF);
-  for (let index = 0; index < 5; index++) {
-    const raw = rawName[index] & 0xFF;
-    if (raw < 0x50) {
-      markers[index] = 0xFB;
-      glyphs[index] = (raw + 0x80) & 0xFF;
-    } else if (raw < 0x80) {
-      markers[index] = 0xFC;
-      glyphs[index] = (raw + 0x50) & 0xFF;
-    } else {
-      glyphs[index] = raw;
-    }
-  }
-  const data = manifest.player_hud_data?.[team & 0x0F]?.[Math.min(playerNumber & 0xFF, 0x0B)]
-    || [0, 0];
-  return { markers, glyphs, data0: data[0] & 0xFF, data1: data[1] & 0xFF };
-}
-function composeOriginalMatchStatusbarTiles(api, manifest) {
-  const tiles = manifest.base_tiles.map((row) => row.slice());
-  if (api.original_hud_tile) {
-    for (let index = 0; index < 6; index++) {
-      tiles[1][13 + index] = api.original_hud_tile(5 - index) & 0xFF;
-    }
-  }
-  const difficulty = api.original_difficulty_mode ? api.original_difficulty_mode() & 0xFF : 0;
-  const substitution = api.original_substitution_counter ? api.original_substitution_counter() & 0xFF : 0;
-  for (let side = 0; side < 2; side++) {
-    const teamByte = api.original_team_number ? api.original_team_number(side) & 0xFF : side;
-    let playerNumber;
-    let controlObject;
-    if (difficulty & 0x20) {
-      if (((side ^ substitution) & 1) !== 0) {
-        playerNumber = api.original_player_number ? api.original_player_number(0x0A + side) & 0xFF : 0;
-        controlObject = 0x0A + side;
-      } else {
-        playerNumber = (substitution & 0x7F) >> 1;
-        controlObject = substitution & 0x7F;
-      }
-    } else {
-      playerNumber = api.original_player_number ? api.original_player_number(side) & 0xFF : 0;
-      controlObject = side;
-    }
-    const record = originalStatusbarPlayerRecord(manifest, teamByte, playerNumber);
-    const column = side === 0 ? 1 : 20;
-    for (let index = 0; index < 5; index++) {
-      tiles[0][column + index] = record.markers[index];
-      tiles[1][column + index] = record.glyphs[index];
-    }
-    tiles[2][column] = difficulty & 0x20
-      ? 0xFF
-      : (teamByte & 0x80 ? 0x4C : 0x3E + side);
-    tiles[2][column + 1] = record.data0;
-    tiles[2][column + 2] = (record.data0 + 1) & 0xFF;
-    const controlPosition = controlObject < 12 && api.original_player_control_position
-      ? api.original_player_control_position(controlObject) & 0xFF : 0;
-    const controlIndex = Math.min(6, (controlPosition & 0x30) >> 3);
-    tiles[2][column + 3] = manifest.control_tiles[controlIndex] & 0xFF;
-    tiles[2][column + 4] = manifest.control_tiles[controlIndex + 1] & 0xFF;
-    if ((difficulty & 0x20) === 0) tiles[2][column + 5] = 0xDC;
-    tiles[3][column + 1] = 0x0C;
-    tiles[3][column + 2] = 0x0D;
-    tiles[3][column + 3] = record.data1;
-  }
-  const copySideBuffer = (side, getter) => {
-    if (!getter) return;
-    const primaryColumn = side === 0 ? 1 : 20;
-    const secondaryColumn = side === 0 ? 7 : 26;
-    tiles[3][primaryColumn] = getter(0) & 0xFF;
-    for (let index = 0; index < 5; index++) {
-      tiles[4][primaryColumn + index] = getter(1 + index) & 0xFF;
-      tiles[0][secondaryColumn + index] = getter(6 + index) & 0xFF;
-      tiles[1][secondaryColumn + index] = getter(11 + index) & 0xFF;
-      tiles[2][secondaryColumn + index] = getter(16 + index) & 0xFF;
-      tiles[3][secondaryColumn + index] = getter(21 + index) & 0xFF;
-      tiles[4][secondaryColumn + index] = getter(26 + index) & 0xFF;
-    }
-  };
-  copySideBuffer(0, api.original_attribute_buffer
-    ? (index) => api.original_attribute_buffer(index) : null);
-  copySideBuffer(1, api.original_graphics_buffer
-    ? (index) => api.original_graphics_buffer(index) : null);
-  return tiles;
-}
-function originalStatusbarTilePalette(manifest, palettePair, row, column) {
-  const attributeRow = Math.min(1, Math.floor(row / 4));
-  const attribute = manifest.attribute_bytes[attributeRow * 8 + Math.floor(column / 4)] & 0xFF;
-  const shift = (Math.floor((row & 3) / 2) * 4) + (Math.floor((column & 3) / 2) * 2);
-  const paletteIndex = (attribute >> shift) & 3;
+function originalStatusbarTilePalette(api, palettePair, row, column) {
+  const paletteIndex = api.statusbar_renderer_palette_index(row, column) >>> 0;
+  if (paletteIndex > 3) return palettePair[0];
   return palettePair[Math.max(0, Math.min(1, paletteIndex - 2))] || palettePair[0];
 }
 function drawOriginalMatchStatusbar(api, view) {
   if (!view?.statusbarLayout || !originalMinimapStatusbarActive(api)) return false;
   const layout = view.statusbarLayout;
   const scale = layout.scale;
-  const manifest = originalAssets.statusbar.manifest;
-  if (!manifest?.base_tiles || !manifest?.attribute_bytes) return false;
+  const statusbarApi = originalAssets.statusbar.api;
+  if (!statusbarApi?.statusbar_renderer_composed_tile
+      || !statusbarApi?.statusbar_renderer_palette_index
+      || statusbarApi.statusbar_renderer_tile_width() !== 32
+      || statusbarApi.statusbar_renderer_tile_height() !== 7) return false;
   const palettes = originalAssets.sprite.palettes;
   const paletteNumber = api.original_background_palette_number
     ? api.original_background_palette_number(1) & 0xFF : 0x29;
@@ -1602,12 +1516,13 @@ function drawOriginalMatchStatusbar(api, view) {
   const teamByte = api.original_team_number ? api.original_team_number(1) & 0xFF : 0;
   const bank0 = teamByte & 0x40 ? 0x06 : 0x04;
   const bank1 = 0x02;
-  const tiles = composeOriginalMatchStatusbarTiles(api, manifest);
   const panelLogicalY = ORIGINAL_STATUSBAR_SPLIT_Y;
-  for (let row = 0; row < tiles.length; row++) {
-    for (let column = 0; column < tiles[row].length; column++) {
-      const palette = originalStatusbarTilePalette(manifest, palettePair, row, column);
-      const tile = originalBackgroundTile(bank0, bank1, tiles[row][column], palette);
+  for (let row = 0; row < 7; row++) {
+    for (let column = 0; column < 32; column++) {
+      const palette = originalStatusbarTilePalette(statusbarApi, palettePair, row, column);
+      const tileId = statusbarApi.statusbar_renderer_composed_tile(row, column) >>> 0;
+      if (tileId > 0xFF) continue;
+      const tile = originalBackgroundTile(bank0, bank1, tileId, palette);
       if (!tile) continue;
       ctx.drawImage(
         tile,
@@ -4164,12 +4079,11 @@ async function main() {
     const image = await withFallback(name, originalAssetUrl(name), originalFallbackUrl(name), loadImage);
     return [id, image];
   })).then((entries) => Object.fromEntries(entries));
-  const [api, field, spriteManifest, palettes, statusbarRenderer, splashLogo, splashTitle, splashTitleBlink, splashStory, resultScreenManifest, resultRenderer, modeSelectionScreenManifest, modeSelectionTiles, opponentSelectionScreenManifest, opponentSelectionTiles, teamPreviewScreenManifest, playerOrderScreenManifest, playerOrderTiles, bracketScreenManifest, bracketRenderer, bracketTiles, matchSettingsScreenManifest, matchSettingsRenderer, matchSettingsTiles, formationControlScreenManifest, formationControlRenderer, formationControlTiles, weatherPreviewScreenManifest, weatherPreviewRenderer, weatherPreviewTiles, tournamentRecordScreenManifest, tournamentRecordRenderer, tournamentRecordTiles, playerProfileScreenManifest, playerProfileRenderer, playerProfileTiles, musicSelectionScreenManifest, musicSelectionRenderer, musicSelectionTiles, meetingSecretScreenManifest, meetingSecretRenderer, meetingSecretTiles0a, meetingSecretTiles0f, creditsScreenManifest, creditsTiles, menuScreens] = await Promise.all([
+  const [api, field, spriteManifest, palettes, splashLogo, splashTitle, splashTitleBlink, splashStory, resultScreenManifest, resultRenderer, modeSelectionScreenManifest, modeSelectionTiles, opponentSelectionScreenManifest, opponentSelectionTiles, teamPreviewScreenManifest, playerOrderScreenManifest, playerOrderTiles, bracketScreenManifest, bracketRenderer, bracketTiles, matchSettingsScreenManifest, matchSettingsRenderer, matchSettingsTiles, formationControlScreenManifest, formationControlRenderer, formationControlTiles, weatherPreviewScreenManifest, weatherPreviewRenderer, weatherPreviewTiles, tournamentRecordScreenManifest, tournamentRecordRenderer, tournamentRecordTiles, playerProfileScreenManifest, playerProfileRenderer, playerProfileTiles, musicSelectionScreenManifest, musicSelectionRenderer, musicSelectionTiles, meetingSecretScreenManifest, meetingSecretRenderer, meetingSecretTiles0a, meetingSecretTiles0f, creditsScreenManifest, creditsTiles, menuScreens] = await Promise.all([
     apiPromise,
     loadOriginalFieldAssets(),
     spriteManifestPromise,
     palettesPromise,
-    withFallback("statusbar_renderer.json", originalAssetUrl("statusbar_renderer.json"), originalFallbackUrl("statusbar_renderer.json"), loadJson),
     withFallback("splash_00_logo.png", originalAssetUrl("splash_00_logo.png"), originalFallbackUrl("splash_00_logo.png"), loadImage),
     withFallback("splash_01_title.png", originalAssetUrl("splash_01_title.png"), originalFallbackUrl("splash_01_title.png"), loadImage),
     withFallback("splash_01_title_blink.png", originalAssetUrl("splash_01_title_blink.png"), originalFallbackUrl("splash_01_title_blink.png"), loadImage),
@@ -4216,7 +4130,8 @@ async function main() {
   originalAssets.sprite.manifest = spriteManifest;
   originalAssets.sprite.patternApi = api;
   originalAssets.sprite.palettes = palettes;
-  originalAssets.statusbar.manifest = statusbarRenderer;
+  originalAssets.statusbar.api = api;
+  document.body.dataset.statusbarRendererSource = "classified-bin-cpp";
   originalAssets.splash = { 0: splashLogo, 1: splashTitle, 0x0e: splashStory, titleBlink: splashTitleBlink };
   originalAssets.menu = menuScreens;
   originalAssets.result.manifest = resultScreenManifest;

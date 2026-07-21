@@ -3960,6 +3960,48 @@
       ]
     },
     {
+      "path": "menu/statusbar-attributes-e608-e610.bin",
+      "category": "menu",
+      "source": "src/bank_FF.asm:E608",
+      "bank": "07",
+      "address": "0xE608",
+      "symbol": "tbl_E608",
+      "layout": "eight statusbar attribute bytes; E5E3-E5EB supplies the following eight $AA bytes",
+      "length": 8,
+      "sha256": "ca282e9851403493b900504f9cd1ac2a14771142d0405b23c54812442cb2decf",
+      "source_ranges": [
+        {
+          "bank": "07",
+          "start": "0xE608",
+          "length": 8
+        }
+      ],
+      "consumers": [
+        "wasm-game/cpp-core/src/screens/statusbar_renderer.cpp"
+      ]
+    },
+    {
+      "path": "menu/statusbar-base-tiles-e610-e6f0.bin",
+      "category": "menu",
+      "source": "src/bank_FF.asm:E610",
+      "bank": "07",
+      "address": "0xE610",
+      "symbol": "tbl_E610",
+      "layout": "seven rows of 32 fixed statusbar nametable tile ids",
+      "length": 224,
+      "sha256": "051b1540929315f59e09f711d71030496ad6b0b4ef92c267ecbfb006c9d3355c",
+      "source_ranges": [
+        {
+          "bank": "07",
+          "start": "0xE610",
+          "length": 224
+        }
+      ],
+      "consumers": [
+        "wasm-game/cpp-core/src/screens/statusbar_renderer.cpp"
+      ]
+    },
+    {
       "path": "menu/statusbar-command-ab88-ad4f.bin",
       "category": "menu",
       "source": "src/bank_03.asm:AB88",
@@ -3998,7 +4040,8 @@
         }
       ],
       "consumers": [
-        "wasm-game/cpp-core/src/ai/ai.cpp"
+        "wasm-game/cpp-core/src/ai/ai.cpp",
+        "wasm-game/cpp-core/src/screens/statusbar_renderer.cpp"
       ]
     },
     {
@@ -4019,7 +4062,8 @@
         }
       ],
       "consumers": [
-        "wasm-game/cpp-core/src/ai/ai.cpp"
+        "wasm-game/cpp-core/src/ai/ai.cpp",
+        "wasm-game/cpp-core/src/screens/statusbar_renderer.cpp"
       ]
     },
     {
@@ -4040,7 +4084,8 @@
         }
       ],
       "consumers": [
-        "wasm-game/cpp-core/src/ai/ai.cpp"
+        "wasm-game/cpp-core/src/ai/ai.cpp",
+        "wasm-game/cpp-core/src/screens/statusbar_renderer.cpp"
       ]
     },
     {
