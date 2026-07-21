@@ -254,7 +254,6 @@ const originalAssets = {
   },
   musicSelection: {
     manifest: null,
-    scripts: null,
     tileImage: null,
     canvas: null,
     context: null,
@@ -1083,7 +1082,7 @@ function loadOriginalSpriteRendererFromBin(api) {
 }
 async function loadWasm() {
   const filename = DEBUG ? "soccer_core_cpp.wasm" : "soccer_core_cpp_production.wasm";
-  const relative = DEBUG ? "../strict-tests.cecdf5d9.wasm" : "../soccer_core_cpp.0a46a845.wasm";
+  const relative = DEBUG ? "../strict-tests.1ca4ae60.wasm" : "../soccer_core_cpp.f081d6e7.wasm";
   const response = await fetchCoreResponse(filename, assetUrl(relative), rootAssetUrl(filename));
   const bytes = await response.arrayBuffer();
   const result = await WebAssembly.instantiate(bytes, {});
@@ -3207,8 +3206,7 @@ function composeOriginalPlayerProfileScreen(api) {
 function composeOriginalMusicSelectionScreen(api) {
   const music = originalAssets.musicSelection;
   const manifest = music.manifest;
-  const scripts = music.scripts;
-  if (!manifest || !scripts || !music.tileImage) return null;
+  if (!manifest || !music.tileImage) return null;
   const option = api.original_option_number ? api.original_option_number() & 0xff : 0xff;
   const hiddenNumber = api.original_option_number_05cb
     ? api.original_option_number_05cb() & 0xff : 0;
@@ -3217,7 +3215,7 @@ function composeOriginalMusicSelectionScreen(api) {
   const bufferCount = api.original_graphics_buffer_count
     ? Math.min(0x20, api.original_graphics_buffer_count() & 0xff) : 0;
   const buffer = [];
-  if (bufferAddress === (scripts.hiddenNumberAddress ?? 0x20e5)) {
+  if (bufferAddress >= 0x2000 && bufferAddress < 0x2400) {
     for (let index = 0; index < bufferCount; index++) {
       buffer.push(api.original_graphics_buffer(index) & 0xff);
     }
@@ -4023,7 +4021,7 @@ async function main() {
     const image = await withFallback(name, originalAssetUrl(name), originalFallbackUrl(name), loadImage);
     return [id, image];
   })).then((entries) => Object.fromEntries(entries));
-  const [api, field, spriteManifest, palettes, splashLogo, splashTitle, splashTitleBlink, splashStory, resultScreenManifest, resultRenderer, modeSelectionScreenManifest, modeSelectionTiles, opponentSelectionScreenManifest, opponentSelectionTiles, teamPreviewScreenManifest, playerOrderScreenManifest, playerOrderTiles, bracketScreenManifest, bracketRenderer, bracketTiles, matchSettingsScreenManifest, matchSettingsRenderer, matchSettingsTiles, formationControlScreenManifest, formationControlRenderer, formationControlTiles, weatherPreviewScreenManifest, weatherPreviewRenderer, weatherPreviewTiles, tournamentRecordScreenManifest, tournamentRecordTiles, playerProfileScreenManifest, playerProfileRenderer, playerProfileTiles, musicSelectionScreenManifest, musicSelectionRenderer, musicSelectionTiles, meetingSecretScreenManifest, meetingSecretRenderer, meetingSecretTiles0a, meetingSecretTiles0f, creditsScreenManifest, creditsTiles, menuScreens] = await Promise.all([
+  const [api, field, spriteManifest, palettes, splashLogo, splashTitle, splashTitleBlink, splashStory, resultScreenManifest, resultRenderer, modeSelectionScreenManifest, modeSelectionTiles, opponentSelectionScreenManifest, opponentSelectionTiles, teamPreviewScreenManifest, playerOrderScreenManifest, playerOrderTiles, bracketScreenManifest, bracketRenderer, bracketTiles, matchSettingsScreenManifest, matchSettingsRenderer, matchSettingsTiles, formationControlScreenManifest, formationControlRenderer, formationControlTiles, weatherPreviewScreenManifest, weatherPreviewRenderer, weatherPreviewTiles, tournamentRecordScreenManifest, tournamentRecordTiles, playerProfileScreenManifest, playerProfileRenderer, playerProfileTiles, musicSelectionScreenManifest, musicSelectionTiles, meetingSecretScreenManifest, meetingSecretRenderer, meetingSecretTiles0a, meetingSecretTiles0f, creditsScreenManifest, creditsTiles, menuScreens] = await Promise.all([
     apiPromise,
     loadOriginalFieldAssets(),
     spriteManifestPromise,
@@ -4059,7 +4057,6 @@ async function main() {
     withFallback("player_profile_renderer.json", originalAssetUrl("player_profile_renderer.json"), originalFallbackUrl("player_profile_renderer.json"), loadJson),
     withFallback("player_profile_tiles.png", originalAssetUrl("player_profile_tiles.png"), originalFallbackUrl("player_profile_tiles.png"), loadImage),
     withFallback("music_selection_screen_manifest.json", originalAssetUrl("music_selection_screen_manifest.json"), originalFallbackUrl("music_selection_screen_manifest.json"), loadJson),
-    withFallback("music_selection_renderer.json", originalAssetUrl("music_selection_renderer.json"), originalFallbackUrl("music_selection_renderer.json"), loadJson),
     withFallback("music_selection_tiles.png", originalAssetUrl("music_selection_tiles.png"), originalFallbackUrl("music_selection_tiles.png"), loadImage),
     withFallback("meeting_secret_screen_manifest.json", originalAssetUrl("meeting_secret_screen_manifest.json"), originalFallbackUrl("meeting_secret_screen_manifest.json"), loadJson),
     withFallback("meeting_secret_renderer.json", originalAssetUrl("meeting_secret_renderer.json"), originalFallbackUrl("meeting_secret_renderer.json"), loadJson),
@@ -4105,8 +4102,8 @@ async function main() {
   originalAssets.playerProfile.scripts = playerProfileRenderer;
   originalAssets.playerProfile.tileImage = playerProfileTiles;
   originalAssets.musicSelection.manifest = musicSelectionScreenManifest;
-  originalAssets.musicSelection.scripts = musicSelectionRenderer;
   originalAssets.musicSelection.tileImage = musicSelectionTiles;
+  document.body.dataset.musicSelectionRendererSource = "cpp-video-buffer";
   originalAssets.meetingSecret.manifest = meetingSecretScreenManifest;
   originalAssets.meetingSecret.scripts = meetingSecretRenderer;
   originalAssets.meetingSecret.tileImages = {
