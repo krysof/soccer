@@ -217,9 +217,11 @@ const originalAssets = {
     key: "",
   },
   formationControl: {
-    manifest: null,
-    scripts: null,
-    tileImage: null,
+    background: null,
+    teamOverlays: new Map(),
+    teamOverlayId: 0xffffffff,
+    pageCanvases: null,
+    nametables: null,
     canvas: null,
     context: null,
     key: "",
@@ -1074,7 +1076,7 @@ function loadOriginalSpriteRendererFromBin(api) {
 }
 async function loadWasm() {
   const filename = DEBUG ? "soccer_core_cpp.wasm" : "soccer_core_cpp_production.wasm";
-  const relative = DEBUG ? "../strict-tests.82c20a0d.wasm" : "../soccer_core_cpp.96ccf88f.wasm";
+  const relative = DEBUG ? "../strict-tests.f263d997.wasm" : "../soccer_core_cpp.2d00bb44.wasm";
   const response = await fetchCoreResponse(filename, assetUrl(relative), rootAssetUrl(filename));
   const bytes = await response.arrayBuffer();
   const result = await WebAssembly.instantiate(bytes, {});
@@ -2635,17 +2637,20 @@ function writeOriginalFormationControlPatch(nametables, address, tiles) {
     offset++;
   }
 }
-function originalFormationControlPpuAddress(rawX, rawY) {
-  const packedRow = (rawY & 0x1F) | (rawX & 0x20) | ((rawY & 0x20) << 1);
-  return (0x2000 + (packedRow << 5) + (rawX & 0x1F)) & 0x3FFF;
-}
 function composeOriginalFormationControlScreen(api) {
   const formation = originalAssets.formationControl;
-  const manifest = formation.manifest;
-  const scripts = formation.scripts;
-  if (!manifest || !scripts || !formation.tileImage || !Array.isArray(manifest.nametables)) {
-    return null;
+  if (!formation.background) {
+    formation.background = decodeOriginalBackgroundImageFromCpp(api, 0x05);
   }
+  const background = formation.background;
+  if (!background || background.destination !== 0x2000
+      || background.stream.length < 0x800
+      || !api.formation_control_renderer_team_overlay_id
+      || !api.formation_control_renderer_overlay_tile) return null;
+  const subPalettes = originalBackgroundSubPalettes(
+    background.palette0, background.palette1,
+  );
+  if (!subPalettes) return null;
   const side = api.original_substitution_counter
     ? api.original_substitution_counter() & 1 : 0;
   const team = api.original_team_number ? api.original_team_number(side) & 0x0F : 0;
@@ -2657,66 +2662,61 @@ function composeOriginalFormationControlScreen(api) {
     ? api.original_player_number(slot * 2 + side) & 0xFF : slot);
   const assignmentSlot = api.original_option_number_05cb
     ? api.original_option_number_05cb() & 0xFF : 0xFF;
-  const key = `${side}:${team}:${state}:${selectedFormation}:${config}:${assignmentSlot}:${playerNumbers.join(",")}`;
+  const teamOverlayId = api.formation_control_renderer_team_overlay_id() >>> 0;
+  const key = `${side}:${team}:${state}:${selectedFormation}:${config}:${assignmentSlot}:${teamOverlayId}:${playerNumbers.join(",")}`;
   if (formation.canvas && formation.key === key) return formation.canvas;
   if (!formation.canvas) {
     formation.canvas = document.createElement("canvas");
     formation.canvas.width = 256;
     formation.canvas.height = 480;
     formation.context = formation.canvas.getContext("2d");
+    formation.pageCanvases = Array.from({ length: 2 }, () => {
+      const page = document.createElement("canvas");
+      page.width = 256;
+      page.height = 240;
+      return page;
+    });
   }
-  const nametables = manifest.nametables.map((source) => Uint8Array.from(source));
-  const overlay = manifest.teamOverlays?.[String(team)];
-  if (overlay) {
-    writeOriginalFormationControlPatch(nametables, overlay.address, overlay.tiles);
-  }
-  writeOriginalFormationControlPatch(
-    nametables,
-    scripts.yesNoMarkerAddress,
-    state < 3 ? scripts.yesNoTopTiles : scripts.yesNoBottomTiles,
-  );
-  for (const address of new Set(scripts.formationChoiceAddresses || [])) {
-    writeOriginalFormationControlPatch(nametables, address, [0x02, 0x02]);
-  }
-  const formationAddress = scripts.formationChoiceAddresses?.[
-    Math.min(selectedFormation, (scripts.formationChoiceAddresses?.length || 1) - 1)
+  const nametables = [
+    Uint8Array.from(background.stream.slice(0, 0x400)),
+    Uint8Array.from(background.stream.slice(0x400, 0x800)),
   ];
-  if (Number.isFinite(formationAddress)) {
+  if (teamOverlayId !== 0xffffffff) {
+    if (!formation.teamOverlays.has(teamOverlayId)) {
+      formation.teamOverlays.set(
+        teamOverlayId,
+        decodeOriginalBackgroundImageFromCpp(api, teamOverlayId),
+      );
+    }
+    const overlay = formation.teamOverlays.get(teamOverlayId);
+    if (!overlay || overlay.chr0 !== background.chr0
+        || overlay.chr1 !== background.chr1) return null;
     writeOriginalFormationControlPatch(
-      nametables,
-      formationAddress,
-      [((scripts.formationChoiceGlyphs?.[side] ?? 0x1B) & 0xFF), 0x1F],
+      nametables, overlay.destination, overlay.stream,
     );
   }
-  for (let group = 0; group < 4; group++) {
-    let selected = (config >> (group * 2)) & 3;
-    if (selected === 3) selected = 0;
-    const patch = scripts.configurationPatches?.[group * 3 + selected];
-    if (patch) writeOriginalFormationControlPatch(nametables, patch.address, patch.tiles);
-  }
-  const confirmedSlots = state > 4
-    ? 6
-    : state === 4 ? Math.min(6, assignmentSlot) : 0;
-  const order = scripts.playerOrder || [];
-  const glyphs = scripts.formationPlayerGlyphs?.[
-    Math.min(selectedFormation, (scripts.formationPlayerGlyphs?.length || 1) - 1)
-  ] || [];
-  const coordinates = scripts.playerGridCoordinates || [];
-  for (let slot = 0; slot < confirmedSlots; slot++) {
-    const option = Math.max(0, order.indexOf(playerNumbers[slot]));
-    const coordinate = coordinates[option];
-    if (!coordinate) continue;
-    const address = originalFormationControlPpuAddress(coordinate[0], coordinate[1]);
-    writeOriginalFormationControlPatch(
-      nametables,
-      address,
-      [0x02, glyphs[slot * 2 + 1] ?? 0x02, glyphs[slot * 2] ?? 0x02],
-    );
+  for (let page = 0; page < 2; page++) {
+    const ppuBase = page === 0 ? 0x2000 : 0x2800;
+    for (let offset = 0; offset < 0x400; offset++) {
+      const tile = api.formation_control_renderer_overlay_tile(ppuBase + offset) >>> 0;
+      if (tile !== 0xffffffff) nametables[page][offset] = tile & 0xff;
+    }
   }
   formation.context.clearRect(0, 0, 256, 480);
   formation.context.imageSmoothingEnabled = false;
-  renderOriginalExtractedAtlasNametable(formation.context, nametables[0], formation.tileImage, 0);
-  renderOriginalExtractedAtlasNametable(formation.context, nametables[1], formation.tileImage, 240);
+  for (let page = 0; page < 2; page++) {
+    const pageCanvas = formation.pageCanvases[page];
+    if (!renderOriginalDynamicBackgroundNametable(
+      pageCanvas.getContext("2d"),
+      nametables[page],
+      background.chr0,
+      background.chr1,
+      subPalettes,
+    )) return null;
+    formation.context.drawImage(pageCanvas, 0, page * 240);
+  }
+  formation.teamOverlayId = teamOverlayId;
+  formation.nametables = nametables;
   formation.key = key;
   return formation.canvas;
 }
@@ -3548,7 +3548,22 @@ function drawOriginalMenuScreen(api) {
             : [];
           window.__soccerMatchSettingsRenderer = rendererState;
         }
-        else window.__soccerFormationControlRenderer = rendererState;
+        else {
+          const background = originalAssets.formationControl.background;
+          rendererState.backgroundId = background?.imageId ?? 0;
+          rendererState.source = "classified-bin-cpp";
+          rendererState.destination = background?.destination ?? 0;
+          rendererState.chr0 = background?.chr0 ?? 0;
+          rendererState.chr1 = background?.chr1 ?? 0;
+          rendererState.paletteNumbers = background
+            ? [background.palette0, background.palette1] : [];
+          rendererState.mirroring = background?.mirroring ?? 0;
+          rendererState.teamOverlayId = originalAssets.formationControl.teamOverlayId;
+          rendererState.nametables = originalAssets.formationControl.nametables
+            ? originalAssets.formationControl.nametables.map((table) => Array.from(table))
+            : [];
+          window.__soccerFormationControlRenderer = rendererState;
+        }
       }
     } else {
       ctx.drawImage(img, layout.x, layout.y, layout.w, layout.h);
@@ -4144,7 +4159,7 @@ async function main() {
     const image = await withFallback(name, originalAssetUrl(name), originalFallbackUrl(name), loadImage);
     return [id, image];
   })).then((entries) => Object.fromEntries(entries));
-  const [api, field, spriteManifest, palettes, splashLogo, splashTitle, splashTitleBlink, splashStory, formationControlScreenManifest, formationControlRenderer, formationControlTiles, weatherPreviewScreenManifest, weatherPreviewRenderer, weatherPreviewTiles, playerProfileScreenManifest, playerProfileRenderer, playerProfileTiles, meetingSecretScreenManifest, meetingSecretRenderer, meetingSecretTiles0a, meetingSecretTiles0f, creditsScreenManifest, creditsTiles, menuScreens] = await Promise.all([
+  const [api, field, spriteManifest, palettes, splashLogo, splashTitle, splashTitleBlink, splashStory, weatherPreviewScreenManifest, weatherPreviewRenderer, weatherPreviewTiles, playerProfileScreenManifest, playerProfileRenderer, playerProfileTiles, meetingSecretScreenManifest, meetingSecretRenderer, meetingSecretTiles0a, meetingSecretTiles0f, creditsScreenManifest, creditsTiles, menuScreens] = await Promise.all([
     apiPromise,
     loadOriginalFieldAssets(),
     spriteManifestPromise,
@@ -4153,9 +4168,6 @@ async function main() {
     withFallback("splash_01_title.png", originalAssetUrl("splash_01_title.png"), originalFallbackUrl("splash_01_title.png"), loadImage),
     withFallback("splash_01_title_blink.png", originalAssetUrl("splash_01_title_blink.png"), originalFallbackUrl("splash_01_title_blink.png"), loadImage),
     withFallback("splash_0e_story.png", originalAssetUrl("splash_0e_story.png"), originalFallbackUrl("splash_0e_story.png"), loadImage),
-    withFallback("formation_control_screen_manifest.json", originalAssetUrl("formation_control_screen_manifest.json"), originalFallbackUrl("formation_control_screen_manifest.json"), loadJson),
-    withFallback("formation_control_renderer.json", originalAssetUrl("formation_control_renderer.json"), originalFallbackUrl("formation_control_renderer.json"), loadJson),
-    withFallback("formation_control_tiles.png", originalAssetUrl("formation_control_tiles.png"), originalFallbackUrl("formation_control_tiles.png"), loadImage),
     withFallback("weather_preview_screen_manifest.json", originalAssetUrl("weather_preview_screen_manifest.json"), originalFallbackUrl("weather_preview_screen_manifest.json"), loadJson),
     withFallback("weather_preview_renderer.json", originalAssetUrl("weather_preview_renderer.json"), originalFallbackUrl("weather_preview_renderer.json"), loadJson),
     withFallback("weather_preview_tiles.png", originalAssetUrl("weather_preview_tiles.png"), originalFallbackUrl("weather_preview_tiles.png"), loadImage),
@@ -4185,9 +4197,7 @@ async function main() {
   document.body.dataset.playerOrderRendererSource = "classified-bin-cpp";
   document.body.dataset.bracketRendererSource = "classified-bin-cpp";
   document.body.dataset.matchSettingsRendererSource = "classified-bin-cpp";
-  originalAssets.formationControl.manifest = formationControlScreenManifest;
-  originalAssets.formationControl.scripts = formationControlRenderer;
-  originalAssets.formationControl.tileImage = formationControlTiles;
+  document.body.dataset.formationControlRendererSource = "classified-bin-cpp";
   originalAssets.weatherPreview.manifest = weatherPreviewScreenManifest;
   originalAssets.weatherPreview.scripts = weatherPreviewRenderer;
   originalAssets.weatherPreview.tileImage = weatherPreviewTiles;
