@@ -1064,7 +1064,7 @@ function loadOriginalSpriteRendererFromBin(api) {
 }
 async function loadWasm() {
   const filename = DEBUG ? "soccer_core_cpp.wasm" : "soccer_core_cpp_production.wasm";
-  const relative = DEBUG ? "../strict-tests.dd1b163e.wasm" : "../soccer_core_cpp.16530ea4.wasm";
+  const relative = DEBUG ? "../strict-tests.3a2add60.wasm" : "../soccer_core_cpp.67d9e48e.wasm";
   const response = await fetchCoreResponse(filename, assetUrl(relative), rootAssetUrl(filename));
   const bytes = await response.arrayBuffer();
   const result = await WebAssembly.instantiate(bytes, {});
@@ -1866,6 +1866,51 @@ function drawOriginalObjectShadow(api, objectIndex, kind, x, y, displayScale = 2
     );
   }
   return { object: objectIndex, kind, tileNumber, paletteSlot, bankSlot, bankNumber };
+}
+function drawCppLogicalOam(api, view) {
+  const required = [
+    "game_sprite_draw_count", "game_sprite_draw_x", "game_sprite_draw_y",
+    "game_sprite_draw_tile", "game_sprite_draw_attribute",
+    "game_sprite_draw_bank", "game_sprite_draw_palette",
+    "game_sprite_draw_oam_slot", "game_sprite_draw_serial",
+  ];
+  if (!view?.original || required.some((name) => typeof api[name] !== "function")) {
+    return false;
+  }
+  const count = Math.min(api.game_sprite_draw_count() >>> 0, 64);
+  const scaleX = view.destW / view.sourceW;
+  const scaleY = view.destH / view.sourceH;
+  const drawScale = view.logicalScale || Math.min(scaleX, scaleY);
+  const commands = [];
+  for (let index = 0; index < count; index++) {
+    const x = api.game_sprite_draw_x(index) & 0xFF;
+    const y = api.game_sprite_draw_y(index) & 0xFF;
+    const tile = api.game_sprite_draw_tile(index) & 0xFF;
+    const attribute = api.game_sprite_draw_attribute(index) & 0xFF;
+    const bank = api.game_sprite_draw_bank(index) & 0xFF;
+    const palette = api.game_sprite_draw_palette(index) & 0xFF;
+    const oamSlot = api.game_sprite_draw_oam_slot(index) & 0xFF;
+    const tileCanvas = originalSpriteTile(bank, tile & 0x3F, palette);
+    if (tileCanvas) {
+      drawOriginalSpriteTile(
+        tileCanvas,
+        view.destX + x * scaleX,
+        view.destY + y * scaleY,
+        attribute,
+        drawScale,
+      );
+    }
+    if (DEBUG) commands.push({ index, x, y, tile, attribute, bank, palette, oamSlot });
+  }
+  if (DEBUG) {
+    window.__soccerLogicalOam = {
+      source: "cpp-logical-oam",
+      serial: api.game_sprite_draw_serial() >>> 0,
+      count,
+      commands,
+    };
+  }
+  return true;
 }
 function drawWeather(api, view, screenW, screenH) {
   if (view?.original) return;
@@ -3888,7 +3933,10 @@ function render(api) {
   ctx.beginPath();
   ctx.rect(objectView.destX, objectView.destY, objectView.destW, objectView.destH);
   ctx.clip();
+  const usesCppLogicalOam = originalScreen === 0x00 && !isOriginalResultScreen
+    && drawCppLogicalOam(api, objectView);
   let entities = [];
+  if (!usesCppLogicalOam || DEBUG) {
   if (!isOriginalResultScreen && api.original_animation_priority_count && api.original_animation_priority) {
     const useCommittedPriority = originalCommittedSpriteFrameActive(api)
       && api.original_committed_animation_priority_count
@@ -3958,14 +4006,20 @@ function render(api) {
       const screenPosition = originalCommittedObjectCanvasPosition(
         api, entity.index, objectView, true,
       ) || worldToScreen(objectView, position.x, position.y);
-      const rendered = drawOriginalObjectShadow(
-        api,
-        entity.index,
-        entity.kind,
-        screenPosition.x,
-        screenPosition.y,
-        objectView.logicalScale || 2,
-      );
+      const tileNumber = entity.kind === "state" ? 0xA1 : 0xB7;
+      const paletteSlot = entity.kind === "state" ? 1 : 0;
+      const bankSlot = tileNumber >> 6;
+      const bankNumber = originalSpriteBankForObject(api, entity.index, bankSlot);
+      const rendered = usesCppLogicalOam
+        ? { object: entity.index, kind: entity.kind, tileNumber, paletteSlot, bankSlot, bankNumber }
+        : drawOriginalObjectShadow(
+          api,
+          entity.index,
+          entity.kind,
+          screenPosition.x,
+          screenPosition.y,
+          objectView.logicalScale || 2,
+        );
       if (rendered) renderedShadows.push(rendered);
       renderedObjects.push({ type: "shadow", index: entity.index, x: screenPosition.x, y: screenPosition.y });
       continue;
@@ -3973,8 +4027,10 @@ function render(api) {
     if (entity.type === "ball") {
       const committed = originalCommittedObjectCanvasPosition(api, 0x0C, objectView, false);
       const b = committed || worldToScreen(objectView, bx, by);
-      if (committed) drawOriginalObject(api, 0x0C, b.x, b.y, objectView.logicalScale || 2);
-      else drawOriginalBall(api, b.x, b.y, bz, objectView.logicalScale || 2);
+      if (!usesCppLogicalOam) {
+        if (committed) drawOriginalObject(api, 0x0C, b.x, b.y, objectView.logicalScale || 2);
+        else drawOriginalBall(api, b.x, b.y, bz, objectView.logicalScale || 2);
+      }
       renderedObjects.push({ type: "ball", index: 0x0C, x: b.x, y: b.y });
       continue;
     }
@@ -3985,13 +4041,15 @@ function render(api) {
       const committed = originalCommittedObjectCanvasPosition(api, entity.object, objectView, false);
       const p = committed || worldToScreen(objectView, originalPosition.x, originalPosition.y);
       const height = committed ? 0 : normalizeOriginalHeight(originalPosition.z);
-      drawOriginalObject(
-        api,
-        entity.object,
-        p.x,
-        p.y - height * (objectView.logicalScale || 1),
-        objectView.logicalScale || 2,
-      );
+      if (!usesCppLogicalOam) {
+        drawOriginalObject(
+          api,
+          entity.object,
+          p.x,
+          p.y - height * (objectView.logicalScale || 1),
+          objectView.logicalScale || 2,
+        );
+      }
       renderedObjects.push({ type: "marker", index: entity.object, x: p.x, y: p.y - height * (objectView.logicalScale || 1) });
       continue;
     }
@@ -4001,7 +4059,9 @@ function render(api) {
     const p = committed || worldToScreen(objectView, originalPosition.x, originalPosition.y);
     const playerHeight = committed ? 0 : normalizeOriginalHeight(originalPosition.z);
     const visualY = p.y - playerHeight * (objectView.logicalScale || 1);
-    drawOriginalObject(api, i, p.x, visualY, objectView.logicalScale || 2);
+    if (!usesCppLogicalOam) {
+      drawOriginalObject(api, i, p.x, visualY, objectView.logicalScale || 2);
+    }
     renderedObjects.push({ type: "player", index: i, x: p.x, y: visualY });
   }
   if (DEBUG) window.__soccerShadows = renderedShadows;
@@ -4021,6 +4081,7 @@ function render(api) {
       screenY: screen.y,
       fieldKey: originalAssets.field?.compositeKey || "",
     } : null;
+  }
   }
   if (!isOriginalResultScreen) drawOriginalWeatherSprites(api, objectView);
   ctx.restore();
@@ -4146,6 +4207,7 @@ async function main() {
   document.body.dataset.splashRendererSource = "classified-bin-cpp";
   document.body.dataset.backgroundRendererSource = "classified-bin-cpp";
   document.body.dataset.fieldRendererSource = "classified-bin-cpp";
+  document.body.dataset.logicalOamRendererSource = "cpp-logical-oam";
   document.body.dataset.resultRendererSource = "classified-bin-cpp";
   document.body.dataset.modeSelectionRendererSource = "classified-bin-cpp";
   document.body.dataset.opponentSelectionRendererSource = "classified-bin-cpp";

@@ -1072,6 +1072,7 @@
         }
       ],
       "consumers": [
+        "wasm-game/cpp-core/src/screens/logical_oam.cpp",
         "wasm-game/cpp-core/src/screens/sprite_renderer.cpp"
       ]
     },
