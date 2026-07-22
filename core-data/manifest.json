@@ -3276,6 +3276,27 @@
       ]
     },
     {
+      "path": "menu/meeting-detail-panels-ae35-af5f.bin",
+      "category": "menu",
+      "source": "src/bank_05.asm:AE35",
+      "bank": "05",
+      "address": "0xAE35",
+      "symbol": "tbl_AE35/tbl_AE37/tbl_AE5F",
+      "layout": "panel base pointer, five seven-row offset records, and 256 source nametable bytes",
+      "length": 298,
+      "sha256": "6c1ad8cab8fbd1bfc331fcff3e6825096dbc23b6c133256e51926b2a3c584d0d",
+      "source_ranges": [
+        {
+          "bank": "05",
+          "start": "0xAE35",
+          "length": 298
+        }
+      ],
+      "consumers": [
+        "wasm-game/cpp-core/src/screens/meeting_secret_renderer.cpp"
+      ]
+    },
+    {
       "path": "menu/meeting-effect-ab88-ab90.bin",
       "category": "menu",
       "source": "src/bank_05.asm:AB88",
@@ -3335,7 +3356,8 @@
         }
       ],
       "consumers": [
-        "wasm-game/cpp-core/src/screens/meeting.cpp"
+        "wasm-game/cpp-core/src/screens/meeting.cpp",
+        "wasm-game/cpp-core/src/screens/meeting_secret_renderer.cpp"
       ]
     },
     {
@@ -3356,7 +3378,8 @@
         }
       ],
       "consumers": [
-        "wasm-game/cpp-core/src/screens/meeting.cpp"
+        "wasm-game/cpp-core/src/screens/meeting.cpp",
+        "wasm-game/cpp-core/src/screens/meeting_secret_renderer.cpp"
       ]
     },
     {
@@ -3440,7 +3463,8 @@
         }
       ],
       "consumers": [
-        "wasm-game/cpp-core/src/screens/credits.cpp"
+        "wasm-game/cpp-core/src/screens/credits.cpp",
+        "wasm-game/cpp-core/src/screens/meeting_secret_renderer.cpp"
       ]
     },
     {
@@ -3461,7 +3485,8 @@
         }
       ],
       "consumers": [
-        "wasm-game/cpp-core/src/screens/credits.cpp"
+        "wasm-game/cpp-core/src/screens/credits.cpp",
+        "wasm-game/cpp-core/src/screens/meeting_secret_renderer.cpp"
       ]
     },
     {
@@ -5684,6 +5709,7 @@
       ],
       "consumers": [
         "wasm-game/cpp-core/src/screens/meeting.cpp",
+        "wasm-game/cpp-core/src/screens/meeting_secret_renderer.cpp",
         "wasm-game/cpp-core/src/screens/menu_profile.cpp",
         "wasm-game/cpp-core/src/screens/player_profile_renderer.cpp"
       ]

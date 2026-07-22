@@ -252,9 +252,7 @@ const originalAssets = {
     key: "",
   },
   meetingSecret: {
-    manifest: null,
-    scripts: null,
-    tileImages: {},
+    backgrounds: new Map(),
     canvas: null,
     context: null,
     key: "",
@@ -1073,7 +1071,7 @@ function loadOriginalSpriteRendererFromBin(api) {
 }
 async function loadWasm() {
   const filename = DEBUG ? "soccer_core_cpp.wasm" : "soccer_core_cpp_production.wasm";
-  const relative = DEBUG ? "../strict-tests.06052081.wasm" : "../soccer_core_cpp.bfba025c.wasm";
+  const relative = DEBUG ? "../strict-tests.d8b7f057.wasm" : "../soccer_core_cpp.e9164b21.wasm";
   const response = await fetchCoreResponse(filename, assetUrl(relative), rootAssetUrl(filename));
   const bytes = await response.arrayBuffer();
   const result = await WebAssembly.instantiate(bytes, {});
@@ -3290,10 +3288,22 @@ function composeOriginalMusicSelectionScreen(api) {
 }
 function composeOriginalMeetingSecretScreen(api, backgroundId) {
   const meeting = originalAssets.meetingSecret;
-  const screen = meeting.manifest?.screens?.[String(backgroundId)];
-  const scripts = meeting.scripts;
-  const tileImage = meeting.tileImages?.[String(backgroundId)];
-  if (!screen || !scripts || !tileImage || !Array.isArray(screen.nametable)) return null;
+  if (!api.meeting_secret_renderer_overlay_tile
+      || !api.meeting_secret_renderer_signature) return null;
+  if (!meeting.backgrounds.has(backgroundId)) {
+    meeting.backgrounds.set(
+      backgroundId,
+      decodeOriginalBackgroundImageFromCpp(api, backgroundId),
+    );
+  }
+  const background = meeting.backgrounds.get(backgroundId);
+  if (!background || background.destination !== 0x2000
+      || background.stream.length !== 0x400) return null;
+  const subPalettes = originalBackgroundSubPalettes(
+    background.palette0,
+    background.palette1,
+  );
+  if (!subPalettes) return null;
   const state = api.original_option_counter ? api.original_option_counter() & 0xff : 0;
   const option = api.original_option_number ? api.original_option_number() & 0xff : 0xff;
   const selected = api.original_selected_player_number
@@ -3309,12 +3319,10 @@ function composeOriginalMeetingSecretScreen(api, backgroundId) {
     ? api.original_text_effect_alt_cursor() & 0xff : 0xff;
   const textWorkspace = Array.from({ length: 14 }, (_, index) =>
     api.original_meeting_name_workspace ? api.original_meeting_name_workspace(index) & 0xff : 0);
-  const blinkAddress = api.original_attribute_buffer_address
-    ? api.original_attribute_buffer_address() & 0x3fff : 0;
-  const blinkTile = api.original_attribute_buffer ? api.original_attribute_buffer(0) & 0xff : 0xff;
   const meetingPlayerData = Array.from({ length: 12 }, (_, index) =>
     api.original_meeting_player_data ? api.original_meeting_player_data(index) & 0xff : 0);
-  const key = `${backgroundId}:${state}:${option}:${selected}:${firstRosterOption}:${effectState}:${effectStatus}:${effectScriptId}:${effectCursor}:${effectAltCursor}:${textWorkspace.join(",")}:${blinkAddress}:${blinkTile}:${meetingPlayerData.join(",")}`;
+  const signature = api.meeting_secret_renderer_signature() >>> 0;
+  const key = `${backgroundId}:${signature}`;
   if (meeting.canvas && meeting.key === key) return meeting.canvas;
   if (!meeting.canvas) {
     meeting.canvas = document.createElement("canvas");
@@ -3322,96 +3330,29 @@ function composeOriginalMeetingSecretScreen(api, backgroundId) {
     meeting.canvas.height = 240;
     meeting.context = meeting.canvas.getContext("2d");
   }
-  const nametable = Uint8Array.from(screen.nametable);
-  const parameterTiles = scripts.parameterTiles || [];
-  const parameterGroups = scripts.parameterGroups || [];
-  const parameterAddresses = scripts.parameterAddresses || [];
-  if (parameterTiles.length >= 12 * 8 && parameterGroups.length >= 8 * 6
-      && parameterAddresses.length >= 12) {
-    for (let player = 0; player < 12; player++) {
-      const value = meetingPlayerData[player];
-      const pair = (value >> 1) & 0x06;
-      const group = ((value & 0x0e) >> 1) * 6;
-      const playerTiles = player * 8;
-      const base = (parameterAddresses[player] & 0x3fff) - 0x2000;
-      const writes = [
-        [base, parameterGroups[group + 2]],
-        [base + 0x20, parameterGroups[group + 3]],
-        [base + 0x40, parameterGroups[group + 4]],
-        [base + 1, parameterTiles[playerTiles + pair]],
-        [base + 0x21, parameterGroups[group]],
-        [base + 0x41, parameterGroups[group + 5]],
-        [base + 2, parameterTiles[playerTiles + pair + 1]],
-        [base + 0x22, parameterGroups[group + 1]],
-        [base + 0x42, 0x1f],
-      ];
-      for (const [offset, tile] of writes) {
-        if (offset >= 0 && offset < nametable.length) nametable[offset] = tile & 0xff;
-      }
-    }
+  const nametable = Uint8Array.from(background.stream);
+  for (let offset = 0; offset < 0x400; offset++) {
+    const tile = api.meeting_secret_renderer_overlay_tile(0x2000 + offset) >>> 0;
+    if (tile !== 0xffffffff) nametable[offset] = tile & 0xff;
   }
-  for (const pair of scripts.stateNametablePatches?.[String(state)] || []) {
-    const [offset, value] = pair;
-    if (offset >= 0 && offset < nametable.length) nametable[offset] = value & 0xff;
-  }
-  const transformMeetingRow = (values, lowAttribute, middleAttribute, highAttribute) => {
-    const graphics = [], attributes = [];
-    for (const raw of values) {
-      const value = raw & 0xff;
-      if ((value & 0x80) !== 0 || value < 0x10) {
-        graphics.push(value); attributes.push(lowAttribute);
-      } else if (value < 0x50) {
-        if (middleAttribute !== 0) {
-          graphics.push(value | 0x80); attributes.push(middleAttribute);
-        } else {
-          graphics.push(0x50); attributes.push(highAttribute || lowAttribute);
-        }
-      } else {
-        graphics.push((value + 0x50) & 0xff); attributes.push(highAttribute || lowAttribute);
-      }
-    }
-    return { graphics, attributes };
-  };
-  const playerNames = scripts.playerNames || [];
-  if (state >= 2 && playerNames.length >= 12 * 5) {
-    const offset = Math.min(selected, 11) * 5;
-    const name = transformMeetingRow(playerNames.slice(offset, offset + 5), 0x59, 0x5a, 0x5b);
-    writeOriginalWeatherPreviewTiles(nametable, 0x22af, name.attributes);
-    writeOriginalWeatherPreviewTiles(nametable, 0x22cf, name.graphics);
-  }
-  const individualRows = scripts.individualOptionRows || [];
-  if (state === 6 && individualRows.length >= 12 * 8) {
-    const rowIndex = Math.min(option, 11) * 8;
-    const row = transformMeetingRow(individualRows.slice(rowIndex, rowIndex + 8), 0x02, 0xda, 0xdb);
-    row.graphics[0] = (row.graphics[0] - firstRosterOption) & 0xff;
-    writeOriginalWeatherPreviewTiles(nametable, 0x2275, row.attributes);
-    writeOriginalWeatherPreviewTiles(nametable, 0x2295, row.graphics);
-  }
-  const scriptIndex = effectScriptId - (scripts.textScriptFirstId ?? 0x0d);
-  const textScript = scripts.textScripts?.[scriptIndex] || [];
-  const textHasStarted = state >= 7 && (effectState & 0x80) === 0
-    && (effectStatus !== 0 || effectCursor !== 0);
-  if (textHasStarted && textScript.length) {
-    const blankRow = new Array(0x1b).fill(0xff);
-    for (const address of [0x2302, 0x2322, 0x2342, 0x2362]) {
-      writeOriginalWeatherPreviewTiles(nametable, address, blankRow);
-    }
-    replayOriginalTextEffect(
-      nametable, textScript, effectCursor, effectStatus, effectAltCursor,
-      textWorkspace, scripts.textAddress ?? 0x2302,
-    );
-  }
-  if ((effectStatus & 0x20) !== 0 && blinkAddress === 0x2390) {
-    writeOriginalWeatherPreviewTiles(nametable, blinkAddress, [blinkTile]);
-  }
-  meeting.context.clearRect(0, 0, 256, 240);
-  meeting.context.imageSmoothingEnabled = false;
-  renderOriginalExtractedAtlasNametable(meeting.context, nametable, tileImage, 0);
+  if (!renderOriginalDynamicBackgroundNametable(
+    meeting.context,
+    nametable,
+    background.chr0,
+    background.chr1,
+    subPalettes,
+  )) return null;
   meeting.key = key;
   if (DEBUG) {
     window.__soccerMeetingSecretRenderer = {
       subtype: api.original_screen_subtype ? api.original_screen_subtype() & 0x7f : 0,
+      source: "classified-bin-cpp",
       backgroundId,
+      destination: background.destination,
+      chr0: background.chr0,
+      chr1: background.chr1,
+      paletteNumbers: [background.palette0, background.palette1],
+      mirroring: background.mirroring,
       state,
       option,
       selected,
@@ -3423,6 +3364,7 @@ function composeOriginalMeetingSecretScreen(api, backgroundId) {
       effectAltCursor,
       textWorkspace,
       meetingPlayerData,
+      signature,
       key,
       nametable: Array.from(nametable),
     };
@@ -4107,7 +4049,7 @@ async function main() {
     const image = await withFallback(name, originalAssetUrl(name), originalFallbackUrl(name), loadImage);
     return [id, image];
   })).then((entries) => Object.fromEntries(entries));
-  const [api, field, spriteManifest, palettes, splashLogo, splashTitle, splashTitleBlink, splashStory, meetingSecretScreenManifest, meetingSecretRenderer, meetingSecretTiles0a, meetingSecretTiles0f, creditsScreenManifest, creditsTiles, menuScreens] = await Promise.all([
+  const [api, field, spriteManifest, palettes, splashLogo, splashTitle, splashTitleBlink, splashStory, creditsScreenManifest, creditsTiles, menuScreens] = await Promise.all([
     apiPromise,
     loadOriginalFieldAssets(),
     spriteManifestPromise,
@@ -4116,10 +4058,6 @@ async function main() {
     withFallback("splash_01_title.png", originalAssetUrl("splash_01_title.png"), originalFallbackUrl("splash_01_title.png"), loadImage),
     withFallback("splash_01_title_blink.png", originalAssetUrl("splash_01_title_blink.png"), originalFallbackUrl("splash_01_title_blink.png"), loadImage),
     withFallback("splash_0e_story.png", originalAssetUrl("splash_0e_story.png"), originalFallbackUrl("splash_0e_story.png"), loadImage),
-    withFallback("meeting_secret_screen_manifest.json", originalAssetUrl("meeting_secret_screen_manifest.json"), originalFallbackUrl("meeting_secret_screen_manifest.json"), loadJson),
-    withFallback("meeting_secret_renderer.json", originalAssetUrl("meeting_secret_renderer.json"), originalFallbackUrl("meeting_secret_renderer.json"), loadJson),
-    withFallback("meeting_secret_tiles_0a.png", originalAssetUrl("meeting_secret_tiles_0a.png"), originalFallbackUrl("meeting_secret_tiles_0a.png"), loadImage),
-    withFallback("meeting_secret_tiles_0f.png", originalAssetUrl("meeting_secret_tiles_0f.png"), originalFallbackUrl("meeting_secret_tiles_0f.png"), loadImage),
     withFallback("credits_screen_manifest.json", originalAssetUrl("credits_screen_manifest.json"), originalFallbackUrl("credits_screen_manifest.json"), loadJson),
     creditsTilesPromise,
     menuScreensPromise,
@@ -4144,12 +4082,7 @@ async function main() {
   document.body.dataset.tournamentRecordRendererSource = "classified-bin-cpp";
   document.body.dataset.playerProfileRendererSource = "classified-bin-cpp";
   document.body.dataset.musicSelectionRendererSource = "classified-bin-cpp";
-  originalAssets.meetingSecret.manifest = meetingSecretScreenManifest;
-  originalAssets.meetingSecret.scripts = meetingSecretRenderer;
-  originalAssets.meetingSecret.tileImages = {
-    "10": meetingSecretTiles0a,
-    "15": meetingSecretTiles0f,
-  };
+  document.body.dataset.meetingSecretRendererSource = "classified-bin-cpp";
   originalAssets.credits.manifest = creditsScreenManifest;
   originalAssets.credits.tileImages = creditsTiles;
   wasmNesApu.bindCore(api);
