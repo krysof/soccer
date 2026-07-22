@@ -240,9 +240,7 @@ const originalAssets = {
     key: "",
   },
   playerProfile: {
-    manifest: null,
-    scripts: null,
-    tileImage: null,
+    background: null,
     canvas: null,
     context: null,
     key: "",
@@ -1075,7 +1073,7 @@ function loadOriginalSpriteRendererFromBin(api) {
 }
 async function loadWasm() {
   const filename = DEBUG ? "soccer_core_cpp.wasm" : "soccer_core_cpp_production.wasm";
-  const relative = DEBUG ? "../strict-tests.8715cfe9.wasm" : "../soccer_core_cpp.31891167.wasm";
+  const relative = DEBUG ? "../strict-tests.06052081.wasm" : "../soccer_core_cpp.bfba025c.wasm";
   const response = await fetchCoreResponse(filename, assetUrl(relative), rootAssetUrl(filename));
   const bytes = await response.arrayBuffer();
   const result = await WebAssembly.instantiate(bytes, {});
@@ -3091,7 +3089,7 @@ function originalPlayerProfileDoubleHeightTiles(values, textEffect = false) {
     if (textEffect && value === 0) {
       top.push(0xff);
       bottom.push(0xff);
-    } else if ((value & 0x80) !== 0 || value < 0x10) {
+    } else if ((value & 0x80) !== 0 || value < (textEffect ? 0x20 : 0x10)) {
       top.push(0xff);
       bottom.push(value);
     } else if (value < 0x50) {
@@ -3149,13 +3147,19 @@ function replayOriginalTextEffect(
 }
 function composeOriginalPlayerProfileScreen(api) {
   const profile = originalAssets.playerProfile;
-  const manifest = profile.manifest;
-  const scripts = profile.scripts;
-  if (!manifest || !scripts || !profile.tileImage || !Array.isArray(manifest.nametable)) {
-    return null;
+  const backgroundId = api.original_background_image_id
+    ? api.original_background_image_id() & 0xff : 0;
+  if (backgroundId !== 0x0c || !api.player_profile_renderer_overlay_tile) return null;
+  if (!profile.background) {
+    profile.background = decodeOriginalBackgroundImageFromCpp(api, backgroundId);
   }
-  const selected = Math.min(11, api.original_selected_player_number
-    ? api.original_selected_player_number() & 0xff : 0);
+  const background = profile.background;
+  if (!background || background.destination !== 0x2000
+      || background.stream.length !== 0x400) return null;
+  const subPalettes = originalBackgroundSubPalettes(background.palette0, background.palette1);
+  if (!subPalettes) return null;
+  const selected = api.original_selected_player_number
+    ? api.original_selected_player_number() & 0xff : 0;
   const effectState = api.original_text_effect_state ? api.original_text_effect_state() & 0xff : 0x80;
   const effectStatus = api.original_text_effect_status ? api.original_text_effect_status() & 0xff : 0;
   const effectScriptId = api.original_text_effect_script_id
@@ -3176,54 +3180,29 @@ function composeOriginalPlayerProfileScreen(api) {
     profile.canvas.height = 240;
     profile.context = profile.canvas.getContext("2d");
   }
-  const nametable = Uint8Array.from(manifest.nametable);
-  const record = scripts.records?.[selected] || scripts.records?.[0];
-  if (record) {
-    for (let index = 0; index < 3; index++) {
-      const value = record[index] & 0xff;
-      writeOriginalWeatherPreviewTiles(
-        nametable,
-        scripts.statAddresses?.[index] ?? (0x20f9 + index * 0x40),
-        [0x80 | Math.floor(value / 10), 0x80 | (value % 10)],
-      );
-    }
-    writeOriginalWeatherPreviewTiles(nametable, scripts.rankAddress ?? 0x21b9, [record[3]]);
-    const playerName = scripts.playerNames?.[selected] || scripts.playerNames?.[0] || [];
-    writeOriginalPlayerProfileDoubleHeightRow(
-      nametable, scripts.nameAddress ?? 0x21c4, playerName,
-    );
-    let descriptionAddress = scripts.descriptionAddress ?? 0x21d2;
-    for (const rowIndex of record.slice(4, 7)) {
-      if ((rowIndex & 0x80) !== 0) break;
-      const row = scripts.descriptionRows?.[rowIndex];
-      if (!row) break;
-      writeOriginalPlayerProfileDoubleHeightRow(nametable, descriptionAddress, row);
-      descriptionAddress += 0x40;
-    }
+  const nametable = Uint8Array.from(background.stream);
+  for (let offset = 0; offset < 0x400; offset++) {
+    const tile = api.player_profile_renderer_overlay_tile(0x2000 + offset) >>> 0;
+    if (tile !== 0xffffffff) nametable[offset] = tile & 0xff;
   }
-  const textHasStarted = (effectState & 0x80) === 0 && (effectStatus !== 0 || effectCursor !== 0);
-  if (textHasStarted) {
-    const blankRow = new Array(0x1b).fill(0xff);
-    for (const address of [0x2302, 0x2322, 0x2342, 0x2362]) {
-      writeOriginalWeatherPreviewTiles(nametable, address, blankRow);
-    }
-    const script = scripts.textScripts?.[Math.max(0, effectScriptId - 1)] || [];
-    replayOriginalTextEffect(
-      nametable, script, effectCursor, effectStatus, effectAltCursor,
-      textWorkspace, scripts.textAddress ?? 0x2302,
-    );
-  }
-  if ((effectStatus & 0x20) !== 0 && blinkAddress === 0x2390) {
-    writeOriginalWeatherPreviewTiles(nametable, 0x2390, [blinkTile]);
-  }
-  profile.context.clearRect(0, 0, 256, 240);
-  profile.context.imageSmoothingEnabled = false;
-  renderOriginalExtractedAtlasNametable(profile.context, nametable, profile.tileImage, 0);
+  if (!renderOriginalDynamicBackgroundNametable(
+    profile.context,
+    nametable,
+    background.chr0,
+    background.chr1,
+    subPalettes,
+  )) return null;
   profile.key = key;
   if (DEBUG) {
     window.__soccerPlayerProfileRenderer = {
       subtype: 0x0a,
-      backgroundId: manifest.backgroundId,
+      source: "classified-bin-cpp",
+      backgroundId,
+      destination: background.destination,
+      chr0: background.chr0,
+      chr1: background.chr1,
+      paletteNumbers: [background.palette0, background.palette1],
+      mirroring: background.mirroring,
       selected,
       effectState,
       effectStatus,
@@ -4128,7 +4107,7 @@ async function main() {
     const image = await withFallback(name, originalAssetUrl(name), originalFallbackUrl(name), loadImage);
     return [id, image];
   })).then((entries) => Object.fromEntries(entries));
-  const [api, field, spriteManifest, palettes, splashLogo, splashTitle, splashTitleBlink, splashStory, playerProfileScreenManifest, playerProfileRenderer, playerProfileTiles, meetingSecretScreenManifest, meetingSecretRenderer, meetingSecretTiles0a, meetingSecretTiles0f, creditsScreenManifest, creditsTiles, menuScreens] = await Promise.all([
+  const [api, field, spriteManifest, palettes, splashLogo, splashTitle, splashTitleBlink, splashStory, meetingSecretScreenManifest, meetingSecretRenderer, meetingSecretTiles0a, meetingSecretTiles0f, creditsScreenManifest, creditsTiles, menuScreens] = await Promise.all([
     apiPromise,
     loadOriginalFieldAssets(),
     spriteManifestPromise,
@@ -4137,9 +4116,6 @@ async function main() {
     withFallback("splash_01_title.png", originalAssetUrl("splash_01_title.png"), originalFallbackUrl("splash_01_title.png"), loadImage),
     withFallback("splash_01_title_blink.png", originalAssetUrl("splash_01_title_blink.png"), originalFallbackUrl("splash_01_title_blink.png"), loadImage),
     withFallback("splash_0e_story.png", originalAssetUrl("splash_0e_story.png"), originalFallbackUrl("splash_0e_story.png"), loadImage),
-    withFallback("player_profile_screen_manifest.json", originalAssetUrl("player_profile_screen_manifest.json"), originalFallbackUrl("player_profile_screen_manifest.json"), loadJson),
-    withFallback("player_profile_renderer.json", originalAssetUrl("player_profile_renderer.json"), originalFallbackUrl("player_profile_renderer.json"), loadJson),
-    withFallback("player_profile_tiles.png", originalAssetUrl("player_profile_tiles.png"), originalFallbackUrl("player_profile_tiles.png"), loadImage),
     withFallback("meeting_secret_screen_manifest.json", originalAssetUrl("meeting_secret_screen_manifest.json"), originalFallbackUrl("meeting_secret_screen_manifest.json"), loadJson),
     withFallback("meeting_secret_renderer.json", originalAssetUrl("meeting_secret_renderer.json"), originalFallbackUrl("meeting_secret_renderer.json"), loadJson),
     withFallback("meeting_secret_tiles_0a.png", originalAssetUrl("meeting_secret_tiles_0a.png"), originalFallbackUrl("meeting_secret_tiles_0a.png"), loadImage),
@@ -4166,9 +4142,7 @@ async function main() {
   document.body.dataset.formationControlRendererSource = "classified-bin-cpp";
   document.body.dataset.weatherPreviewRendererSource = "classified-bin-cpp";
   document.body.dataset.tournamentRecordRendererSource = "classified-bin-cpp";
-  originalAssets.playerProfile.manifest = playerProfileScreenManifest;
-  originalAssets.playerProfile.scripts = playerProfileRenderer;
-  originalAssets.playerProfile.tileImage = playerProfileTiles;
+  document.body.dataset.playerProfileRendererSource = "classified-bin-cpp";
   document.body.dataset.musicSelectionRendererSource = "classified-bin-cpp";
   originalAssets.meetingSecret.manifest = meetingSecretScreenManifest;
   originalAssets.meetingSecret.scripts = meetingSecretRenderer;
