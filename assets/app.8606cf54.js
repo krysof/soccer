@@ -235,8 +235,7 @@ const originalAssets = {
     key: "",
   },
   tournamentRecord: {
-    manifest: null,
-    tileImage: null,
+    background: null,
     canvas: null,
     context: null,
     key: "",
@@ -1078,7 +1077,7 @@ function loadOriginalSpriteRendererFromBin(api) {
 }
 async function loadWasm() {
   const filename = DEBUG ? "soccer_core_cpp.wasm" : "soccer_core_cpp_production.wasm";
-  const relative = DEBUG ? "../strict-tests.2b60d840.wasm" : "../soccer_core_cpp.d9a9e395.wasm";
+  const relative = DEBUG ? "../strict-tests.328caf76.wasm" : "../soccer_core_cpp.0a2bed48.wasm";
   const response = await fetchCoreResponse(filename, assetUrl(relative), rootAssetUrl(filename));
   const bytes = await response.arrayBuffer();
   const result = await WebAssembly.instantiate(bytes, {});
@@ -3075,11 +3074,17 @@ function composeOriginalTeamPreviewScreen(api) {
 }
 function composeOriginalTournamentRecordScreen(api) {
   const record = originalAssets.tournamentRecord;
-  const manifest = record.manifest;
-  if (!manifest || !record.tileImage || !Array.isArray(manifest.nametable)
-      || !api.tournament_record_renderer_overlay_tile) {
-    return null;
+  const backgroundId = api.original_background_image_id
+    ? api.original_background_image_id() & 0xff : 0;
+  if (backgroundId !== 0x0d || !api.tournament_record_renderer_overlay_tile) return null;
+  if (!record.background) {
+    record.background = decodeOriginalBackgroundImageFromCpp(api, backgroundId);
   }
+  const background = record.background;
+  if (!background || background.destination !== 0x2000
+      || background.stream.length !== 0x400) return null;
+  const subPalettes = originalBackgroundSubPalettes(background.palette0, background.palette1);
+  if (!subPalettes) return null;
   const statuses = Array.from({ length: 12 }, (_, index) =>
     api.original_team_status_053e ? api.original_team_status_053e(index) & 0xff : 0);
   const values = [
@@ -3097,16 +3102,25 @@ function composeOriginalTournamentRecordScreen(api) {
     record.canvas.height = 240;
     record.context = record.canvas.getContext("2d");
   }
-  const nametable = Uint8Array.from(manifest.nametable);
+  const nametable = Uint8Array.from(background.stream);
   applyOriginalTournamentRecordOverlay(api, nametable);
-  record.context.clearRect(0, 0, 256, 240);
-  record.context.imageSmoothingEnabled = false;
-  renderOriginalMatchSettingsNametable(record.context, nametable, record.tileImage, 0);
+  if (!renderOriginalDynamicBackgroundNametable(
+    record.context,
+    nametable,
+    background.chr0,
+    background.chr1,
+    subPalettes,
+  )) return null;
   record.key = key;
   if (DEBUG) {
     window.__soccerTournamentRecordRenderer = {
       subtype: 0x09,
-      backgroundId: manifest.backgroundId,
+      backgroundId,
+      destination: background.destination,
+      chr0: background.chr0,
+      chr1: background.chr1,
+      paletteNumbers: [background.palette0, background.palette1],
+      mirroring: background.mirroring,
       statuses,
       values,
       packed,
@@ -4108,7 +4122,7 @@ async function main() {
     const image = await withFallback(name, originalAssetUrl(name), originalFallbackUrl(name), loadImage);
     return [id, image];
   })).then((entries) => Object.fromEntries(entries));
-  const [api, field, spriteManifest, palettes, splashLogo, splashTitle, splashTitleBlink, splashStory, resultScreenManifest, resultRenderer, teamPreviewScreenManifest, bracketScreenManifest, bracketRenderer, bracketTiles, matchSettingsScreenManifest, matchSettingsRenderer, matchSettingsTiles, formationControlScreenManifest, formationControlRenderer, formationControlTiles, weatherPreviewScreenManifest, weatherPreviewRenderer, weatherPreviewTiles, tournamentRecordScreenManifest, tournamentRecordTiles, playerProfileScreenManifest, playerProfileRenderer, playerProfileTiles, meetingSecretScreenManifest, meetingSecretRenderer, meetingSecretTiles0a, meetingSecretTiles0f, creditsScreenManifest, creditsTiles, menuScreens] = await Promise.all([
+  const [api, field, spriteManifest, palettes, splashLogo, splashTitle, splashTitleBlink, splashStory, resultScreenManifest, resultRenderer, teamPreviewScreenManifest, bracketScreenManifest, bracketRenderer, bracketTiles, matchSettingsScreenManifest, matchSettingsRenderer, matchSettingsTiles, formationControlScreenManifest, formationControlRenderer, formationControlTiles, weatherPreviewScreenManifest, weatherPreviewRenderer, weatherPreviewTiles, playerProfileScreenManifest, playerProfileRenderer, playerProfileTiles, meetingSecretScreenManifest, meetingSecretRenderer, meetingSecretTiles0a, meetingSecretTiles0f, creditsScreenManifest, creditsTiles, menuScreens] = await Promise.all([
     apiPromise,
     loadOriginalFieldAssets(),
     spriteManifestPromise,
@@ -4132,8 +4146,6 @@ async function main() {
     withFallback("weather_preview_screen_manifest.json", originalAssetUrl("weather_preview_screen_manifest.json"), originalFallbackUrl("weather_preview_screen_manifest.json"), loadJson),
     withFallback("weather_preview_renderer.json", originalAssetUrl("weather_preview_renderer.json"), originalFallbackUrl("weather_preview_renderer.json"), loadJson),
     withFallback("weather_preview_tiles.png", originalAssetUrl("weather_preview_tiles.png"), originalFallbackUrl("weather_preview_tiles.png"), loadImage),
-    withFallback("tournament_record_screen_manifest.json", originalAssetUrl("tournament_record_screen_manifest.json"), originalFallbackUrl("tournament_record_screen_manifest.json"), loadJson),
-    withFallback("tournament_record_tiles.png", originalAssetUrl("tournament_record_tiles.png"), originalFallbackUrl("tournament_record_tiles.png"), loadImage),
     withFallback("player_profile_screen_manifest.json", originalAssetUrl("player_profile_screen_manifest.json"), originalFallbackUrl("player_profile_screen_manifest.json"), loadJson),
     withFallback("player_profile_renderer.json", originalAssetUrl("player_profile_renderer.json"), originalFallbackUrl("player_profile_renderer.json"), loadJson),
     withFallback("player_profile_tiles.png", originalAssetUrl("player_profile_tiles.png"), originalFallbackUrl("player_profile_tiles.png"), loadImage),
@@ -4171,8 +4183,6 @@ async function main() {
   originalAssets.weatherPreview.manifest = weatherPreviewScreenManifest;
   originalAssets.weatherPreview.scripts = weatherPreviewRenderer;
   originalAssets.weatherPreview.tileImage = weatherPreviewTiles;
-  originalAssets.tournamentRecord.manifest = tournamentRecordScreenManifest;
-  originalAssets.tournamentRecord.tileImage = tournamentRecordTiles;
   document.body.dataset.tournamentRecordRendererSource = "classified-bin-cpp";
   originalAssets.playerProfile.manifest = playerProfileScreenManifest;
   originalAssets.playerProfile.scripts = playerProfileRenderer;
