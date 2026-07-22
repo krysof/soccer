@@ -227,9 +227,8 @@ const originalAssets = {
     key: "",
   },
   weatherPreview: {
-    manifest: null,
-    scripts: null,
-    tileImage: null,
+    background: null,
+    nametable: null,
     canvas: null,
     context: null,
     key: "",
@@ -1076,7 +1075,7 @@ function loadOriginalSpriteRendererFromBin(api) {
 }
 async function loadWasm() {
   const filename = DEBUG ? "soccer_core_cpp.wasm" : "soccer_core_cpp_production.wasm";
-  const relative = DEBUG ? "../strict-tests.f263d997.wasm" : "../soccer_core_cpp.2d00bb44.wasm";
+  const relative = DEBUG ? "../strict-tests.8715cfe9.wasm" : "../soccer_core_cpp.31891167.wasm";
   const response = await fetchCoreResponse(filename, assetUrl(relative), rootAssetUrl(filename));
   const bytes = await response.arrayBuffer();
   const result = await WebAssembly.instantiate(bytes, {});
@@ -2727,28 +2726,27 @@ function writeOriginalWeatherPreviewTiles(nametable, address, tiles) {
     offset++;
   }
 }
-function writeOriginalWeatherPreviewRows(nametable, patch) {
-  if (!patch || !Array.isArray(patch.rows)) return;
-  for (let row = 0; row < patch.rows.length; row++) {
-    writeOriginalWeatherPreviewTiles(nametable, patch.address + row * 0x20, patch.rows[row]);
-  }
-}
 function composeOriginalWeatherPreviewScreen(api) {
   const weather = originalAssets.weatherPreview;
-  const manifest = weather.manifest;
-  const scripts = weather.scripts;
-  if (!manifest || !scripts || !weather.tileImage || !Array.isArray(manifest.nametable)) {
-    return null;
+  if (!weather.background) {
+    weather.background = decodeOriginalBackgroundImageFromCpp(api, 0x08);
   }
-  const difficulty = api.original_difficulty_mode ? api.original_difficulty_mode() & 0xff : 0;
-  const continent = api.original_continent_option ? api.original_continent_option() & 0xff : 0;
-  const rightTeam = api.original_team_number ? api.original_team_number(1) & 0xff : 0;
-  const tournamentRound = api.original_ram_054a ? api.original_ram_054a() & 0xff : 0xff;
-  const condition = api.original_ram_0603 ? api.original_ram_0603() & 0xff : 0;
+  const background = weather.background;
+  if (!background || background.destination !== 0x2000
+      || background.stream.length !== 0x400
+      || !api.weather_preview_renderer_continent_selector
+      || !api.weather_preview_renderer_condition_selector
+      || !api.weather_preview_renderer_overlay_tile) return null;
+  const subPalettes = originalBackgroundSubPalettes(
+    background.palette0, background.palette1,
+  );
+  if (!subPalettes) return null;
+  const continentPatchIndex = api.weather_preview_renderer_continent_selector() & 0xff;
+  const conditionIndex = api.weather_preview_renderer_condition_selector() & 0xff;
   const rainWind = api.original_rain_wind_option ? api.original_rain_wind_option() & 0xff : 0;
   const storm = api.original_lightning_tornado_direction
     ? api.original_lightning_tornado_direction() & 0xff : 0;
-  const key = `${difficulty}:${continent}:${rightTeam}:${tournamentRound}:${condition}:${rainWind}:${storm}`;
+  const key = `${continentPatchIndex}:${conditionIndex}:${rainWind}:${storm}`;
   if (weather.canvas && weather.key === key) return weather.canvas;
   if (!weather.canvas) {
     weather.canvas = document.createElement("canvas");
@@ -2756,62 +2754,33 @@ function composeOriginalWeatherPreviewScreen(api) {
     weather.canvas.height = 240;
     weather.context = weather.canvas.getContext("2d");
   }
-  const nametable = Uint8Array.from(manifest.nametable);
-  let continentPatchIndex;
-  if ((difficulty & 0x80) === 0) {
-    continentPatchIndex = continent;
-  } else if ((tournamentRound & 0x80) === 0) {
-    continentPatchIndex = 4;
-  } else {
-    continentPatchIndex = (rightTeam & 0x0f) + 4;
+  const nametable = Uint8Array.from(background.stream);
+  for (let offset = 0; offset < 0x400; offset++) {
+    const tile = api.weather_preview_renderer_overlay_tile(0x2000 + offset) >>> 0;
+    if (tile !== 0xffffffff) nametable[offset] = tile & 0xff;
   }
-  writeOriginalWeatherPreviewRows(
+  if (!renderOriginalDynamicBackgroundNametable(
+    weather.context,
     nametable,
-    scripts.continentPatches?.[Math.min(continentPatchIndex, (scripts.continentPatches?.length || 1) - 1)],
-  );
-  const conditionIndex = Math.min(7, (condition & 0xe0) >> 5);
-  writeOriginalWeatherPreviewRows(nametable, scripts.conditionPatches?.[conditionIndex]);
-  writeOriginalWeatherPreviewTiles(
-    nametable,
-    0x2219,
-    scripts.weatherIconTiles?.slice(conditionIndex * 2, conditionIndex * 2 + 2),
-  );
-  const direction = storm & 3;
-  writeOriginalWeatherPreviewTiles(
-    nametable,
-    0x225a,
-    scripts.directionTiles?.slice(direction * 2, direction * 2 + 2),
-  );
-  const windOffset = Math.min(32, (rainWind & 0x70) >> 1);
-  writeOriginalWeatherPreviewTiles(
-    nametable,
-    0x2278,
-    scripts.windTextTiles?.slice(windOffset, windOffset + 4),
-  );
-  writeOriginalWeatherPreviewTiles(
-    nametable,
-    0x2298,
-    scripts.windTextTiles?.slice(windOffset + 4, windOffset + 8),
-  );
-  let stormAddress = 0x22d8;
-  if (storm & 0x0c) {
-    writeOriginalWeatherPreviewTiles(nametable, stormAddress, scripts.stormTextTiles?.slice(0, 4));
-    stormAddress += 0x40;
-  }
-  if (storm & 0x30) {
-    writeOriginalWeatherPreviewTiles(nametable, stormAddress, scripts.stormTextTiles?.slice(4, 8));
-  }
-  weather.context.clearRect(0, 0, 256, 240);
-  weather.context.imageSmoothingEnabled = false;
-  renderOriginalExtractedAtlasNametable(weather.context, nametable, weather.tileImage, 0);
+    background.chr0,
+    background.chr1,
+    subPalettes,
+  )) return null;
+  weather.nametable = nametable;
   weather.key = key;
   if (DEBUG) {
     window.__soccerWeatherPreviewRenderer = {
       subtype: 0x08,
-      backgroundId: manifest.backgroundId,
+      source: "classified-bin-cpp",
+      backgroundId: background.imageId,
+      destination: background.destination,
+      chr0: background.chr0,
+      chr1: background.chr1,
+      paletteNumbers: [background.palette0, background.palette1],
+      mirroring: background.mirroring,
       continentPatchIndex,
       conditionIndex,
-      windOffset,
+      windOffset: (rainWind & 0x70) >> 1,
       storm,
       key,
       nametable: Array.from(nametable),
@@ -4159,7 +4128,7 @@ async function main() {
     const image = await withFallback(name, originalAssetUrl(name), originalFallbackUrl(name), loadImage);
     return [id, image];
   })).then((entries) => Object.fromEntries(entries));
-  const [api, field, spriteManifest, palettes, splashLogo, splashTitle, splashTitleBlink, splashStory, weatherPreviewScreenManifest, weatherPreviewRenderer, weatherPreviewTiles, playerProfileScreenManifest, playerProfileRenderer, playerProfileTiles, meetingSecretScreenManifest, meetingSecretRenderer, meetingSecretTiles0a, meetingSecretTiles0f, creditsScreenManifest, creditsTiles, menuScreens] = await Promise.all([
+  const [api, field, spriteManifest, palettes, splashLogo, splashTitle, splashTitleBlink, splashStory, playerProfileScreenManifest, playerProfileRenderer, playerProfileTiles, meetingSecretScreenManifest, meetingSecretRenderer, meetingSecretTiles0a, meetingSecretTiles0f, creditsScreenManifest, creditsTiles, menuScreens] = await Promise.all([
     apiPromise,
     loadOriginalFieldAssets(),
     spriteManifestPromise,
@@ -4168,9 +4137,6 @@ async function main() {
     withFallback("splash_01_title.png", originalAssetUrl("splash_01_title.png"), originalFallbackUrl("splash_01_title.png"), loadImage),
     withFallback("splash_01_title_blink.png", originalAssetUrl("splash_01_title_blink.png"), originalFallbackUrl("splash_01_title_blink.png"), loadImage),
     withFallback("splash_0e_story.png", originalAssetUrl("splash_0e_story.png"), originalFallbackUrl("splash_0e_story.png"), loadImage),
-    withFallback("weather_preview_screen_manifest.json", originalAssetUrl("weather_preview_screen_manifest.json"), originalFallbackUrl("weather_preview_screen_manifest.json"), loadJson),
-    withFallback("weather_preview_renderer.json", originalAssetUrl("weather_preview_renderer.json"), originalFallbackUrl("weather_preview_renderer.json"), loadJson),
-    withFallback("weather_preview_tiles.png", originalAssetUrl("weather_preview_tiles.png"), originalFallbackUrl("weather_preview_tiles.png"), loadImage),
     withFallback("player_profile_screen_manifest.json", originalAssetUrl("player_profile_screen_manifest.json"), originalFallbackUrl("player_profile_screen_manifest.json"), loadJson),
     withFallback("player_profile_renderer.json", originalAssetUrl("player_profile_renderer.json"), originalFallbackUrl("player_profile_renderer.json"), loadJson),
     withFallback("player_profile_tiles.png", originalAssetUrl("player_profile_tiles.png"), originalFallbackUrl("player_profile_tiles.png"), loadImage),
@@ -4198,9 +4164,7 @@ async function main() {
   document.body.dataset.bracketRendererSource = "classified-bin-cpp";
   document.body.dataset.matchSettingsRendererSource = "classified-bin-cpp";
   document.body.dataset.formationControlRendererSource = "classified-bin-cpp";
-  originalAssets.weatherPreview.manifest = weatherPreviewScreenManifest;
-  originalAssets.weatherPreview.scripts = weatherPreviewRenderer;
-  originalAssets.weatherPreview.tileImage = weatherPreviewTiles;
+  document.body.dataset.weatherPreviewRendererSource = "classified-bin-cpp";
   document.body.dataset.tournamentRecordRendererSource = "classified-bin-cpp";
   originalAssets.playerProfile.manifest = playerProfileScreenManifest;
   originalAssets.playerProfile.scripts = playerProfileRenderer;

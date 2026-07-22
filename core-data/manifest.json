@@ -4567,7 +4567,62 @@
         }
       ],
       "consumers": [
-        "wasm-game/cpp-core/src/screens/menu_weather.cpp"
+        "wasm-game/cpp-core/src/screens/menu_weather.cpp",
+        "wasm-game/cpp-core/src/screens/weather_preview_renderer.cpp"
+      ]
+    },
+    {
+      "path": "menu/weather-preview-condition-records.bin",
+      "category": "menu",
+      "source": "src/CHR_ROM.chr:1D423",
+      "bank": "CHR",
+      "address": "0x1D423",
+      "symbol": "tbl_BF55 plus CHR $74/$75 software-copy sources",
+      "layout": "8 weather records x 3 rows x 18 nametable tile ids; destination $2127",
+      "length": 432,
+      "sha256": "1984b82437ad6df41ece33715ef1fa63827cfd4e1e02d1511a3d4582ade28563",
+      "source_ranges": [
+        {
+          "bank": "05",
+          "start": "0xBF55",
+          "length": 16
+        },
+        {
+          "bank": "CHR",
+          "start": "0x1D423",
+          "length": 378
+        }
+      ],
+      "consumers": [
+        "soccer::screens::weather_preview_overlay_tile",
+        "wasm-game/cpp-core/src/screens/weather_preview_renderer.cpp"
+      ]
+    },
+    {
+      "path": "menu/weather-preview-continent-records.bin",
+      "category": "menu",
+      "source": "src/CHR_ROM.chr:1D59D",
+      "bank": "CHR",
+      "address": "0x1D59D",
+      "symbol": "tbl_BFA2 plus CHR $74/$75 software-copy sources",
+      "layout": "20 selector records x 2 rows x 14 nametable tile ids; destination $20AA",
+      "length": 560,
+      "sha256": "274f2f2b41853fd63dd8606d4da12429ec324046675f8ca4924655a9d5c8030a",
+      "source_ranges": [
+        {
+          "bank": "05",
+          "start": "0xBFA2",
+          "length": 40
+        },
+        {
+          "bank": "CHR",
+          "start": "0x1D59D",
+          "length": 476
+        }
+      ],
+      "consumers": [
+        "soccer::screens::weather_preview_overlay_tile",
+        "wasm-game/cpp-core/src/screens/weather_preview_renderer.cpp"
       ]
     },
     {
