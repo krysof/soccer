@@ -162,7 +162,7 @@ const runtimeLifecycle = {
 let wakeLockSentinel = null;
 const originalAssets = {
   field: null,
-  splash: {},
+  splash: { states: new Map(), last: null },
   staticBackgrounds: new Map(),
   modeSelection: {
     background: null,
@@ -1064,7 +1064,7 @@ function loadOriginalSpriteRendererFromBin(api) {
 }
 async function loadWasm() {
   const filename = DEBUG ? "soccer_core_cpp.wasm" : "soccer_core_cpp_production.wasm";
-  const relative = DEBUG ? "../strict-tests.f29b9866.wasm" : "../soccer_core_cpp.9ee253df.wasm";
+  const relative = DEBUG ? "../strict-tests.60b1a868.wasm" : "../soccer_core_cpp.57f9dd11.wasm";
   const response = await fetchCoreResponse(filename, assetUrl(relative), rootAssetUrl(filename));
   const bytes = await response.arrayBuffer();
   const result = await WebAssembly.instantiate(bytes, {});
@@ -1999,10 +1999,9 @@ function drawOriginalSplash(api) {
   ctx.fillRect(0, 0, canvas.width, canvas.height);
   const id = api.original_background_image_id ? api.original_background_image_id() : 0;
   const subtype = api.original_screen_subtype ? api.original_screen_subtype() & 0x7F : 0;
-  let img = originalAssets.splash[id];
-  if (id === 1 && api.original_frame_counter && (api.original_frame_counter() & 4) !== 0) {
-    img = originalAssets.splash.titleBlink || img;
-  }
+  const blinkOff = id === 1 && (subtype === 0x07 || subtype === 0x0A)
+    && api.original_frame_counter && (api.original_frame_counter() & 4) !== 0;
+  const img = composeOriginalSplashBackground(api, id, blinkOff);
   const brightness = api.original_current_brightness ? api.original_current_brightness() : 0x40;
   const alpha = Math.max(0, Math.min(1, brightness / 0x40));
   let layout = originalFullScreenLayout();
@@ -2013,11 +2012,6 @@ function drawOriginalSplash(api) {
     ctx.globalAlpha = 1;
   }
   drawOriginalSplashObjects(api, layout, id, subtype, alpha);
-  ctx.textAlign = "center";
-  ctx.fillStyle = "rgba(255,255,255,.75)";
-  ctx.font = "15px system-ui, sans-serif";
-  ctx.fillText("Start：PC Enter / Space，手机 START 键", canvas.width / 2, canvas.height - 12);
-  ctx.textAlign = "left";
 }
 function originalSplashSignedCoordinate(value) {
   const word = value & 0xFFFF;
@@ -2855,6 +2849,71 @@ function composeOriginalStaticBackground(api, imageId) {
   });
   return canvas;
 }
+function composeOriginalSplashBackground(api, imageId, blinkOff = false) {
+  const id = imageId & 0xff;
+  composeOriginalStaticBackground(api, id);
+  const base = originalAssets.staticBackgrounds.get(id);
+  if (!base || base.nametables.length !== 1) return base?.canvas || null;
+  const background = base.background;
+  const bank0Value = api.original_background_bank
+    ? api.original_background_bank(0) & 0xff : background.chr0;
+  const bank1Value = api.original_background_bank
+    ? api.original_background_bank(1) & 0xff : background.chr1;
+  const bank0 = bank0Value || background.chr0;
+  const bank1 = bank1Value || background.chr1;
+  const palette0 = api.original_background_palette_number
+    ? api.original_background_palette_number(0) & 0xff : background.palette0;
+  const palette1 = api.original_background_palette_number
+    ? api.original_background_palette_number(1) & 0xff : background.palette1;
+  const key = `${id}:${bank0}:${bank1}:${palette0}:${palette1}:${blinkOff ? 1 : 0}`;
+  const cached = originalAssets.splash.states.get(key);
+  if (cached) {
+    originalAssets.splash.last = cached;
+    publishOriginalSplashRendererDebug(id, cached);
+    return cached.canvas;
+  }
+  const subPalettes = originalBackgroundSubPalettes(palette0, palette1);
+  if (!subPalettes) return null;
+  const nametable = Uint8Array.from(base.nametables[0]);
+  if (id === 0x01 && blinkOff) {
+    nametable.fill(0x00, 0x2c6, 0x2c6 + 0x12);
+    nametable[0x2ad] = 0x00;
+  }
+  const splashCanvas = document.createElement("canvas");
+  splashCanvas.width = 0x100;
+  splashCanvas.height = 0xf0;
+  const splashContext = splashCanvas.getContext("2d");
+  if (!splashContext || !renderOriginalDynamicBackgroundNametable(
+    splashContext, nametable, bank0, bank1, subPalettes)) return null;
+  const state = {
+    source: "classified-bin-cpp",
+    background,
+    canvas: splashCanvas,
+    nametable,
+    bank0,
+    bank1,
+    paletteNumbers: [palette0, palette1],
+    blinkOff: Boolean(blinkOff),
+  };
+  originalAssets.splash.states.set(key, state);
+  originalAssets.splash.last = state;
+  publishOriginalSplashRendererDebug(id, state);
+  return splashCanvas;
+}
+function publishOriginalSplashRendererDebug(imageId, state) {
+  if (!DEBUG || !state) return;
+  window.__soccerSplashRenderer = {
+    source: state.source,
+    backgroundId: imageId & 0xff,
+    destination: state.background.destination,
+    bank0: state.bank0,
+    bank1: state.bank1,
+    paletteNumbers: [...state.paletteNumbers],
+    mirroring: state.background.mirroring,
+    blinkOff: state.blinkOff,
+    nametable: Array.from(state.nametable),
+  };
+}
 function composeOriginalOpponentSelectionScreen(api) {
   const opponent = originalAssets.opponentSelection;
   if (!opponent.background) {
@@ -3567,7 +3626,7 @@ function drawOriginalCreditsScreen(api) {
   const backgroundId = api.original_background_image_id
     ? api.original_background_image_id() & 0xff : 0x1c;
   const background = backgroundId === 0
-    ? originalAssets.splash[0]
+    ? composeOriginalSplashBackground(api, 0, false)
     : composeOriginalCreditsBackground(api, backgroundId);
   const layout = originalFullScreenLayout();
   const cameraX = api.original_camera_x_lo && api.original_camera_x_hi
@@ -4077,15 +4136,11 @@ async function main() {
   const apiPromise = loadWasm();
   const spriteManifestPromise = apiPromise.then((api) => loadOriginalSpriteRendererFromBin(api));
   const palettesPromise = apiPromise.then(() => loadOriginalPaletteDataFromBins());
-  const [api, field, spriteManifest, palettes, splashLogo, splashTitle, splashTitleBlink, splashStory] = await Promise.all([
+  const [api, field, spriteManifest, palettes] = await Promise.all([
     apiPromise,
     loadOriginalFieldAssets(),
     spriteManifestPromise,
     palettesPromise,
-    withFallback("splash_00_logo.png", originalAssetUrl("splash_00_logo.png"), originalFallbackUrl("splash_00_logo.png"), loadImage),
-    withFallback("splash_01_title.png", originalAssetUrl("splash_01_title.png"), originalFallbackUrl("splash_01_title.png"), loadImage),
-    withFallback("splash_01_title_blink.png", originalAssetUrl("splash_01_title_blink.png"), originalFallbackUrl("splash_01_title_blink.png"), loadImage),
-    withFallback("splash_0e_story.png", originalAssetUrl("splash_0e_story.png"), originalFallbackUrl("splash_0e_story.png"), loadImage),
   ]);
   originalAssets.field = field;
   originalAssets.sprite.manifest = spriteManifest;
@@ -4093,7 +4148,7 @@ async function main() {
   originalAssets.sprite.palettes = palettes;
   originalAssets.statusbar.api = api;
   document.body.dataset.statusbarRendererSource = "classified-bin-cpp";
-  originalAssets.splash = { 0: splashLogo, 1: splashTitle, 0x0e: splashStory, titleBlink: splashTitleBlink };
+  document.body.dataset.splashRendererSource = "classified-bin-cpp";
   document.body.dataset.backgroundRendererSource = "classified-bin-cpp";
   document.body.dataset.resultRendererSource = "classified-bin-cpp";
   document.body.dataset.modeSelectionRendererSource = "classified-bin-cpp";
@@ -4154,6 +4209,26 @@ async function main() {
         paletteNumbers: background ? [background.palette0, background.palette1] : [],
         mirroring: background?.mirroring ?? 0,
         nametables: state ? state.nametables.map((table) => Array.from(table)) : [],
+      };
+    };
+    window.__soccerSplashBackground = (backgroundId, blinkOff = false) => {
+      const id = backgroundId & 0xff;
+      const canvas = composeOriginalSplashBackground(api, id, Boolean(blinkOff));
+      const state = originalAssets.splash.last;
+      const background = state?.background;
+      return {
+        rendered: Boolean(canvas && state),
+        source: state?.source || "",
+        backgroundId: id,
+        width: canvas?.width ?? 0,
+        height: canvas?.height ?? 0,
+        destination: background?.destination ?? 0,
+        bank0: state?.bank0 ?? 0,
+        bank1: state?.bank1 ?? 0,
+        paletteNumbers: state ? [...state.paletteNumbers] : [],
+        mirroring: background?.mirroring ?? 0,
+        blinkOff: state?.blinkOff ?? false,
+        nametable: state ? Array.from(state.nametable) : [],
       };
     };
     window.__soccerInputBits = () => inputBits();
