@@ -264,8 +264,7 @@ const originalAssets = {
     api: null,
   },
   result: {
-    manifest: null,
-    scripts: null,
+    backgrounds: new Map(),
     canvas: null,
     context: null,
     key: "",
@@ -1075,7 +1074,7 @@ function loadOriginalSpriteRendererFromBin(api) {
 }
 async function loadWasm() {
   const filename = DEBUG ? "soccer_core_cpp.wasm" : "soccer_core_cpp_production.wasm";
-  const relative = DEBUG ? "../strict-tests.be93ac68.wasm" : "../soccer_core_cpp.868037bb.wasm";
+  const relative = DEBUG ? "../strict-tests.02d76637.wasm" : "../soccer_core_cpp.f0997a5f.wasm";
   const response = await fetchCoreResponse(filename, assetUrl(relative), rootAssetUrl(filename));
   const bytes = await response.arrayBuffer();
   const result = await WebAssembly.instantiate(bytes, {});
@@ -2090,6 +2089,27 @@ function originalFullScreenLayout() {
   const h = Math.round(240 * scale);
   return { scale, x: (canvas.width - w) / 2, y: (canvas.height - h) / 2, w, h };
 }
+function originalResultScreenMetaFromCpp(api, backgroundId) {
+  const result = originalAssets.result;
+  const cached = result.backgrounds.get(backgroundId);
+  if (cached) return cached;
+  const background = decodeOriginalBackgroundImageFromCpp(api, backgroundId);
+  if (!background || background.destination !== 0x2000
+      || background.stream.length < 0x400) return null;
+  const subPalettes = originalBackgroundSubPalettes(background.palette0, background.palette1);
+  if (!subPalettes) return null;
+  const tableCount = Math.max(1, Math.ceil(background.stream.length / 0x400));
+  const screenMeta = {
+    background,
+    chr0: background.chr0,
+    chr1: background.chr1,
+    subPalettes,
+    nametableAttributes: Array.from({ length: tableCount }, (_, index) =>
+      Array.from(background.stream.slice(index * 0x400 + 0x3C0, index * 0x400 + 0x400))),
+  };
+  result.backgrounds.set(backgroundId, screenMeta);
+  return screenMeta;
+}
 function originalResultBackgroundTile(screenMeta, tileNumber, paletteSlot) {
   const result = originalAssets.result;
   const sprite = originalAssets.sprite;
@@ -2166,22 +2186,24 @@ function drawOriginalResultLargeDigit(resultContext, screenMeta, ppuAddress, dig
   }
 }
 function drawOriginalResultNamesAndScore(api, resultContext, screenMeta) {
-  const scripts = originalAssets.result.scripts;
-  if (!scripts) return;
+  if (!api.result_renderer_team_name_tile
+      || !api.result_renderer_score_digit_tile
+      || !api.result_renderer_half_time_name_tile
+      || !api.result_renderer_team_name_ppu_address
+      || !api.result_renderer_score_ppu_address) return;
   const subtype = api.original_screen_subtype ? api.original_screen_subtype() & 0x7F : 0;
   if (subtype === 0x08) {
-    writeOriginalResultTiles(resultContext, screenMeta, 0x24CC, scripts.halfTimeTeamName);
-    writeOriginalResultTiles(
-      resultContext,
-      screenMeta,
-      0x24EC,
-      scripts.halfTimeTeamName.map((tile) => tile === 0x35 ? 0x35 : (tile + 0x10) & 0xFF),
-    );
+    for (let row = 0; row < 2; row++) {
+      const tiles = Array.from({ length: 8 }, (_, index) =>
+        api.result_renderer_half_time_name_tile(row, index) & 0xFF);
+      writeOriginalResultTiles(resultContext, screenMeta, 0x24CC + row * 0x20, tiles);
+    }
   } else {
     for (let side = 0; side < 2; side++) {
       const team = api.original_team_number ? api.original_team_number(side) & 0x0F : 0;
-      const tiles = scripts.teamNames[team];
-      const address = 0x2400 | scripts.teamNamePpuLo[side];
+      const tiles = Array.from({ length: 8 }, (_, index) =>
+        api.result_renderer_team_name_tile(team, index) & 0xFF);
+      const address = api.result_renderer_team_name_ppu_address(side) & 0x3FFF;
       writeOriginalResultTiles(resultContext, screenMeta, address, tiles);
       writeOriginalResultTiles(
         resultContext,
@@ -2195,24 +2217,30 @@ function drawOriginalResultNamesAndScore(api, resultContext, screenMeta) {
   for (let side = 0; side < 2; side++) {
     const score = clamp(scores[side], 0, 99);
     if (score < 10) {
+      const tiles = Array.from({ length: 24 }, (_, index) =>
+        api.result_renderer_score_digit_tile(score, index) & 0xFF);
       drawOriginalResultLargeDigit(
         resultContext,
         screenMeta,
-        0x2500 | scripts.singleScorePpuLo[side],
-        scripts.scoreDigits[score],
+        api.result_renderer_score_ppu_address(side, 0) & 0x3FFF,
+        tiles,
       );
     } else {
+      const tens = Math.floor(score / 10);
+      const ones = score % 10;
       drawOriginalResultLargeDigit(
         resultContext,
         screenMeta,
-        0x2500 | scripts.tensScorePpuLo[side],
-        scripts.scoreDigits[Math.floor(score / 10)],
+        api.result_renderer_score_ppu_address(side, 1) & 0x3FFF,
+        Array.from({ length: 24 }, (_, index) =>
+          api.result_renderer_score_digit_tile(tens, index) & 0xFF),
       );
       drawOriginalResultLargeDigit(
         resultContext,
         screenMeta,
-        0x2500 | scripts.onesScorePpuLo[side],
-        scripts.scoreDigits[score % 10],
+        api.result_renderer_score_ppu_address(side, 2) & 0x3FFF,
+        Array.from({ length: 24 }, (_, index) =>
+          api.result_renderer_score_digit_tile(ones, index) & 0xFF),
       );
     }
   }
@@ -2220,14 +2248,11 @@ function drawOriginalResultNamesAndScore(api, resultContext, screenMeta) {
   writeOriginalResultTiles(resultContext, screenMeta, 0x2570, [0x36, 0x46], 0x20);
 }
 function drawOriginalResultWetnessRows(api, resultContext, screenMeta) {
-  const scripts = originalAssets.result.scripts;
-  if (!scripts) return;
+  if (!api.original_result_wetness_pattern_tile) return;
   const wetness = api.original_surface_wetness ? api.original_surface_wetness() & 0x0F : 0;
-  const selectedWetness = Math.min(wetness, scripts.wetnessPatterns.length - 1);
-  const pattern = api.original_result_wetness_pattern_tile
-    ? Array.from({ length: 6 }, (_, index) =>
-      api.original_result_wetness_pattern_tile(selectedWetness, index) & 0xFF)
-    : scripts.wetnessPatterns[selectedWetness];
+  const selectedWetness = Math.min(wetness, 2);
+  const pattern = Array.from({ length: 6 }, (_, index) =>
+    api.original_result_wetness_pattern_tile(selectedWetness, index) & 0xFF);
   for (const base of [0x2300, 0x2700]) {
     for (let column = 0; column < 0x20; column++) {
       writeOriginalResultTiles(resultContext, screenMeta, base + column, pattern, 0x20);
@@ -2236,16 +2261,14 @@ function drawOriginalResultWetnessRows(api, resultContext, screenMeta) {
 }
 function applyOriginalResultSupporterUpdate(resultContext, screenMeta) {
   const result = originalAssets.result;
-  const scripts = result.scripts;
-  if (!scripts || result.mode === 0) return;
+  if (result.mode === 0) return;
   if (result.mode === 1) {
     do {
       const group = result.supporterSubframe & 1;
       const frame = result.supporterFrame;
-      const strip = api.original_result_supporter_scroll_tile
-        ? Array.from({ length: 18 }, (_, index) =>
-          api.original_result_supporter_scroll_tile(group, frame, index) & 0xFF)
-        : scripts.supporterScrollFrames[group][frame];
+      if (!api.original_result_supporter_scroll_tile) return;
+      const strip = Array.from({ length: 18 }, (_, index) =>
+        api.original_result_supporter_scroll_tile(group, frame, index) & 0xFF);
       const count = result.supporterPpuHi === 0x24
         && result.supporterPpuLo >= 0x04 && result.supporterPpuLo < 0x1C ? 4 : 18;
       writeOriginalResultTiles(
@@ -2275,14 +2298,16 @@ function applyOriginalResultSupporterUpdate(resultContext, screenMeta) {
     return;
   }
   const frame = result.supporterFrame;
-  const addresses = scripts.supporterPatchAddresses[frame & 0x7F];
-  const ppuHi = scripts.supporterPatchPpuHi;
-  const tiles = scripts.supporterTiles[String(result.mode)] || scripts.supporterTiles["3"];
+  if (!api.result_renderer_supporter_patch_ppu_address
+      || !api.result_renderer_supporter_patch_tile) return;
+  const tiles = Array.from({ length: 16 }, (_, index) =>
+    api.result_renderer_supporter_patch_tile(result.mode, index) & 0xFF);
   for (let index = 0; index < 8; index++) {
-    const ppuLo = addresses[index];
+    const address = api.result_renderer_supporter_patch_ppu_address(
+      frame & 0x7F, index) & 0x3FFF;
+    const ppuLo = address & 0xFF;
     let tileOffset = frame & 0x80 ? 8 : 0;
     if ((((ppuLo >> 5) ^ ppuLo) & 0x02) !== 0) tileOffset += 4;
-    const address = (ppuHi[index] << 8) | ppuLo;
     writeOriginalResultTiles(resultContext, screenMeta, address, tiles.slice(tileOffset, tileOffset + 2));
     writeOriginalResultTiles(resultContext, screenMeta, address + 0x20, tiles.slice(tileOffset + 2, tileOffset + 4));
   }
@@ -2292,8 +2317,8 @@ function applyOriginalResultSupporterUpdate(resultContext, screenMeta) {
 }
 function composeOriginalResultBackground(api, backgroundId, baseImage) {
   const result = originalAssets.result;
-  const screenMeta = result.manifest?.screens?.[String(backgroundId)];
-  if (!baseImage || !screenMeta || !result.scripts) return baseImage;
+  const screenMeta = originalResultScreenMetaFromCpp(api, backgroundId);
+  if (!baseImage || !screenMeta) return baseImage;
   const teams = [0, 1].map((side) => api.original_team_number ? api.original_team_number(side) & 0x0F : 0);
   const scores = [api.score_left ? api.score_left() : 0, api.score_right ? api.score_right() : 0];
   const wetness = api.original_surface_wetness ? api.original_surface_wetness() & 0xFF : 0;
@@ -4098,7 +4123,7 @@ async function main() {
     const image = await withFallback(name, originalAssetUrl(name), originalFallbackUrl(name), loadImage);
     return [id, image];
   })).then((entries) => Object.fromEntries(entries));
-  const [api, field, spriteManifest, palettes, splashLogo, splashTitle, splashTitleBlink, splashStory, resultScreenManifest, resultRenderer, matchSettingsScreenManifest, matchSettingsRenderer, matchSettingsTiles, formationControlScreenManifest, formationControlRenderer, formationControlTiles, weatherPreviewScreenManifest, weatherPreviewRenderer, weatherPreviewTiles, playerProfileScreenManifest, playerProfileRenderer, playerProfileTiles, meetingSecretScreenManifest, meetingSecretRenderer, meetingSecretTiles0a, meetingSecretTiles0f, creditsScreenManifest, creditsTiles, menuScreens] = await Promise.all([
+  const [api, field, spriteManifest, palettes, splashLogo, splashTitle, splashTitleBlink, splashStory, matchSettingsScreenManifest, matchSettingsRenderer, matchSettingsTiles, formationControlScreenManifest, formationControlRenderer, formationControlTiles, weatherPreviewScreenManifest, weatherPreviewRenderer, weatherPreviewTiles, playerProfileScreenManifest, playerProfileRenderer, playerProfileTiles, meetingSecretScreenManifest, meetingSecretRenderer, meetingSecretTiles0a, meetingSecretTiles0f, creditsScreenManifest, creditsTiles, menuScreens] = await Promise.all([
     apiPromise,
     loadOriginalFieldAssets(),
     spriteManifestPromise,
@@ -4107,8 +4132,6 @@ async function main() {
     withFallback("splash_01_title.png", originalAssetUrl("splash_01_title.png"), originalFallbackUrl("splash_01_title.png"), loadImage),
     withFallback("splash_01_title_blink.png", originalAssetUrl("splash_01_title_blink.png"), originalFallbackUrl("splash_01_title_blink.png"), loadImage),
     withFallback("splash_0e_story.png", originalAssetUrl("splash_0e_story.png"), originalFallbackUrl("splash_0e_story.png"), loadImage),
-    withFallback("result_screen_manifest.json", originalAssetUrl("result_screen_manifest.json"), originalFallbackUrl("result_screen_manifest.json"), loadJson),
-    withFallback("result_renderer.json", originalAssetUrl("result_renderer.json"), originalFallbackUrl("result_renderer.json"), loadJson),
     withFallback("match_settings_screen_manifest.json", originalAssetUrl("match_settings_screen_manifest.json"), originalFallbackUrl("match_settings_screen_manifest.json"), loadJson),
     withFallback("match_settings_renderer.json", originalAssetUrl("match_settings_renderer.json"), originalFallbackUrl("match_settings_renderer.json"), loadJson),
     withFallback("match_settings_tiles.png", originalAssetUrl("match_settings_tiles.png"), originalFallbackUrl("match_settings_tiles.png"), loadImage),
@@ -4137,8 +4160,7 @@ async function main() {
   document.body.dataset.statusbarRendererSource = "classified-bin-cpp";
   originalAssets.splash = { 0: splashLogo, 1: splashTitle, 0x0e: splashStory, titleBlink: splashTitleBlink };
   originalAssets.menu = menuScreens;
-  originalAssets.result.manifest = resultScreenManifest;
-  originalAssets.result.scripts = resultRenderer;
+  document.body.dataset.resultRendererSource = "classified-bin-cpp";
   document.body.dataset.modeSelectionRendererSource = "classified-bin-cpp";
   document.body.dataset.opponentSelectionRendererSource = "classified-bin-cpp";
   document.body.dataset.teamPreviewRendererSource = "classified-bin-cpp";

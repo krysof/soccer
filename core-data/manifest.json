@@ -3898,6 +3898,27 @@
       ]
     },
     {
+      "path": "menu/result-halftime-name-b899-b8a1.bin",
+      "category": "menu",
+      "source": "src/bank_01.asm:B899",
+      "bank": "01",
+      "address": "0xB899",
+      "symbol": "tbl_B899",
+      "layout": "fixed eight-tile half-time result label",
+      "length": 8,
+      "sha256": "0d826dd24d5711dd8784e806c9c82d2a1e01511a3a38674ad689b579df549436",
+      "source_ranges": [
+        {
+          "bank": "01",
+          "start": "0xB899",
+          "length": 8
+        }
+      ],
+      "consumers": [
+        "wasm-game/cpp-core/src/screens/result_renderer.cpp"
+      ]
+    },
+    {
       "path": "menu/result-pointer-b3ae-b3b2.bin",
       "category": "menu",
       "source": "src/bank_05.asm:B3AE",
@@ -3919,6 +3940,27 @@
       ]
     },
     {
+      "path": "menu/result-score-digits-b754-b858.bin",
+      "category": "menu",
+      "source": "src/bank_01.asm:B754",
+      "bank": "01",
+      "address": "0xB754",
+      "symbol": "tbl_B754/off_B768..off_B840",
+      "layout": "ten large-digit pointers and ten 4-by-6 tile digit records",
+      "length": 260,
+      "sha256": "a65dcabe37947d324676f1dd568416cef88deec02b6e42ea8d98971ae2533897",
+      "source_ranges": [
+        {
+          "bank": "01",
+          "start": "0xB754",
+          "length": 260
+        }
+      ],
+      "consumers": [
+        "wasm-game/cpp-core/src/screens/result_renderer.cpp"
+      ]
+    },
+    {
       "path": "menu/result-supporter-patches-b4f4-b55c.bin",
       "category": "menu",
       "source": "src/bank_01.asm:B4F4",
@@ -3936,7 +3978,50 @@
         }
       ],
       "consumers": [
+        "wasm-game/cpp-core/src/screens/result_renderer.cpp",
         "wasm-game/cpp-core/src/screens/result_supporters.cpp"
+      ]
+    },
+    {
+      "path": "menu/result-supporter-pointers-b4d2-b4ec.bin",
+      "category": "menu",
+      "source": "src/bank_01.asm:B4D2",
+      "bank": "01",
+      "address": "0xB4D2",
+      "symbol": "tbl_B4D2",
+      "layout": "thirteen little-endian supporter patch-row pointers",
+      "length": 26,
+      "sha256": "d8881166c42262e90d716e519bd89f7239d6589a5aacb058d8d91eb929693b8c",
+      "source_ranges": [
+        {
+          "bank": "01",
+          "start": "0xB4D2",
+          "length": 26
+        }
+      ],
+      "consumers": [
+        "wasm-game/cpp-core/src/screens/result_renderer.cpp"
+      ]
+    },
+    {
+      "path": "menu/result-supporter-ppu-high-b4ec-b4f4.bin",
+      "category": "menu",
+      "source": "src/bank_01.asm:B4EC",
+      "bank": "01",
+      "address": "0xB4EC",
+      "symbol": "tbl_B4EC",
+      "layout": "eight supporter patch destination high bytes",
+      "length": 8,
+      "sha256": "c361f75629c9d9506c34faae601b8ff3a9dbf30bad209a90a92ddbdd2467ae93",
+      "source_ranges": [
+        {
+          "bank": "01",
+          "start": "0xB4EC",
+          "length": 8
+        }
+      ],
+      "consumers": [
+        "wasm-game/cpp-core/src/screens/result_renderer.cpp"
       ]
     },
     {
@@ -3978,7 +4063,50 @@
         }
       ],
       "consumers": [
+        "wasm-game/cpp-core/src/screens/result_renderer.cpp",
         "wasm-game/cpp-core/src/screens/result_supporters.cpp"
+      ]
+    },
+    {
+      "path": "menu/result-team-layout-b5eb-b5f3.bin",
+      "category": "menu",
+      "source": "src/bank_01.asm:B5EB",
+      "bank": "01",
+      "address": "0xB5EB",
+      "symbol": "tbl_B5EB/tbl_B5ED/tbl_B5EF/tbl_B5F1",
+      "layout": "team-name and single/tens/ones score destination low bytes",
+      "length": 8,
+      "sha256": "4e57b0f545866f34ced40bc30fb6fe13e25c934679ada92c3cfe9e92f40ea71d",
+      "source_ranges": [
+        {
+          "bank": "01",
+          "start": "0xB5EB",
+          "length": 8
+        }
+      ],
+      "consumers": [
+        "wasm-game/cpp-core/src/screens/result_renderer.cpp"
+      ]
+    },
+    {
+      "path": "menu/result-team-names-b650-b6d8.bin",
+      "category": "menu",
+      "source": "src/bank_01.asm:B650",
+      "bank": "01",
+      "address": "0xB650",
+      "symbol": "tbl_B650/off_B670..off_B6D0",
+      "layout": "sixteen team-name pointers and shared eight-tile label rows",
+      "length": 136,
+      "sha256": "64b733f2f31569d8a24b37cfd614e062735001762eee5a99a2df780cf65e039f",
+      "source_ranges": [
+        {
+          "bank": "01",
+          "start": "0xB650",
+          "length": 136
+        }
+      ],
+      "consumers": [
+        "wasm-game/cpp-core/src/screens/result_renderer.cpp"
       ]
     },
     {
