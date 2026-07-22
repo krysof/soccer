@@ -2828,6 +2828,27 @@
       ]
     },
     {
+      "path": "menu/bracket-active-markers-b881-b8a5.bin",
+      "category": "menu",
+      "source": "src/bank_05.asm:B881",
+      "bank": "05",
+      "address": "0xB881",
+      "symbol": "tbl_B881..tbl_B886",
+      "layout": "six active-team attribute and graphics marker records",
+      "length": 36,
+      "sha256": "1156ff81c6952a969d688781f2453fed9c22891224759997dd27d996be62564f",
+      "source_ranges": [
+        {
+          "bank": "05",
+          "start": "0xB881",
+          "length": 36
+        }
+      ],
+      "consumers": [
+        "wasm-game/cpp-core/src/screens/bracket_renderer.cpp"
+      ]
+    },
+    {
       "path": "menu/bracket-initial-b5d4-b5e6.bin",
       "category": "menu",
       "source": "src/bank_05.asm:B5D4",
@@ -2849,6 +2870,27 @@
       ]
     },
     {
+      "path": "menu/bracket-patch-streams-b80e-b881.bin",
+      "category": "menu",
+      "source": "src/bank_05.asm:B80E",
+      "bank": "05",
+      "address": "0xB80E",
+      "symbol": "off_B80E_00..off_B876_21",
+      "layout": "shared big-endian PPU address/count/tile streams selected by the bracket pointer table",
+      "length": 115,
+      "sha256": "30e528bd43e0d5fe8d6a71f182cfe0d6e6231191c415247d63b2f98716428645",
+      "source_ranges": [
+        {
+          "bank": "05",
+          "start": "0xB80E",
+          "length": 115
+        }
+      ],
+      "consumers": [
+        "wasm-game/cpp-core/src/screens/bracket_renderer.cpp"
+      ]
+    },
+    {
       "path": "menu/bracket-pointers-b7c6-b80e.bin",
       "category": "menu",
       "source": "src/bank_05.asm:B7C6",
@@ -2866,7 +2908,29 @@
         }
       ],
       "consumers": [
+        "wasm-game/cpp-core/src/screens/bracket_renderer.cpp",
         "wasm-game/cpp-core/src/screens/tournament.cpp"
+      ]
+    },
+    {
+      "path": "menu/bracket-team-labels-b746-b7c6.bin",
+      "category": "menu",
+      "source": "src/bank_05.asm:B746",
+      "bank": "05",
+      "address": "0xB746",
+      "symbol": "off_B746",
+      "layout": "sixteen eight-byte team labels transformed by sub_AD91",
+      "length": 128,
+      "sha256": "e3ecd6dcaec8fedd5d4dfba89db4c86824d414bc6bbb0d3d7427bb8b03e408b2",
+      "source_ranges": [
+        {
+          "bank": "05",
+          "start": "0xB746",
+          "length": 128
+        }
+      ],
+      "consumers": [
+        "wasm-game/cpp-core/src/screens/bracket_renderer.cpp"
       ]
     },
     {
