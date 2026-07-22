@@ -47,11 +47,6 @@ const PLAYER_NAMES = [
   ["じんない", "あいはら", "みどう", "ゆうじ", "まもる", "けん"],
   ["ジョン", "マイク", "ピエール", "カルロス", "リー", "アレックス"],
 ];
-const ORIGINAL_BACKGROUND_SCREEN_IDS = [
-  0x02, 0x03, 0x0b, 0x04, 0x06, 0x07, 0x05, 0x08,
-  0x0d, 0x0c, 0x09, 0x0f, 0x0a, 0x14, 0x15,
-  0x10, 0x11, 0x12, 0x13,
-];
 const keys = new Set();
 let resetRequested = false;
 const keyTapLatch = { kick: 0, sprint: 0, start: 0, select: 0 };
@@ -168,7 +163,7 @@ let wakeLockSentinel = null;
 const originalAssets = {
   field: null,
   splash: {},
-  menu: {},
+  staticBackgrounds: new Map(),
   modeSelection: {
     background: null,
     canvas: null,
@@ -1069,7 +1064,7 @@ function loadOriginalSpriteRendererFromBin(api) {
 }
 async function loadWasm() {
   const filename = DEBUG ? "soccer_core_cpp.wasm" : "soccer_core_cpp_production.wasm";
-  const relative = DEBUG ? "../strict-tests.031caf76.wasm" : "../soccer_core_cpp.52b91c52.wasm";
+  const relative = DEBUG ? "../strict-tests.3532d061.wasm" : "../soccer_core_cpp.e3c3b768.wasm";
   const response = await fetchCoreResponse(filename, assetUrl(relative), rootAssetUrl(filename));
   const bytes = await response.arrayBuffer();
   const result = await WebAssembly.instantiate(bytes, {});
@@ -2310,9 +2305,10 @@ function applyOriginalResultSupporterUpdate(resultContext, screenMeta) {
   if ((result.supporterFrame & 0x7F) >= 0x0D) result.supporterFrame &= 0x80;
   result.supporterFrame ^= 0x80;
 }
-function composeOriginalResultBackground(api, backgroundId, baseImage) {
+function composeOriginalResultBackground(api, backgroundId) {
   const result = originalAssets.result;
   const screenMeta = originalResultScreenMetaFromCpp(api, backgroundId);
+  const baseImage = composeOriginalStaticBackground(api, backgroundId);
   if (!baseImage || !screenMeta) return baseImage;
   const teams = [0, 1].map((side) => api.original_team_number ? api.original_team_number(side) & 0x0F : 0);
   const scores = [api.score_left ? api.score_left() : 0, api.score_right ? api.score_right() : 0];
@@ -2818,6 +2814,46 @@ function decodeOriginalBackgroundImageFromCpp(api, imageId) {
     palette1: api.background_renderer_palette_number(1) & 0xFF,
     mirroring: api.background_renderer_mirroring() & 0xFF,
   };
+}
+function composeOriginalStaticBackground(api, imageId) {
+  const id = imageId & 0xff;
+  const cached = originalAssets.staticBackgrounds.get(id);
+  if (cached) return cached.canvas;
+  const background = decodeOriginalBackgroundImageFromCpp(api, id);
+  if (!background || background.destination !== 0x2000
+      || background.stream.length < 0x400) return null;
+  const pageCount = Math.min(2, Math.floor(background.stream.length / 0x400));
+  const subPalettes = originalBackgroundSubPalettes(
+    background.palette0, background.palette1);
+  if (!pageCount || !subPalettes) return null;
+  const canvas = document.createElement("canvas");
+  canvas.width = pageCount * 0x100;
+  canvas.height = 0xf0;
+  const context = canvas.getContext("2d");
+  if (!context) return null;
+  context.imageSmoothingEnabled = false;
+  const nametables = [];
+  for (let page = 0; page < pageCount; page++) {
+    const begin = page * 0x400;
+    const nametable = Uint8Array.from(
+      background.stream.subarray(begin, begin + 0x400));
+    const pageCanvas = document.createElement("canvas");
+    pageCanvas.width = 0x100;
+    pageCanvas.height = 0xf0;
+    const pageContext = pageCanvas.getContext("2d");
+    if (!pageContext || !renderOriginalDynamicBackgroundNametable(
+      pageContext, nametable, background.chr0, background.chr1, subPalettes)) {
+      return null;
+    }
+    context.drawImage(pageCanvas, page * 0x100, 0);
+    nametables.push(nametable);
+  }
+  originalAssets.staticBackgrounds.set(id, {
+    background,
+    canvas,
+    nametables,
+  });
+  return canvas;
 }
 function composeOriginalOpponentSelectionScreen(api) {
   const opponent = originalAssets.opponentSelection;
@@ -3374,31 +3410,33 @@ function drawOriginalMenuScreen(api) {
   ctx.fillRect(0, 0, canvas.width, canvas.height);
   const id = api.original_background_image_id ? api.original_background_image_id() : 0x02;
   const subtype = api.original_screen_subtype ? api.original_screen_subtype() & 0x7f : 0;
+  const staticBackground = composeOriginalStaticBackground(api, id);
   const img = subtype === 0x0f
-    ? (composeOriginalBracketScreen(api) || originalAssets.menu[id])
+    ? (composeOriginalBracketScreen(api) || staticBackground)
     : subtype === 0x01
-      ? (composeOriginalModeSelectionScreen(api) || originalAssets.menu[id])
+      ? (composeOriginalModeSelectionScreen(api) || staticBackground)
     : subtype === 0x02
-      ? (composeOriginalOpponentSelectionScreen(api) || originalAssets.menu[id])
+      ? (composeOriginalOpponentSelectionScreen(api) || staticBackground)
     : subtype === 0x03
-      ? (composeOriginalTeamPreviewScreen(api) || originalAssets.menu[id])
+      ? (composeOriginalTeamPreviewScreen(api) || staticBackground)
     : subtype === 0x04
-      ? (composeOriginalPlayerOrderScreen(api) || originalAssets.menu[id])
+      ? (composeOriginalPlayerOrderScreen(api) || staticBackground)
     : subtype === 0x06
-      ? (composeOriginalMatchSettingsScreen(api) || originalAssets.menu[id])
+      ? (composeOriginalMatchSettingsScreen(api) || staticBackground)
       : subtype === 0x07
-        ? (composeOriginalFormationControlScreen(api) || originalAssets.menu[0x05])
+        ? (composeOriginalFormationControlScreen(api)
+          || composeOriginalStaticBackground(api, 0x05))
       : subtype === 0x08
-        ? (composeOriginalWeatherPreviewScreen(api) || originalAssets.menu[id])
+        ? (composeOriginalWeatherPreviewScreen(api) || staticBackground)
       : subtype === 0x09
-        ? (composeOriginalTournamentRecordScreen(api) || originalAssets.menu[id])
+        ? (composeOriginalTournamentRecordScreen(api) || staticBackground)
       : subtype === 0x0a
-        ? (composeOriginalPlayerProfileScreen(api) || originalAssets.menu[id])
+        ? (composeOriginalPlayerProfileScreen(api) || staticBackground)
       : subtype === 0x0b
-        ? (composeOriginalMusicSelectionScreen(api) || originalAssets.menu[id])
+        ? (composeOriginalMusicSelectionScreen(api) || staticBackground)
       : subtype === 0x0c || subtype === 0x0d
-        ? (composeOriginalMeetingSecretScreen(api, id) || originalAssets.menu[id])
-      : originalAssets.menu[id];
+        ? (composeOriginalMeetingSecretScreen(api, id) || staticBackground)
+      : staticBackground;
   const layout = originalFullScreenLayout();
   const brightness = api.original_current_brightness ? api.original_current_brightness() : 0x40;
   if (img) {
@@ -3706,10 +3744,8 @@ function render(api) {
   gameWrap.classList.toggle("original-4x3-screen", isOriginalResultScreen || originalField4x3);
   const resultBackgroundId = api.original_background_image_id
     ? api.original_background_image_id() & 0xFF : 0x10;
-  const originalResultBaseBackground = isOriginalResultScreen
-    ? originalAssets.menu[resultBackgroundId] : null;
   const originalResultBackground = isOriginalResultScreen
-    ? composeOriginalResultBackground(api, resultBackgroundId, originalResultBaseBackground)
+    ? composeOriginalResultBackground(api, resultBackgroundId)
     : null;
   const committedCopyCamera = originalScreen === 0x00 ? originalCommittedCamera(api, true) : null;
   const copyCameraX = committedCopyCamera?.x ?? (api.original_copy_camera_x_lo && api.original_copy_camera_x_hi
@@ -4041,13 +4077,7 @@ async function main() {
   const apiPromise = loadWasm();
   const spriteManifestPromise = apiPromise.then((api) => loadOriginalSpriteRendererFromBin(api));
   const palettesPromise = apiPromise.then(() => loadOriginalPaletteDataFromBins());
-  const menuScreensPromise = Promise.all(ORIGINAL_BACKGROUND_SCREEN_IDS.map(async (id) => {
-    const suffix = id >= 0x10 && id <= 0x12 ? "_wide" : "";
-    const name = `screen_${id.toString(16).padStart(2, "0")}${suffix}.png`;
-    const image = await withFallback(name, originalAssetUrl(name), originalFallbackUrl(name), loadImage);
-    return [id, image];
-  })).then((entries) => Object.fromEntries(entries));
-  const [api, field, spriteManifest, palettes, splashLogo, splashTitle, splashTitleBlink, splashStory, menuScreens] = await Promise.all([
+  const [api, field, spriteManifest, palettes, splashLogo, splashTitle, splashTitleBlink, splashStory] = await Promise.all([
     apiPromise,
     loadOriginalFieldAssets(),
     spriteManifestPromise,
@@ -4056,7 +4086,6 @@ async function main() {
     withFallback("splash_01_title.png", originalAssetUrl("splash_01_title.png"), originalFallbackUrl("splash_01_title.png"), loadImage),
     withFallback("splash_01_title_blink.png", originalAssetUrl("splash_01_title_blink.png"), originalFallbackUrl("splash_01_title_blink.png"), loadImage),
     withFallback("splash_0e_story.png", originalAssetUrl("splash_0e_story.png"), originalFallbackUrl("splash_0e_story.png"), loadImage),
-    menuScreensPromise,
   ]);
   originalAssets.field = field;
   originalAssets.sprite.manifest = spriteManifest;
@@ -4065,7 +4094,7 @@ async function main() {
   originalAssets.statusbar.api = api;
   document.body.dataset.statusbarRendererSource = "classified-bin-cpp";
   originalAssets.splash = { 0: splashLogo, 1: splashTitle, 0x0e: splashStory, titleBlink: splashTitleBlink };
-  originalAssets.menu = menuScreens;
+  document.body.dataset.backgroundRendererSource = "classified-bin-cpp";
   document.body.dataset.resultRendererSource = "classified-bin-cpp";
   document.body.dataset.modeSelectionRendererSource = "classified-bin-cpp";
   document.body.dataset.opponentSelectionRendererSource = "classified-bin-cpp";
@@ -4107,6 +4136,24 @@ async function main() {
         paletteNumbers: background ? [background.palette0, background.palette1] : [],
         mirroring: background?.mirroring ?? 0,
         nametable: state ? Array.from(state.nametable) : [],
+      };
+    };
+    window.__soccerStaticBackground = (backgroundId) => {
+      const id = backgroundId & 0xff;
+      const canvas = composeOriginalStaticBackground(api, id);
+      const state = originalAssets.staticBackgrounds.get(id);
+      const background = state?.background;
+      return {
+        rendered: Boolean(canvas && state),
+        backgroundId: id,
+        width: canvas?.width ?? 0,
+        height: canvas?.height ?? 0,
+        destination: background?.destination ?? 0,
+        chr0: background?.chr0 ?? 0,
+        chr1: background?.chr1 ?? 0,
+        paletteNumbers: background ? [background.palette0, background.palette1] : [],
+        mirroring: background?.mirroring ?? 0,
+        nametables: state ? state.nametables.map((table) => Array.from(table)) : [],
       };
     };
     window.__soccerInputBits = () => inputBits();
