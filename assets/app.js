@@ -51,9 +51,7 @@ const ORIGINAL_BACKGROUND_SCREEN_IDS = [
   0x02, 0x03, 0x0b, 0x04, 0x06, 0x07, 0x05, 0x08,
   0x0d, 0x0c, 0x09, 0x0f, 0x0a, 0x14, 0x15,
   0x10, 0x11, 0x12, 0x13,
-  0x1c, 0x1d, 0x1e, 0x1f, 0x20, 0x21, 0x22, 0x23, 0x24,
 ];
-const ORIGINAL_CREDITS_SCREEN_IDS = [0x1c, 0x1d, 0x1e, 0x1f, 0x20, 0x21, 0x22, 0x23, 0x24];
 const keys = new Set();
 let resetRequested = false;
 const keyTapLatch = { kick: 0, sprint: 0, start: 0, select: 0 };
@@ -198,8 +196,8 @@ const originalAssets = {
     key: "",
   },
   credits: {
-    manifest: null,
-    tileImages: {},
+    base: null,
+    backgrounds: new Map(),
     states: new Map(),
   },
   bracket: {
@@ -1071,7 +1069,7 @@ function loadOriginalSpriteRendererFromBin(api) {
 }
 async function loadWasm() {
   const filename = DEBUG ? "soccer_core_cpp.wasm" : "soccer_core_cpp_production.wasm";
-  const relative = DEBUG ? "../strict-tests.d8b7f057.wasm" : "../soccer_core_cpp.e9164b21.wasm";
+  const relative = DEBUG ? "../strict-tests.031caf76.wasm" : "../soccer_core_cpp.52b91c52.wasm";
   const response = await fetchCoreResponse(filename, assetUrl(relative), rootAssetUrl(filename));
   const bytes = await response.arrayBuffer();
   const result = await WebAssembly.instantiate(bytes, {});
@@ -3475,42 +3473,33 @@ function applyOriginalCreditsBuffer(api, nametable, bufferName, countName, addre
   }
   return `${address.toString(16)}:${values.join(",")}`;
 }
-function renderOriginalExtractedNametable(nametable, tileImage, target) {
-  const targetContext = target.getContext("2d");
-  targetContext.clearRect(0, 0, 256, 240);
-  targetContext.imageSmoothingEnabled = false;
-  const attributes = nametable.subarray(0x3c0, 0x400);
-  for (let row = 0; row < 30; row++) {
-    for (let col = 0; col < 32; col++) {
-      const tile = nametable[row * 32 + col];
-      const attribute = attributes[Math.floor(row / 4) * 8 + Math.floor(col / 4)];
-      const shift = ((row & 2) << 1) | (col & 2);
-      const palette = (attribute >> shift) & 3;
-      targetContext.drawImage(
-        tileImage,
-        (tile & 0x0f) * 8,
-        palette * 128 + (tile >> 4) * 8,
-        8,
-        8,
-        col * 8,
-        row * 8,
-        8,
-        8,
-      );
-    }
-  }
-}
 function composeOriginalCreditsBackground(api, backgroundId) {
   const credits = originalAssets.credits;
-  const meta = credits.manifest?.screens?.[String(backgroundId)];
-  const tileImage = credits.tileImages[backgroundId];
-  if (!meta || !tileImage) return originalAssets.menu[backgroundId] || null;
+  if (!credits.base) credits.base = decodeOriginalBackgroundImageFromCpp(api, 0x1c);
+  if (!credits.backgrounds.has(backgroundId)) {
+    credits.backgrounds.set(backgroundId, decodeOriginalBackgroundImageFromCpp(api, backgroundId));
+  }
+  const base = credits.base;
+  const overlay = credits.backgrounds.get(backgroundId);
+  if (!base || !overlay || base.destination !== 0x2000 || base.stream.length < 0x400) return null;
   let state = credits.states.get(backgroundId);
   if (!state) {
     const canvas = document.createElement("canvas");
     canvas.width = 256;
     canvas.height = 240;
-    state = { canvas, nametable: Uint8Array.from(meta.nametable || []), signature: "" };
+    const nametable = Uint8Array.from(base.stream.subarray(0, 0x400));
+    const overlayOffset = overlay.destination - 0x2000;
+    if (overlayOffset < 0 || overlayOffset >= 0x400) return null;
+    const overlaySize = Math.min(overlay.stream.length, 0x400 - overlayOffset);
+    nametable.set(overlay.stream.subarray(0, overlaySize), overlayOffset);
+    state = {
+      canvas,
+      context: canvas.getContext("2d"),
+      nametable,
+      background: overlay,
+      signature: "",
+      rendered: false,
+    };
     credits.states.set(backgroundId, state);
   }
   const attrSignature = applyOriginalCreditsBuffer(
@@ -3523,7 +3512,11 @@ function composeOriginalCreditsBackground(api, backgroundId) {
   );
   const signature = `${attrSignature}|${graphicsSignature}`;
   if (state.signature !== signature || !state.rendered) {
-    renderOriginalExtractedNametable(state.nametable, tileImage, state.canvas);
+    const background = state.background;
+    const subPalettes = originalBackgroundSubPalettes(background.palette0, background.palette1);
+    if (!state.context || !renderOriginalDynamicBackgroundNametable(
+      state.context, state.nametable, background.chr0, background.chr1, subPalettes,
+    )) return null;
     state.signature = signature;
     state.rendered = true;
   }
@@ -3586,8 +3579,18 @@ function drawOriginalCreditsScreen(api) {
   }
   ctx.restore();
   if (DEBUG) {
+    const creditsState = originalAssets.credits.states.get(backgroundId);
+    const creditsBackground = creditsState?.background;
     window.__soccerCreditsRenderer = {
       subtype, backgroundId, cameraX, cameraY,
+      source: "classified-bin-cpp",
+      destination: creditsBackground?.destination ?? 0,
+      chr0: creditsBackground?.chr0 ?? 0,
+      chr1: creditsBackground?.chr1 ?? 0,
+      paletteNumbers: creditsBackground
+        ? [creditsBackground.palette0, creditsBackground.palette1] : [],
+      mirroring: creditsBackground?.mirroring ?? 0,
+      nametable: creditsState ? Array.from(creditsState.nametable) : [],
       scene: api.original_credits_scene_index ? api.original_credits_scene_index() : 0,
       effectDone: api.original_credits_effect_done ? api.original_credits_effect_done() : 0,
       drawnObjects,
@@ -4044,12 +4047,7 @@ async function main() {
     const image = await withFallback(name, originalAssetUrl(name), originalFallbackUrl(name), loadImage);
     return [id, image];
   })).then((entries) => Object.fromEntries(entries));
-  const creditsTilesPromise = Promise.all(ORIGINAL_CREDITS_SCREEN_IDS.map(async (id) => {
-    const name = `credits_tiles_${id.toString(16).padStart(2, "0")}.png`;
-    const image = await withFallback(name, originalAssetUrl(name), originalFallbackUrl(name), loadImage);
-    return [id, image];
-  })).then((entries) => Object.fromEntries(entries));
-  const [api, field, spriteManifest, palettes, splashLogo, splashTitle, splashTitleBlink, splashStory, creditsScreenManifest, creditsTiles, menuScreens] = await Promise.all([
+  const [api, field, spriteManifest, palettes, splashLogo, splashTitle, splashTitleBlink, splashStory, menuScreens] = await Promise.all([
     apiPromise,
     loadOriginalFieldAssets(),
     spriteManifestPromise,
@@ -4058,8 +4056,6 @@ async function main() {
     withFallback("splash_01_title.png", originalAssetUrl("splash_01_title.png"), originalFallbackUrl("splash_01_title.png"), loadImage),
     withFallback("splash_01_title_blink.png", originalAssetUrl("splash_01_title_blink.png"), originalFallbackUrl("splash_01_title_blink.png"), loadImage),
     withFallback("splash_0e_story.png", originalAssetUrl("splash_0e_story.png"), originalFallbackUrl("splash_0e_story.png"), loadImage),
-    withFallback("credits_screen_manifest.json", originalAssetUrl("credits_screen_manifest.json"), originalFallbackUrl("credits_screen_manifest.json"), loadJson),
-    creditsTilesPromise,
     menuScreensPromise,
   ]);
   originalAssets.field = field;
@@ -4083,8 +4079,7 @@ async function main() {
   document.body.dataset.playerProfileRendererSource = "classified-bin-cpp";
   document.body.dataset.musicSelectionRendererSource = "classified-bin-cpp";
   document.body.dataset.meetingSecretRendererSource = "classified-bin-cpp";
-  originalAssets.credits.manifest = creditsScreenManifest;
-  originalAssets.credits.tileImages = creditsTiles;
+  document.body.dataset.creditsRendererSource = "classified-bin-cpp";
   wasmNesApu.bindCore(api);
   api.game_init();
   if (!api.game_initialization_ready || api.game_initialization_ready() !== 1) {
@@ -4098,6 +4093,22 @@ async function main() {
       bytes: api.cpp_asset_loaded_bytes ? api.cpp_asset_loaded_bytes() : 0,
     });
     window.__soccerRender = () => render(api);
+    window.__soccerCreditsBackground = (backgroundId) => {
+      const id = backgroundId & 0xff;
+      const canvas = composeOriginalCreditsBackground(api, id);
+      const state = originalAssets.credits.states.get(id);
+      const background = state?.background;
+      return {
+        rendered: Boolean(canvas && state?.rendered),
+        backgroundId: id,
+        destination: background?.destination ?? 0,
+        chr0: background?.chr0 ?? 0,
+        chr1: background?.chr1 ?? 0,
+        paletteNumbers: background ? [background.palette0, background.palette1] : [],
+        mirroring: background?.mirroring ?? 0,
+        nametable: state ? Array.from(state.nametable) : [],
+      };
+    };
     window.__soccerInputBits = () => inputBits();
     window.__soccerFootprints = () => ({
       serial: originalAssets.field?.footprintSerial ?? null,
