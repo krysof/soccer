@@ -253,8 +253,7 @@ const originalAssets = {
     key: "",
   },
   musicSelection: {
-    manifest: null,
-    tileImage: null,
+    background: null,
     canvas: null,
     context: null,
     key: "",
@@ -1082,7 +1081,7 @@ function loadOriginalSpriteRendererFromBin(api) {
 }
 async function loadWasm() {
   const filename = DEBUG ? "soccer_core_cpp.wasm" : "soccer_core_cpp_production.wasm";
-  const relative = DEBUG ? "../strict-tests.1ca4ae60.wasm" : "../soccer_core_cpp.f081d6e7.wasm";
+  const relative = DEBUG ? "../strict-tests.2ea90dd3.wasm" : "../soccer_core_cpp.c51f77fe.wasm";
   const response = await fetchCoreResponse(filename, assetUrl(relative), rootAssetUrl(filename));
   const bytes = await response.arrayBuffer();
   const result = await WebAssembly.instantiate(bytes, {});
@@ -2818,6 +2817,35 @@ function applyOriginalTournamentRecordOverlay(api, nametable) {
   }
   return true;
 }
+function decodeOriginalBackgroundImageFromCpp(api, imageId) {
+  if (!api.background_renderer_decode_image
+      || !api.background_renderer_stream_byte
+      || !api.background_renderer_destination
+      || !api.background_renderer_chr_bank
+      || !api.background_renderer_palette_number
+      || !api.background_renderer_mirroring) return null;
+  const size = api.background_renderer_decode_image(imageId) >>> 0;
+  const destination = api.background_renderer_destination() >>> 0;
+  if (!size || size > 0x1000 || destination < 0x2000 || destination >= 0x3000) {
+    return null;
+  }
+  const stream = new Uint8Array(size);
+  for (let index = 0; index < size; index++) {
+    const value = api.background_renderer_stream_byte(index) >>> 0;
+    if (value > 0xFF) return null;
+    stream[index] = value;
+  }
+  return {
+    imageId: imageId & 0xFF,
+    destination,
+    stream,
+    chr0: api.background_renderer_chr_bank(0) & 0xFF,
+    chr1: api.background_renderer_chr_bank(1) & 0xFF,
+    palette0: api.background_renderer_palette_number(0) & 0xFF,
+    palette1: api.background_renderer_palette_number(1) & 0xFF,
+    mirroring: api.background_renderer_mirroring() & 0xFF,
+  };
+}
 function composeOriginalOpponentSelectionScreen(api) {
   const opponent = originalAssets.opponentSelection;
   const manifest = opponent.manifest;
@@ -3205,8 +3233,17 @@ function composeOriginalPlayerProfileScreen(api) {
 }
 function composeOriginalMusicSelectionScreen(api) {
   const music = originalAssets.musicSelection;
-  const manifest = music.manifest;
-  if (!manifest || !music.tileImage) return null;
+  if (!music.background) {
+    music.background = decodeOriginalBackgroundImageFromCpp(api, 0x09);
+  }
+  const background = music.background;
+  if (!background || background.destination !== 0x2000
+      || background.stream.length !== 0x400) return null;
+  const subPalettes = originalBackgroundSubPalettes(
+    background.palette0,
+    background.palette1,
+  );
+  if (!subPalettes) return null;
   const option = api.original_option_number ? api.original_option_number() & 0xff : 0xff;
   const hiddenNumber = api.original_option_number_05cb
     ? api.original_option_number_05cb() & 0xff : 0;
@@ -3228,7 +3265,7 @@ function composeOriginalMusicSelectionScreen(api) {
     music.canvas.height = 240;
     music.context = music.canvas.getContext("2d");
   }
-  const nametable = Uint8Array.from(manifest.nametable || []);
+  const nametable = Uint8Array.from(background.stream);
   if (bufferAddress >= 0x2000 && bufferAddress < 0x2400) {
     let address = bufferAddress;
     for (const tile of buffer) {
@@ -3239,12 +3276,23 @@ function composeOriginalMusicSelectionScreen(api) {
   }
   music.context.clearRect(0, 0, 256, 240);
   music.context.imageSmoothingEnabled = false;
-  renderOriginalMatchSettingsNametable(music.context, nametable, music.tileImage, 0);
+  renderOriginalDynamicBackgroundNametable(
+    music.context,
+    nametable,
+    background.chr0,
+    background.chr1,
+    subPalettes,
+  );
   music.key = key;
   if (DEBUG) {
     window.__soccerMusicSelectionRenderer = {
       subtype: 0x0b,
-      backgroundId: manifest.backgroundId,
+      backgroundId: background.imageId,
+      destination: background.destination,
+      chr0: background.chr0,
+      chr1: background.chr1,
+      paletteNumbers: [background.palette0, background.palette1],
+      mirroring: background.mirroring,
       option,
       hiddenNumber,
       bufferAddress,
@@ -4021,7 +4069,7 @@ async function main() {
     const image = await withFallback(name, originalAssetUrl(name), originalFallbackUrl(name), loadImage);
     return [id, image];
   })).then((entries) => Object.fromEntries(entries));
-  const [api, field, spriteManifest, palettes, splashLogo, splashTitle, splashTitleBlink, splashStory, resultScreenManifest, resultRenderer, modeSelectionScreenManifest, modeSelectionTiles, opponentSelectionScreenManifest, opponentSelectionTiles, teamPreviewScreenManifest, playerOrderScreenManifest, playerOrderTiles, bracketScreenManifest, bracketRenderer, bracketTiles, matchSettingsScreenManifest, matchSettingsRenderer, matchSettingsTiles, formationControlScreenManifest, formationControlRenderer, formationControlTiles, weatherPreviewScreenManifest, weatherPreviewRenderer, weatherPreviewTiles, tournamentRecordScreenManifest, tournamentRecordTiles, playerProfileScreenManifest, playerProfileRenderer, playerProfileTiles, musicSelectionScreenManifest, musicSelectionTiles, meetingSecretScreenManifest, meetingSecretRenderer, meetingSecretTiles0a, meetingSecretTiles0f, creditsScreenManifest, creditsTiles, menuScreens] = await Promise.all([
+  const [api, field, spriteManifest, palettes, splashLogo, splashTitle, splashTitleBlink, splashStory, resultScreenManifest, resultRenderer, modeSelectionScreenManifest, modeSelectionTiles, opponentSelectionScreenManifest, opponentSelectionTiles, teamPreviewScreenManifest, playerOrderScreenManifest, playerOrderTiles, bracketScreenManifest, bracketRenderer, bracketTiles, matchSettingsScreenManifest, matchSettingsRenderer, matchSettingsTiles, formationControlScreenManifest, formationControlRenderer, formationControlTiles, weatherPreviewScreenManifest, weatherPreviewRenderer, weatherPreviewTiles, tournamentRecordScreenManifest, tournamentRecordTiles, playerProfileScreenManifest, playerProfileRenderer, playerProfileTiles, meetingSecretScreenManifest, meetingSecretRenderer, meetingSecretTiles0a, meetingSecretTiles0f, creditsScreenManifest, creditsTiles, menuScreens] = await Promise.all([
     apiPromise,
     loadOriginalFieldAssets(),
     spriteManifestPromise,
@@ -4056,8 +4104,6 @@ async function main() {
     withFallback("player_profile_screen_manifest.json", originalAssetUrl("player_profile_screen_manifest.json"), originalFallbackUrl("player_profile_screen_manifest.json"), loadJson),
     withFallback("player_profile_renderer.json", originalAssetUrl("player_profile_renderer.json"), originalFallbackUrl("player_profile_renderer.json"), loadJson),
     withFallback("player_profile_tiles.png", originalAssetUrl("player_profile_tiles.png"), originalFallbackUrl("player_profile_tiles.png"), loadImage),
-    withFallback("music_selection_screen_manifest.json", originalAssetUrl("music_selection_screen_manifest.json"), originalFallbackUrl("music_selection_screen_manifest.json"), loadJson),
-    withFallback("music_selection_tiles.png", originalAssetUrl("music_selection_tiles.png"), originalFallbackUrl("music_selection_tiles.png"), loadImage),
     withFallback("meeting_secret_screen_manifest.json", originalAssetUrl("meeting_secret_screen_manifest.json"), originalFallbackUrl("meeting_secret_screen_manifest.json"), loadJson),
     withFallback("meeting_secret_renderer.json", originalAssetUrl("meeting_secret_renderer.json"), originalFallbackUrl("meeting_secret_renderer.json"), loadJson),
     withFallback("meeting_secret_tiles_0a.png", originalAssetUrl("meeting_secret_tiles_0a.png"), originalFallbackUrl("meeting_secret_tiles_0a.png"), loadImage),
@@ -4101,9 +4147,7 @@ async function main() {
   originalAssets.playerProfile.manifest = playerProfileScreenManifest;
   originalAssets.playerProfile.scripts = playerProfileRenderer;
   originalAssets.playerProfile.tileImage = playerProfileTiles;
-  originalAssets.musicSelection.manifest = musicSelectionScreenManifest;
-  originalAssets.musicSelection.tileImage = musicSelectionTiles;
-  document.body.dataset.musicSelectionRendererSource = "cpp-video-buffer";
+  document.body.dataset.musicSelectionRendererSource = "classified-bin-cpp";
   originalAssets.meetingSecret.manifest = meetingSecretScreenManifest;
   originalAssets.meetingSecret.scripts = meetingSecretRenderer;
   originalAssets.meetingSecret.tileImages = {

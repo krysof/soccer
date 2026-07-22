@@ -1339,6 +1339,27 @@
       ]
     },
     {
+      "path": "background/upload-destinations-ea12-ea18.bin",
+      "category": "background",
+      "source": "src/bank_FF.asm:EA12",
+      "bank": "07",
+      "address": "0xEA12",
+      "symbol": "tbl_EA12/tbl_EA13",
+      "layout": "three little-endian PPU destination addresses selected by each upload record",
+      "length": 6,
+      "sha256": "27a4e78d27c914080521120f8046dedd21b952e2033a9316f1febc2b266c5e7e",
+      "source_ranges": [
+        {
+          "bank": "07",
+          "start": "0xEA12",
+          "length": 6
+        }
+      ],
+      "consumers": [
+        "wasm-game/cpp-core/src/screens/background.cpp"
+      ]
+    },
+    {
       "path": "background/upload-records-ea1a-eb42.bin",
       "category": "background",
       "source": "src/bank_FF.asm:EA1A",
