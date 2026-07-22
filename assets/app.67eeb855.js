@@ -209,9 +209,9 @@ const originalAssets = {
     key: "",
   },
   matchSettings: {
-    manifest: null,
-    scripts: null,
-    tileImage: null,
+    background: null,
+    pageCanvases: null,
+    nametables: null,
     canvas: null,
     context: null,
     key: "",
@@ -1074,7 +1074,7 @@ function loadOriginalSpriteRendererFromBin(api) {
 }
 async function loadWasm() {
   const filename = DEBUG ? "soccer_core_cpp.wasm" : "soccer_core_cpp_production.wasm";
-  const relative = DEBUG ? "../strict-tests.02d76637.wasm" : "../soccer_core_cpp.f0997a5f.wasm";
+  const relative = DEBUG ? "../strict-tests.82c20a0d.wasm" : "../soccer_core_cpp.96ccf88f.wasm";
   const response = await fetchCoreResponse(filename, assetUrl(relative), rootAssetUrl(filename));
   const bytes = await response.arrayBuffer();
   const result = await WebAssembly.instantiate(bytes, {});
@@ -2477,13 +2477,15 @@ function composeOriginalBracketScreen(api) {
   }
   return bracket.canvas;
 }
-function renderOriginalMatchSettingsNametable(context, nametable, tileImage, destinationY) {
+function renderOriginalExtractedAtlasNametable(
+  context, nametable, tileImage, destinationY,
+) {
   const attributes = nametable.subarray(0x3c0, 0x400);
   for (let row = 0; row < 30; row++) {
-    for (let col = 0; col < 32; col++) {
-      const tile = nametable[row * 32 + col];
-      const attribute = attributes[Math.floor(row / 4) * 8 + Math.floor(col / 4)];
-      const shift = ((row & 2) << 1) | (col & 2);
+    for (let column = 0; column < 32; column++) {
+      const tile = nametable[row * 32 + column];
+      const attribute = attributes[(row >> 2) * 8 + (column >> 2)];
+      const shift = ((row & 2) << 1) | (column & 2);
       const palette = (attribute >> shift) & 3;
       context.drawImage(
         tileImage,
@@ -2491,7 +2493,7 @@ function renderOriginalMatchSettingsNametable(context, nametable, tileImage, des
         palette * 128 + (tile >> 4) * 8,
         8,
         8,
-        col * 8,
+        column * 8,
         destinationY + row * 8,
         8,
         8,
@@ -2564,11 +2566,17 @@ function composeOriginalModeSelectionScreen(api) {
 }
 function composeOriginalMatchSettingsScreen(api) {
   const settings = originalAssets.matchSettings;
-  const manifest = settings.manifest;
-  const scripts = settings.scripts;
-  if (!manifest || !scripts || !settings.tileImage || !Array.isArray(manifest.nametables)) {
-    return null;
+  if (!settings.background) {
+    settings.background = decodeOriginalBackgroundImageFromCpp(api, 0x07);
   }
+  const background = settings.background;
+  if (!background || background.destination !== 0x2000
+      || background.stream.length < 0x800
+      || !api.match_settings_renderer_overlay_tile) return null;
+  const subPalettes = originalBackgroundSubPalettes(
+    background.palette0, background.palette1,
+  );
+  if (!subPalettes) return null;
   const continent = api.original_continent_option ? api.original_continent_option() & 0xff : 0;
   const surfaceWetness = api.original_surface_wetness ? api.original_surface_wetness() & 0xff : 0;
   const rainWind = api.original_rain_wind_option ? api.original_rain_wind_option() & 0xff : 0;
@@ -2581,38 +2589,38 @@ function composeOriginalMatchSettingsScreen(api) {
     settings.canvas.width = 256;
     settings.canvas.height = 480;
     settings.context = settings.canvas.getContext("2d");
+    settings.pageCanvases = Array.from({ length: 2 }, () => {
+      const page = document.createElement("canvas");
+      page.width = 256;
+      page.height = 240;
+      return page;
+    });
   }
-  const nametables = manifest.nametables.map((source) => Uint8Array.from(source));
-  const wetnessToOption = [0, 1, 1, 2, 2, 3];
-  const options = {
-    2: continent & 0x03,
-    3: surfaceWetness & 0x0f,
-    4: wetnessToOption[Math.min(surfaceWetness >> 4, wetnessToOption.length - 1)],
-    5: rainWind & 0x0f,
-    6: (rainWind >> 4) & 0x0f,
-    7: storm & 0x03,
-    8: (storm >> 2) & 0x03,
-    9: (storm >> 4) & 0x03,
-  };
-  for (let state = 2; state <= 9; state++) {
-    const patterns = scripts.highlightPatterns?.[state];
-    const address = scripts.highlightAddresses?.[state];
-    if (!patterns || !Number.isFinite(address)) continue;
-    const option = Math.min(options[state] ?? 0, patterns.length - 1);
-    const pattern = patterns[option];
-    const tableIndex = address >= 0x2800 ? 1 : 0;
-    const baseAddress = tableIndex ? 0x2800 : 0x2000;
-    for (let offset = 0; offset < pattern.length; offset++) {
-      const target = address - baseAddress + offset;
-      if (target >= 0 && target < nametables[tableIndex].length) {
-        nametables[tableIndex][target] = pattern[offset] & 0xff;
-      }
+  const nametables = [
+    Uint8Array.from(background.stream.slice(0, 0x400)),
+    Uint8Array.from(background.stream.slice(0x400, 0x800)),
+  ];
+  for (let page = 0; page < 2; page++) {
+    const ppuBase = page === 0 ? 0x2000 : 0x2800;
+    for (let offset = 0; offset < 0x400; offset++) {
+      const tile = api.match_settings_renderer_overlay_tile(ppuBase + offset) >>> 0;
+      if (tile !== 0xffffffff) nametables[page][offset] = tile & 0xff;
     }
   }
   settings.context.clearRect(0, 0, 256, 480);
   settings.context.imageSmoothingEnabled = false;
-  renderOriginalMatchSettingsNametable(settings.context, nametables[0], settings.tileImage, 0);
-  renderOriginalMatchSettingsNametable(settings.context, nametables[1], settings.tileImage, 240);
+  for (let page = 0; page < 2; page++) {
+    const pageCanvas = settings.pageCanvases[page];
+    if (!renderOriginalDynamicBackgroundNametable(
+      pageCanvas.getContext("2d"),
+      nametables[page],
+      background.chr0,
+      background.chr1,
+      subPalettes,
+    )) return null;
+    settings.context.drawImage(pageCanvas, 0, page * 240);
+  }
+  settings.nametables = nametables;
   settings.key = key;
   return settings.canvas;
 }
@@ -2707,8 +2715,8 @@ function composeOriginalFormationControlScreen(api) {
   }
   formation.context.clearRect(0, 0, 256, 480);
   formation.context.imageSmoothingEnabled = false;
-  renderOriginalMatchSettingsNametable(formation.context, nametables[0], formation.tileImage, 0);
-  renderOriginalMatchSettingsNametable(formation.context, nametables[1], formation.tileImage, 240);
+  renderOriginalExtractedAtlasNametable(formation.context, nametables[0], formation.tileImage, 0);
+  renderOriginalExtractedAtlasNametable(formation.context, nametables[1], formation.tileImage, 240);
   formation.key = key;
   return formation.canvas;
 }
@@ -2795,7 +2803,7 @@ function composeOriginalWeatherPreviewScreen(api) {
   }
   weather.context.clearRect(0, 0, 256, 240);
   weather.context.imageSmoothingEnabled = false;
-  renderOriginalMatchSettingsNametable(weather.context, nametable, weather.tileImage, 0);
+  renderOriginalExtractedAtlasNametable(weather.context, nametable, weather.tileImage, 0);
   weather.key = key;
   if (DEBUG) {
     window.__soccerWeatherPreviewRenderer = {
@@ -3241,7 +3249,7 @@ function composeOriginalPlayerProfileScreen(api) {
   }
   profile.context.clearRect(0, 0, 256, 240);
   profile.context.imageSmoothingEnabled = false;
-  renderOriginalMatchSettingsNametable(profile.context, nametable, profile.tileImage, 0);
+  renderOriginalExtractedAtlasNametable(profile.context, nametable, profile.tileImage, 0);
   profile.key = key;
   if (DEBUG) {
     window.__soccerPlayerProfileRenderer = {
@@ -3450,7 +3458,7 @@ function composeOriginalMeetingSecretScreen(api, backgroundId) {
   }
   meeting.context.clearRect(0, 0, 256, 240);
   meeting.context.imageSmoothingEnabled = false;
-  renderOriginalMatchSettingsNametable(meeting.context, nametable, tileImage, 0);
+  renderOriginalExtractedAtlasNametable(meeting.context, nametable, tileImage, 0);
   meeting.key = key;
   if (DEBUG) {
     window.__soccerMeetingSecretRenderer = {
@@ -3526,7 +3534,20 @@ function drawOriginalMenuScreen(api) {
             ? originalAssets.matchSettings.key
             : originalAssets.formationControl.key,
         };
-        if (subtype === 0x06) window.__soccerMatchSettingsRenderer = rendererState;
+        if (subtype === 0x06) {
+          const background = originalAssets.matchSettings.background;
+          rendererState.source = "classified-bin-cpp";
+          rendererState.destination = background?.destination ?? 0;
+          rendererState.chr0 = background?.chr0 ?? 0;
+          rendererState.chr1 = background?.chr1 ?? 0;
+          rendererState.paletteNumbers = background
+            ? [background.palette0, background.palette1] : [];
+          rendererState.mirroring = background?.mirroring ?? 0;
+          rendererState.nametables = originalAssets.matchSettings.nametables
+            ? originalAssets.matchSettings.nametables.map((table) => Array.from(table))
+            : [];
+          window.__soccerMatchSettingsRenderer = rendererState;
+        }
         else window.__soccerFormationControlRenderer = rendererState;
       }
     } else {
@@ -4123,7 +4144,7 @@ async function main() {
     const image = await withFallback(name, originalAssetUrl(name), originalFallbackUrl(name), loadImage);
     return [id, image];
   })).then((entries) => Object.fromEntries(entries));
-  const [api, field, spriteManifest, palettes, splashLogo, splashTitle, splashTitleBlink, splashStory, matchSettingsScreenManifest, matchSettingsRenderer, matchSettingsTiles, formationControlScreenManifest, formationControlRenderer, formationControlTiles, weatherPreviewScreenManifest, weatherPreviewRenderer, weatherPreviewTiles, playerProfileScreenManifest, playerProfileRenderer, playerProfileTiles, meetingSecretScreenManifest, meetingSecretRenderer, meetingSecretTiles0a, meetingSecretTiles0f, creditsScreenManifest, creditsTiles, menuScreens] = await Promise.all([
+  const [api, field, spriteManifest, palettes, splashLogo, splashTitle, splashTitleBlink, splashStory, formationControlScreenManifest, formationControlRenderer, formationControlTiles, weatherPreviewScreenManifest, weatherPreviewRenderer, weatherPreviewTiles, playerProfileScreenManifest, playerProfileRenderer, playerProfileTiles, meetingSecretScreenManifest, meetingSecretRenderer, meetingSecretTiles0a, meetingSecretTiles0f, creditsScreenManifest, creditsTiles, menuScreens] = await Promise.all([
     apiPromise,
     loadOriginalFieldAssets(),
     spriteManifestPromise,
@@ -4132,9 +4153,6 @@ async function main() {
     withFallback("splash_01_title.png", originalAssetUrl("splash_01_title.png"), originalFallbackUrl("splash_01_title.png"), loadImage),
     withFallback("splash_01_title_blink.png", originalAssetUrl("splash_01_title_blink.png"), originalFallbackUrl("splash_01_title_blink.png"), loadImage),
     withFallback("splash_0e_story.png", originalAssetUrl("splash_0e_story.png"), originalFallbackUrl("splash_0e_story.png"), loadImage),
-    withFallback("match_settings_screen_manifest.json", originalAssetUrl("match_settings_screen_manifest.json"), originalFallbackUrl("match_settings_screen_manifest.json"), loadJson),
-    withFallback("match_settings_renderer.json", originalAssetUrl("match_settings_renderer.json"), originalFallbackUrl("match_settings_renderer.json"), loadJson),
-    withFallback("match_settings_tiles.png", originalAssetUrl("match_settings_tiles.png"), originalFallbackUrl("match_settings_tiles.png"), loadImage),
     withFallback("formation_control_screen_manifest.json", originalAssetUrl("formation_control_screen_manifest.json"), originalFallbackUrl("formation_control_screen_manifest.json"), loadJson),
     withFallback("formation_control_renderer.json", originalAssetUrl("formation_control_renderer.json"), originalFallbackUrl("formation_control_renderer.json"), loadJson),
     withFallback("formation_control_tiles.png", originalAssetUrl("formation_control_tiles.png"), originalFallbackUrl("formation_control_tiles.png"), loadImage),
@@ -4166,9 +4184,7 @@ async function main() {
   document.body.dataset.teamPreviewRendererSource = "classified-bin-cpp";
   document.body.dataset.playerOrderRendererSource = "classified-bin-cpp";
   document.body.dataset.bracketRendererSource = "classified-bin-cpp";
-  originalAssets.matchSettings.manifest = matchSettingsScreenManifest;
-  originalAssets.matchSettings.scripts = matchSettingsRenderer;
-  originalAssets.matchSettings.tileImage = matchSettingsTiles;
+  document.body.dataset.matchSettingsRendererSource = "classified-bin-cpp";
   originalAssets.formationControl.manifest = formationControlScreenManifest;
   originalAssets.formationControl.scripts = formationControlRenderer;
   originalAssets.formationControl.tileImage = formationControlTiles;
