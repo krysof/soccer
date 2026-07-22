@@ -4195,6 +4195,33 @@
       ]
     },
     {
+      "path": "menu/team-preview-continent-headings.bin",
+      "category": "menu",
+      "source": "src/CHR_ROM.chr:1D333",
+      "bank": "CHR",
+      "address": "0x1D333",
+      "symbol": "tbl_BF20 plus CHR $74 software-copy sources",
+      "layout": "5 continent records x 2 rows x 24 nametable tile ids; destination $2044",
+      "length": 240,
+      "sha256": "7f953f5c431a3c0a3800bdb8cf781a410d6fa7696c3cdc91ed865e8ea23d2bfa",
+      "source_ranges": [
+        {
+          "bank": "05",
+          "start": "0xBF20",
+          "length": 10
+        },
+        {
+          "bank": "CHR",
+          "start": "0x1D333",
+          "length": 240
+        }
+      ],
+      "consumers": [
+        "soccer::screens::team_preview_overlay_tile",
+        "wasm-game/cpp-core/src/screens/team_preview_renderer.cpp"
+      ]
+    },
+    {
       "path": "menu/team-preview-navigation-8c7e-8cc6.bin",
       "category": "menu",
       "source": "src/bank_05.asm:8C7E",
@@ -4213,6 +4240,33 @@
       ],
       "consumers": [
         "wasm-game/cpp-core/src/screens/menu_preview.cpp"
+      ]
+    },
+    {
+      "path": "menu/team-preview-team-logos.bin",
+      "category": "menu",
+      "source": "src/CHR_ROM.chr:1D000",
+      "bank": "CHR",
+      "address": "0x1D000",
+      "symbol": "tbl_BED6/tbl_BEDA plus CHR $74 software-copy sources",
+      "layout": "16 team records x 9 rows x 7 nametable tile ids; destinations $20E5/$20F4",
+      "length": 1008,
+      "sha256": "d54c5522f7e64daff55b6f408d930ad8bbd0e47e7c0d698b049c70bd9a2f3821",
+      "source_ranges": [
+        {
+          "bank": "05",
+          "start": "0xBED6",
+          "length": 36
+        },
+        {
+          "bank": "CHR",
+          "start": "0x1D000",
+          "length": 819
+        }
+      ],
+      "consumers": [
+        "soccer::screens::team_preview_overlay_tile",
+        "wasm-game/cpp-core/src/screens/team_preview_renderer.cpp"
       ]
     },
     {

@@ -186,7 +186,7 @@ const originalAssets = {
     key: "",
   },
   teamPreview: {
-    manifest: null,
+    background: null,
     canvas: null,
     context: null,
     key: "",
@@ -1075,7 +1075,7 @@ function loadOriginalSpriteRendererFromBin(api) {
 }
 async function loadWasm() {
   const filename = DEBUG ? "soccer_core_cpp.wasm" : "soccer_core_cpp_production.wasm";
-  const relative = DEBUG ? "../strict-tests.466c9b58.wasm" : "../soccer_core_cpp.53ca1ca8.wasm";
+  const relative = DEBUG ? "../strict-tests.be93ac68.wasm" : "../soccer_core_cpp.868037bb.wasm";
   const response = await fetchCoreResponse(filename, assetUrl(relative), rootAssetUrl(filename));
   const bytes = await response.arrayBuffer();
   const result = await WebAssembly.instantiate(bytes, {});
@@ -2956,36 +2956,28 @@ function composeOriginalPlayerOrderScreen(api) {
   }
   return order.canvas;
 }
-function writeOriginalNametableRectangle(nametable, destination, width, height, tiles) {
-  const offset = (destination & 0x3FFF) - 0x2000;
-  if (offset < 0 || !Array.isArray(tiles)) return;
-  const startRow = Math.floor(offset / 32);
-  const startColumn = offset & 31;
-  for (let row = 0; row < height; row++) {
-    for (let column = 0; column < width; column++) {
-      const source = row * width + column;
-      const target = (startRow + row) * 32 + startColumn + column;
-      if (source < tiles.length && target >= 0 && target < 0x3C0) {
-        nametable[target] = tiles[source] & 0xFF;
-      }
-    }
-  }
-}
 function composeOriginalTeamPreviewScreen(api) {
   const preview = originalAssets.teamPreview;
-  const manifest = preview.manifest;
-  if (!manifest || !Array.isArray(manifest.nametable)) return null;
+  const backgroundId = api.original_background_image_id
+    ? api.original_background_image_id() & 0xFF : 0;
+  if (backgroundId !== 0x0B || !api.team_preview_renderer_overlay_tile) return null;
+  if (!preview.background) {
+    preview.background = decodeOriginalBackgroundImageFromCpp(api, backgroundId);
+  }
+  const background = preview.background;
+  if (!background || background.destination !== 0x2000
+      || background.stream.length !== 0x400) return null;
   const teams = [0, 1].map((side) => api.original_team_number
     ? api.original_team_number(side) & 0x0F : 0);
   const continent = api.original_continent_option
     ? Math.min(api.original_continent_option() & 0xFF, 4) : 0;
   const bank0 = api.original_background_bank
-    ? api.original_background_bank(0) & 0xFF : manifest.chr0;
+    ? api.original_background_bank(0) & 0xFF : background.chr0;
   const bank1 = api.original_background_bank
-    ? api.original_background_bank(1) & 0xFF : manifest.chr1;
+    ? api.original_background_bank(1) & 0xFF : background.chr1;
   const paletteNumbers = [0, 1].map((slot) => api.original_background_palette_number
     ? api.original_background_palette_number(slot) & 0xFF
-    : (slot === 0 ? 0x1C : 0x1C));
+    : (slot === 0 ? background.palette0 : background.palette1));
   const subPalettes = originalBackgroundSubPalettes(paletteNumbers[0], paletteNumbers[1]);
   if (!subPalettes) return null;
   const key = `${teams.join(",")}:${continent}:${bank0}:${bank1}:${paletteNumbers.join(",")}`;
@@ -2996,42 +2988,35 @@ function composeOriginalTeamPreviewScreen(api) {
     preview.canvas.height = 240;
     preview.context = preview.canvas.getContext("2d");
   }
-  const nametable = Uint8Array.from(manifest.nametable);
-  const logo = manifest.teamLogo;
-  for (let side = 0; side < 2; side++) {
-    writeOriginalNametableRectangle(
-      nametable,
-      logo?.destinations?.[side] ?? (side === 0 ? 0x20E5 : 0x20F4),
-      logo?.width ?? 7,
-      logo?.height ?? 9,
-      logo?.tilesByTeam?.[teams[side]],
-    );
+  const nametable = Uint8Array.from(background.stream);
+  for (let offset = 0; offset < 0x400; offset++) {
+    const tile = api.team_preview_renderer_overlay_tile(0x2000 + offset) >>> 0;
+    if (tile !== 0xffffffff) nametable[offset] = tile & 0xff;
   }
-  const heading = manifest.continentHeading;
-  writeOriginalNametableRectangle(
-    nametable,
-    heading?.destination ?? 0x2044,
-    heading?.width ?? 24,
-    heading?.height ?? 2,
-    heading?.tilesByContinent?.[continent],
-  );
-  renderOriginalDynamicBackgroundNametable(
+  if (!renderOriginalDynamicBackgroundNametable(
     preview.context,
     nametable,
-    bank0 || manifest.chr0,
-    bank1 || manifest.chr1,
+    bank0 || background.chr0,
+    bank1 || background.chr1,
     subPalettes,
-  );
+  )) return null;
   preview.key = key;
   if (DEBUG) {
     window.__soccerTeamPreviewRenderer = {
+      backgroundId,
+      destination: background.destination,
       teams: [...teams],
       continent,
-      bank0: bank0 || manifest.chr0,
-      bank1: bank1 || manifest.chr1,
+      bank0: bank0 || background.chr0,
+      bank1: bank1 || background.chr1,
       paletteNumbers: [...paletteNumbers],
-      expectedFlagAnimations: teams.map((team) => manifest.flagAnimationByTeam?.[team]),
-      expectedFlagPalettes: teams.map((team) => manifest.flagPaletteByTeam?.[team]),
+      expectedFlagAnimations: [
+        api.original_ball_animation ? api.original_ball_animation() & 0xff : null,
+        api.original_player_animation ? api.original_player_animation(0) & 0xff : null,
+      ],
+      expectedFlagPalettes: [0, 1].map((slot) => api.original_sprite_palette_number
+        ? api.original_sprite_palette_number(slot) & 0xff : null),
+      mirroring: background.mirroring,
       key,
       nametable: Array.from(nametable),
     };
@@ -4113,7 +4098,7 @@ async function main() {
     const image = await withFallback(name, originalAssetUrl(name), originalFallbackUrl(name), loadImage);
     return [id, image];
   })).then((entries) => Object.fromEntries(entries));
-  const [api, field, spriteManifest, palettes, splashLogo, splashTitle, splashTitleBlink, splashStory, resultScreenManifest, resultRenderer, teamPreviewScreenManifest, matchSettingsScreenManifest, matchSettingsRenderer, matchSettingsTiles, formationControlScreenManifest, formationControlRenderer, formationControlTiles, weatherPreviewScreenManifest, weatherPreviewRenderer, weatherPreviewTiles, playerProfileScreenManifest, playerProfileRenderer, playerProfileTiles, meetingSecretScreenManifest, meetingSecretRenderer, meetingSecretTiles0a, meetingSecretTiles0f, creditsScreenManifest, creditsTiles, menuScreens] = await Promise.all([
+  const [api, field, spriteManifest, palettes, splashLogo, splashTitle, splashTitleBlink, splashStory, resultScreenManifest, resultRenderer, matchSettingsScreenManifest, matchSettingsRenderer, matchSettingsTiles, formationControlScreenManifest, formationControlRenderer, formationControlTiles, weatherPreviewScreenManifest, weatherPreviewRenderer, weatherPreviewTiles, playerProfileScreenManifest, playerProfileRenderer, playerProfileTiles, meetingSecretScreenManifest, meetingSecretRenderer, meetingSecretTiles0a, meetingSecretTiles0f, creditsScreenManifest, creditsTiles, menuScreens] = await Promise.all([
     apiPromise,
     loadOriginalFieldAssets(),
     spriteManifestPromise,
@@ -4124,7 +4109,6 @@ async function main() {
     withFallback("splash_0e_story.png", originalAssetUrl("splash_0e_story.png"), originalFallbackUrl("splash_0e_story.png"), loadImage),
     withFallback("result_screen_manifest.json", originalAssetUrl("result_screen_manifest.json"), originalFallbackUrl("result_screen_manifest.json"), loadJson),
     withFallback("result_renderer.json", originalAssetUrl("result_renderer.json"), originalFallbackUrl("result_renderer.json"), loadJson),
-    withFallback("team_preview_screen_manifest.json", originalAssetUrl("team_preview_screen_manifest.json"), originalFallbackUrl("team_preview_screen_manifest.json"), loadJson),
     withFallback("match_settings_screen_manifest.json", originalAssetUrl("match_settings_screen_manifest.json"), originalFallbackUrl("match_settings_screen_manifest.json"), loadJson),
     withFallback("match_settings_renderer.json", originalAssetUrl("match_settings_renderer.json"), originalFallbackUrl("match_settings_renderer.json"), loadJson),
     withFallback("match_settings_tiles.png", originalAssetUrl("match_settings_tiles.png"), originalFallbackUrl("match_settings_tiles.png"), loadImage),
@@ -4157,7 +4141,7 @@ async function main() {
   originalAssets.result.scripts = resultRenderer;
   document.body.dataset.modeSelectionRendererSource = "classified-bin-cpp";
   document.body.dataset.opponentSelectionRendererSource = "classified-bin-cpp";
-  originalAssets.teamPreview.manifest = teamPreviewScreenManifest;
+  document.body.dataset.teamPreviewRendererSource = "classified-bin-cpp";
   document.body.dataset.playerOrderRendererSource = "classified-bin-cpp";
   document.body.dataset.bracketRendererSource = "classified-bin-cpp";
   originalAssets.matchSettings.manifest = matchSettingsScreenManifest;
