@@ -1064,7 +1064,7 @@ function loadOriginalSpriteRendererFromBin(api) {
 }
 async function loadWasm() {
   const filename = DEBUG ? "soccer_core_cpp.wasm" : "soccer_core_cpp_production.wasm";
-  const relative = DEBUG ? "../strict-tests.60b1a868.wasm" : "../soccer_core_cpp.57f9dd11.wasm";
+  const relative = DEBUG ? "../strict-tests.dd1b163e.wasm" : "../soccer_core_cpp.16530ea4.wasm";
   const response = await fetchCoreResponse(filename, assetUrl(relative), rootAssetUrl(filename));
   const bytes = await response.arrayBuffer();
   const result = await WebAssembly.instantiate(bytes, {});
@@ -1083,7 +1083,7 @@ const ORIGINAL_CAMERA_BASE_Y = 0x48;
 const ORIGINAL_STATUSBAR_SPLIT_Y = 0xB9;
 function synchronizeOriginalFieldFootprints(api, originalScreen) {
   const field = originalAssets.field;
-  if (!field?.manifest || !api.original_footprint_commit_serial) return;
+  if (!field?.geometry || !api.original_footprint_commit_serial) return;
   if (originalScreen !== 0) {
     if (field.footprintActive) {
       field.footprintActive = false;
@@ -1120,31 +1120,25 @@ function originalFieldSubpalettes(fieldColor) {
   for (const palette of palettes) palette[0] = universal;
   return palettes;
 }
-function drawOriginalFieldFootprints(api, fieldContext, coverage, fieldColor, puddleSet) {
+function drawOriginalFieldFootprints(api, fieldContext, fieldColor) {
   const field = originalAssets.field;
   if (!field?.footprints?.size) return;
-  const manifest = field.manifest;
-  const assetScale = manifest.scale || 1;
-  const mapTileWidth = manifest.logical_width >> 3;
+  const geometry = field.geometry;
+  const assetScale = geometry.scale;
+  const mapTileWidth = geometry.logical_width >> 3;
   const palettes = originalFieldSubpalettes(fieldColor);
-  if (!palettes) return;
+  if (!palettes || api.field_renderer_prepare() !== 1) return;
   const fieldBank = api.original_field_bg_bank
-    ? (api.original_field_bg_bank() & 0xFF) || (manifest.default_field_bank & 0xFF)
-    : manifest.default_field_bank & 0xFF;
-  const fieldPrgBank = api.original_field_prg_bank
-    ? (api.original_field_prg_bank() & 0xFF) || (manifest.default_prg_bank & 0xFF)
-    : manifest.default_prg_bank & 0xFF;
+    ? (api.original_field_bg_bank() & 0xFF) || geometry.default_field_bank
+    : geometry.default_field_bank;
   for (const footprint of field.footprints.values()) {
     const tileX = footprint.x >> 3;
     const tileY = footprint.y >> 3;
-    if (tileX < 0 || tileX >= mapTileWidth || tileY < 0 || tileY >= (manifest.logical_height >> 3)) continue;
-    const sector = (footprint.y < manifest.top_height ? 0 : 4)
-      + Math.min(3, Math.max(0, Math.floor(footprint.x / manifest.sector_width)));
-    const variant = Math.min(coverage + (((puddleSet >> sector) & 1) ? 1 : 0), 2);
-    const slots = manifest.prg_variants?.[String(fieldPrgBank)]?.[String(variant)]?.palette_slots
-      || manifest.variants?.[String(variant)]?.palette_slots;
-    const paletteSlot = slots?.[tileY * mapTileWidth + tileX] ?? 0;
-    const highBankOffset = footprint.x < manifest.sector_width * 2 ? 0x04 : 0x02;
+    if (tileX < 0 || tileX >= mapTileWidth
+        || tileY < 0 || tileY >= (geometry.logical_height >> 3)) continue;
+    const paletteSlot = api.field_renderer_palette_slot(tileY * mapTileWidth + tileX);
+    if (paletteSlot > 3) continue;
+    const highBankOffset = footprint.x < geometry.sector_width * 2 ? 0x04 : 0x02;
     const tile = originalBackgroundTile(
       fieldBank,
       (fieldBank + highBankOffset) & 0xFF,
@@ -1163,54 +1157,63 @@ function drawOriginalFieldFootprints(api, fieldContext, coverage, fieldColor, pu
 }
 function composeOriginalField(api) {
   const field = originalAssets.field;
-  if (!field?.manifest) return null;
+  if (!field?.geometry || api.field_renderer_prepare() !== 1) return null;
   const coverage = clamp(api.original_field_puddle_coverage ? api.original_field_puddle_coverage() : 0, 0, 2);
   const fieldColor = clamp(api.original_field_color ? api.original_field_color() : 0, 0, 4);
   const puddleSet = api.original_puddle_set ? api.original_puddle_set() & 0xFF : 0;
   const fieldPrgBank = api.original_field_prg_bank
-    ? (api.original_field_prg_bank() & 0xFF) || (field.manifest.default_prg_bank & 0xFF)
-    : field.manifest.default_prg_bank & 0xFF;
+    ? (api.original_field_prg_bank() & 0xFF) || field.geometry.default_prg_bank
+    : field.geometry.default_prg_bank;
   const fieldBank = api.original_field_bg_bank
-    ? (api.original_field_bg_bank() & 0xFF) || (field.manifest.default_field_bank & 0xFF)
-    : field.manifest.default_field_bank & 0xFF;
+    ? (api.original_field_bg_bank() & 0xFF) || field.geometry.default_field_bank
+    : field.geometry.default_field_bank;
   const key = `${fieldPrgBank}/${fieldBank}/${coverage}/${fieldColor}/${puddleSet}`;
   if (field.footprintBaseKey && field.footprintBaseKey !== key) {
     field.footprints.clear();
   }
   field.footprintBaseKey = key;
   if (field.compositeKey === key && field.composite) return field.composite;
-  const base = field.images[`${fieldPrgBank}/${fieldBank}/${coverage}/${fieldColor}`]
-    || field.images[String(coverage)]?.[String(fieldColor)];
-  if (!base) return null;
   if (!field.composite) {
     field.composite = document.createElement("canvas");
     field.compositeContext = field.composite.getContext("2d");
   }
-  field.composite.width = base.naturalWidth || base.width;
-  field.composite.height = base.naturalHeight || base.height;
+  const geometry = field.geometry;
+  const assetScale = geometry.scale;
+  field.composite.width = geometry.logical_width * assetScale;
+  field.composite.height = geometry.logical_height * assetScale;
   const fieldContext = field.compositeContext;
   fieldContext.imageSmoothingEnabled = false;
   fieldContext.clearRect(0, 0, field.composite.width, field.composite.height);
-  fieldContext.drawImage(base, 0, 0);
-  const wetVariant = Math.min(coverage + 1, 2);
-  const wet = field.images[`${fieldPrgBank}/${fieldBank}/${wetVariant}/${fieldColor}`]
-    || field.images[String(wetVariant)]?.[String(fieldColor)];
-  if (wet && wetVariant !== coverage && puddleSet) {
-    const assetScale = field.manifest.scale || 1;
-    const sectorWidth = field.manifest.sector_width * assetScale;
-    const topHeight = field.manifest.top_height * assetScale;
-    const bottomHeight = field.manifest.bottom_height * assetScale;
-    for (let sector = 0; sector < 8; sector++) {
-      if ((puddleSet & (1 << sector)) === 0) continue;
-      const column = sector & 3;
-      const sourceX = column * sectorWidth;
-      const sourceY = sector < 4 ? 0 : topHeight;
-      const height = sector < 4 ? topHeight : bottomHeight;
-      fieldContext.drawImage(wet, sourceX, sourceY, sectorWidth, height, sourceX, sourceY, sectorWidth, height);
+  const palettes = originalFieldSubpalettes(fieldColor);
+  if (!palettes) return null;
+  const tileWidth = geometry.logical_width >> 3;
+  const tileHeight = geometry.logical_height >> 3;
+  for (let tileY = 0; tileY < tileHeight; tileY++) {
+    for (let tileX = 0; tileX < tileWidth; tileX++) {
+      const index = tileY * tileWidth + tileX;
+      const tileByte = api.field_renderer_tile(index);
+      const paletteSlot = api.field_renderer_palette_slot(index);
+      if (tileByte > 0xFF || paletteSlot > 3) return null;
+      const highBankOffset = tileX < (geometry.sector_width >> 2) ? 0x04 : 0x02;
+      const tile = originalBackgroundTile(
+        fieldBank,
+        (fieldBank + highBankOffset) & 0xFF,
+        tileByte,
+        palettes[paletteSlot],
+      );
+      if (!tile) return null;
+      fieldContext.drawImage(
+        tile,
+        tileX * 8 * assetScale,
+        tileY * 8 * assetScale,
+        8 * assetScale,
+        8 * assetScale,
+      );
     }
   }
-  drawOriginalFieldFootprints(api, fieldContext, coverage, fieldColor, puddleSet);
+  drawOriginalFieldFootprints(api, fieldContext, fieldColor);
   field.compositeKey = key;
+  field.renderedKeys.add(key);
   return field.composite;
 }
 function drawField(api, screenW, screenH, worldW = screenW, worldH = screenH, cameraX = null, cameraY = ORIGINAL_CAMERA_BASE_Y) {
@@ -1218,12 +1221,12 @@ function drawField(api, screenW, screenH, worldW = screenW, worldH = screenH, ca
   const img = composeOriginalField(api);
   if (img) {
     ctx.imageSmoothingEnabled = false;
-    const manifest = originalAssets.field.manifest;
-    const assetScale = manifest.scale || 1;
-    const logicalWidth = manifest.logical_width;
-    const logicalHeight = manifest.logical_height;
-    const viewWidth = manifest.camera_width || ORIGINAL_CAMERA_VIEW_W;
-    const viewHeight = manifest.camera_height || ORIGINAL_CAMERA_VIEW_H;
+    const geometry = originalAssets.field.geometry;
+    const assetScale = geometry.scale;
+    const logicalWidth = geometry.logical_width;
+    const logicalHeight = geometry.logical_height;
+    const viewWidth = geometry.camera_width;
+    const viewHeight = geometry.camera_height;
     const clampedCameraX = clamp(cameraX == null ? 0 : cameraX, 0, logicalWidth - viewWidth);
     const clampedCameraY = clamp(cameraY == null ? 0 : cameraY, 0, logicalHeight - viewHeight);
     const sourceX = clampedCameraX * assetScale;
@@ -1319,38 +1322,30 @@ function drawField(api, screenW, screenH, worldW = screenW, worldH = screenH, ca
   ctx.strokeRect(screenW - 118, screenH / 2 - 82, 88, 164);
   return { sourceX: 0, sourceW: screenW, sourceH: screenH, fullW: screenW, fullH: screenH, screenW, screenH, worldW, worldH, cameraX, cameraY, verticalOffset: (ORIGINAL_CAMERA_BASE_Y - cameraY) / worldH * screenH, original: false };
 }
-async function loadOriginalFieldAssets() {
-  const manifest = await withFallback(
-    "field_manifest.json",
-    originalAssetUrl("field_manifest.json"),
-    originalFallbackUrl("field_manifest.json"),
-    loadJson,
-  );
-  const images = {};
-  const requests = [];
-  for (const [key, fileOrPaletteFiles] of Object.entries(manifest.images || {})) {
-    if (typeof fileOrPaletteFiles === "string") {
-      requests.push(
-        withFallback(fileOrPaletteFiles, originalAssetUrl(fileOrPaletteFiles), originalFallbackUrl(fileOrPaletteFiles), loadImage)
-          .then((image) => { images[key] = image; }),
-      );
-    } else {
-      images[key] = {};
-      for (const [palette, fileName] of Object.entries(fileOrPaletteFiles)) {
-        requests.push(
-          withFallback(fileName, originalAssetUrl(fileName), originalFallbackUrl(fileName), loadImage)
-            .then((image) => { images[key][palette] = image; }),
-        );
-      }
-    }
+function loadOriginalFieldAssets(api) {
+  if (typeof api.field_renderer_prepare !== "function"
+      || typeof api.field_renderer_tile !== "function"
+      || typeof api.field_renderer_palette_slot !== "function") {
+    throw new Error("C++ core is missing the classified field renderer ABI");
   }
-  await Promise.all(requests);
   return {
-    manifest,
-    images,
+    geometry: {
+      source: "classified-bin-cpp",
+      default_prg_bank: 0x01,
+      default_field_bank: 0x40,
+      scale: 2,
+      logical_width: 1024,
+      logical_height: 368,
+      camera_width: 256,
+      camera_height: 176,
+      sector_width: 256,
+      top_height: 240,
+      bottom_height: 128,
+    },
     composite: null,
     compositeContext: null,
     compositeKey: "",
+    renderedKeys: new Set(),
     footprintBaseKey: "",
     footprintSerial: null,
     footprintActive: false,
@@ -4138,7 +4133,7 @@ async function main() {
   const palettesPromise = apiPromise.then(() => loadOriginalPaletteDataFromBins());
   const [api, field, spriteManifest, palettes] = await Promise.all([
     apiPromise,
-    loadOriginalFieldAssets(),
+    apiPromise.then((api) => loadOriginalFieldAssets(api)),
     spriteManifestPromise,
     palettesPromise,
   ]);
@@ -4150,6 +4145,7 @@ async function main() {
   document.body.dataset.statusbarRendererSource = "classified-bin-cpp";
   document.body.dataset.splashRendererSource = "classified-bin-cpp";
   document.body.dataset.backgroundRendererSource = "classified-bin-cpp";
+  document.body.dataset.fieldRendererSource = "classified-bin-cpp";
   document.body.dataset.resultRendererSource = "classified-bin-cpp";
   document.body.dataset.modeSelectionRendererSource = "classified-bin-cpp";
   document.body.dataset.opponentSelectionRendererSource = "classified-bin-cpp";
@@ -4238,8 +4234,8 @@ async function main() {
     });
     window.__soccerField = () => ({
       key: originalAssets.field?.compositeKey || "",
-      loadedKeys: Object.keys(originalAssets.field?.images || {}),
-      source: originalAssets.field?.manifest?.source || "",
+      loadedKeys: Array.from(originalAssets.field?.renderedKeys || []),
+      source: originalAssets.field?.geometry?.source || "",
     });
     window.__soccerConsumeTouchTapLatchSoftwareFrame = () => consumeTapLatchesAfterSoftwareFrame();
     window.__soccerSpriteFrame = (index) => {

@@ -1889,6 +1889,8 @@
       ],
       "consumers": [
         "soccer::build_statusbar_and_scrolling_field_column",
+        "soccer::prepare_field_renderer",
+        "wasm-game/cpp-core/src/screens/field_renderer.cpp",
         "wasm-game/cpp-core/src/screens/field_scroll.cpp"
       ]
     },
@@ -1991,6 +1993,8 @@
       ],
       "consumers": [
         "soccer::build_statusbar_and_scrolling_field_column",
+        "soccer::prepare_field_renderer",
+        "wasm-game/cpp-core/src/screens/field_renderer.cpp",
         "wasm-game/cpp-core/src/screens/field_scroll.cpp"
       ]
     },
@@ -2151,7 +2155,9 @@
       "consumers": [
         "soccer::probe_field_surface",
         "soccer::build_statusbar_and_scrolling_field_column",
+        "soccer::prepare_field_renderer",
         "wasm-game/cpp-core/src/collision/collision.cpp",
+        "wasm-game/cpp-core/src/screens/field_renderer.cpp",
         "wasm-game/cpp-core/src/screens/field_scroll.cpp"
       ]
     },
@@ -2250,7 +2256,9 @@
       "consumers": [
         "soccer::probe_field_surface",
         "soccer::build_statusbar_and_scrolling_field_column",
+        "soccer::prepare_field_renderer",
         "wasm-game/cpp-core/src/collision/collision.cpp",
+        "wasm-game/cpp-core/src/screens/field_renderer.cpp",
         "wasm-game/cpp-core/src/screens/field_scroll.cpp"
       ]
     },
