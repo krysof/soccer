@@ -1169,7 +1169,7 @@ function loadOriginalSpriteRendererFromBin(api) {
 }
 async function loadWasm() {
   const filename = DEBUG ? "soccer_core_cpp.wasm" : "soccer_core_cpp_production.wasm";
-  const relative = DEBUG ? "../strict-tests.54a48909.wasm" : "../soccer_core_cpp.a40e0ead.wasm";
+  const relative = DEBUG ? "../strict-tests.93804318.wasm" : "../soccer_core_cpp.0ba39a88.wasm";
   const response = await fetchCoreResponse(filename, assetUrl(relative), rootAssetUrl(filename));
   const bytes = await response.arrayBuffer();
   const result = await WebAssembly.instantiate(bytes, {});
@@ -2041,7 +2041,8 @@ function drawScore(api, w, originalStatusbarDrawn = false) {
   const rightScore = api.score_right();
   const seconds = api.match_seconds_left ? api.match_seconds_left() : 0;
   const period = api.current_period ? api.current_period() : 1;
-  const cpuTeam = api.cpu_team_id ? api.cpu_team_id() : 1;
+  const cpuTeam = api.original_team_number
+    ? (api.original_team_number(1) & 0x0F) : 1;
   const timeText = api.original_time_minutes
     ? `${api.original_time_minutes()}:${api.original_time_seconds_tens()}${api.original_time_seconds_ones()}`
     : `${String(Math.floor(seconds / 60)).padStart(1, "0")}:${String(seconds % 60).padStart(2, "0")}`;
@@ -3700,49 +3701,6 @@ function drawOriginalCreditsScreen(api) {
     };
   }
 }
-function drawMenuOverlay(api) {
-  const selected = api.menu_opponent_id ? api.menu_opponent_id() : (api.cpu_team_id ? api.cpu_team_id() : 1);
-  const wins = api.tournament_win_count ? api.tournament_win_count() : 0;
-  ctx.fillStyle = "rgba(0,0,0,.72)";
-  ctx.fillRect(0, 0, canvas.width, canvas.height);
-  ctx.textAlign = "center";
-  ctx.fillStyle = "#fff";
-  ctx.font = "bold 36px system-ui, sans-serif";
-  ctx.fillText("SELECT TEAM", canvas.width / 2, 104);
-  ctx.font = "15px ui-monospace, Consolas, monospace";
-  ctx.fillStyle = "#d7f7ff";
-  ctx.fillText(`熱血  VS  ${TEAM_NAMES[selected] || "CPU"}     WIN ${wins}`, canvas.width / 2, 134);
-  const startY = 176;
-  for (let team = 1; team < TEAM_NAMES.length; team++) {
-    const y = startY + (team - 1) * 48;
-    const active = team === selected;
-    const weatherId = team === 2 ? 1 : team === 3 ? 2 : team === 4 ? 3 : team === 5 ? 4 : 0;
-    if (active) {
-      ctx.fillStyle = "rgba(255,230,70,.22)";
-      ctx.fillRect(canvas.width / 2 - 236, y - 26, 472, 38);
-      ctx.strokeStyle = "rgba(255,230,70,.85)";
-      ctx.strokeRect(canvas.width / 2 - 236, y - 26, 472, 38);
-    }
-    ctx.fillStyle = active ? "#ffe64a" : "#ffffff";
-    ctx.font = active ? "bold 20px ui-monospace, Consolas, monospace" : "18px ui-monospace, Consolas, monospace";
-    const cursor = active ? "▶" : " ";
-    const spd = api.team_speed ? api.team_speedForMenu?.(team) : null;
-    const speed = api.team_speed ? (team === selected ? api.team_speed(1) : "") : "";
-    const pow = api.team_power ? (team === selected ? api.team_power(1) : "") : "";
-    ctx.fillText(`${cursor} ${TEAM_NAMES[team]}   FIELD ${WEATHER_NAMES[weatherId]}`, canvas.width / 2, y);
-    if (active) {
-      ctx.font = "13px ui-monospace, Consolas, monospace";
-      ctx.fillStyle = "#b8d5ff";
-      ctx.fillText(`SPD ${speed}  POW ${pow}  KEEPER ${api.team_keeper ? api.team_keeper(1) : "?"}  SPECIAL ${api.team_special_curve ? api.team_special_curve(1) : "?"}`, canvas.width / 2, y + 20);
-      const captain = (PLAYER_NAMES[team] && PLAYER_NAMES[team][3]) || "CAPTAIN";
-      ctx.fillText(`CAPTAIN ${captain}`, canvas.width / 2 + 188, y + 20);
-    }
-  }
-  ctx.fillStyle = "#fff";
-  ctx.font = "16px system-ui, sans-serif";
-  ctx.fillText("方向键/摇杆选择对手；PC：J/Z/Enter 开赛；手机：点 A开赛", canvas.width / 2, startY + 5 * 48 + 18);
-  ctx.textAlign = "left";
-}
 function render(api) {
   gameWrap.classList.remove("original-result-screen");
   const worldW = api.game_field_w();
@@ -3771,8 +3729,10 @@ function render(api) {
     return;
   }
   const originalSubtype = api.original_screen_subtype ? api.original_screen_subtype() : 0;
-  const cpuTeam = api.cpu_team_id ? api.cpu_team_id() : 1;
-  const menuTeam = api.menu_opponent_id ? api.menu_opponent_id() : cpuTeam;
+  const cpuTeam = api.original_team_number
+    ? (api.original_team_number(1) & 0x0F) : 1;
+  const menuTeam = api.original_option_number
+    ? (api.original_option_number() & 0xFF) : 0;
   const wins = api.tournament_win_count ? api.tournament_win_count() : 0;
   const ballPosition = originalBallPosition(api);
   const bx = ballPosition.x;
