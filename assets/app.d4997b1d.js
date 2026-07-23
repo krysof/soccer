@@ -1169,7 +1169,7 @@ function loadOriginalSpriteRendererFromBin(api) {
 }
 async function loadWasm() {
   const filename = DEBUG ? "soccer_core_cpp.wasm" : "soccer_core_cpp_production.wasm";
-  const relative = DEBUG ? "../strict-tests.dbc01e3d.wasm" : "../soccer_core_cpp.30850f20.wasm";
+  const relative = DEBUG ? "../strict-tests.a9bde0f6.wasm" : "../soccer_core_cpp.a1589271.wasm";
   const response = await fetchCoreResponse(filename, assetUrl(relative), rootAssetUrl(filename));
   const bytes = await response.arrayBuffer();
   const result = await WebAssembly.instantiate(bytes, {});
@@ -1965,21 +1965,6 @@ function drawCppLogicalOam(api, view, options = {}) {
 function drawWeather(api, view, screenW, screenH) {
   if (view?.original) return;
   const weather = api.field_weather ? api.field_weather() : 0;
-  const hazards = api.field_hazard_count ? api.field_hazard_count() : 0;
-  for (let i = 0; i < hazards; i++) {
-    const h = worldToScreen(view, api.field_hazard_x(i), api.field_hazard_y(i));
-    if (weather === 1) {
-      ctx.fillStyle = "rgba(70,130,190,.38)";
-      ctx.beginPath(); ctx.ellipse(h.x, h.y, 28, 12, -0.15, 0, Math.PI * 2); ctx.fill();
-      ctx.strokeStyle = "rgba(180,220,255,.35)"; ctx.stroke();
-    } else if (weather === 2) {
-      ctx.fillStyle = "rgba(92,58,30,.42)";
-      ctx.beginPath(); ctx.ellipse(h.x, h.y, 30, 14, 0.12, 0, Math.PI * 2); ctx.fill();
-    } else if (weather === 3) {
-      ctx.fillStyle = "rgba(230,245,255,.34)";
-      ctx.beginPath(); ctx.ellipse(h.x, h.y, 32, 16, 0, 0, Math.PI * 2); ctx.fill();
-    }
-  }
   if (weather === 1 || weather === 3) {
     ctx.save();
     ctx.strokeStyle = weather === 1 ? "rgba(160,205,255,.28)" : "rgba(255,255,255,.55)";
@@ -3793,8 +3778,6 @@ function render(api) {
   const bx = ballPosition.x;
   const by = ballPosition.y;
   const bz = normalizeOriginalHeight(ballPosition.z);
-  const bspin = api.ball_spin ? api.ball_spin() : Math.floor(api.game_tick_count() / 6);
-  const bspecial = api.ball_special_timer ? api.ball_special_timer() : 0;
   const exposesOriginalCamera = api.original_camera_x_lo && api.original_camera_x_hi
     && api.original_camera_y_lo && api.original_camera_y_hi;
   const committedVideoView = originalCommittedVideoView(api);
@@ -4085,15 +4068,9 @@ function render(api) {
   }
   const restart = api.restart_team ? api.restart_team() : 0;
   const action = api.original_player_action ? api.original_player_action(controlled) : 0;
-  const charge = api.shot_charge ? api.shot_charge() : 0;
-  const curve = api.ball_curve ? api.ball_curve() : 0;
-  const keeper = api.keeper_outcome ? api.keeper_outcome() : 0;
-  const hold = api.keeper_hold_timer ? api.keeper_hold_timer() : 0;
-  const special = api.ball_special_timer ? api.ball_special_timer() : 0;
   const period = api.current_period ? api.current_period() : 1;
   const swapped = api.side_swapped ? api.side_swapped() : 0;
   const weather = api.field_weather ? api.field_weather() : 0;
-  const hazards = api.field_hazard_count ? api.field_hazard_count() : 0;
   const wind = `${api.field_wind_x ? api.field_wind_x() : 0}/${api.field_wind_y ? api.field_wind_y() : 0}`;
   const originalOwner = api.original_ball_owner ? api.original_ball_owner() : 0;
   const roleInfo = api.player_role_speed ? `${api.player_role_speed(controlled)}/${api.player_role_power(controlled)}/${api.player_role_stamina(controlled)}/${api.player_role_tackle(controlled)}/${api.player_role_keeper(controlled)}` : "0";
@@ -4128,7 +4105,7 @@ function render(api) {
   const btnPress = api.debug_original_button_ram ? api.debug_original_button_ram(0, 0x08).toString(16).padStart(2, "0") : "??";
   if (DEBUG) {
     stats.hidden = false;
-    stats.textContent = `build=${BUILD_ID} phase=${phase} input=$${touch.lastBits.toString(16).padStart(2, "0")} stick=${touch.axisX}/${touch.axisY} btn=${btnHold}/${btnPress} script=$${script} pauseRet=${pauseReturn} period=${period} swap=${swapped} cpu=${cpuTeam} menu=${menuTeam} wins=${wins} weather=${weather} hazards=${hazards} wind=${wind} score=${api.score_left()}-${api.score_right()} time=${api.match_seconds_left()} tick=${api.game_tick_count()} players=${count} role=${roleInfo} pOrig=${playerOrig}@${playerDispatch}/${playerMainDispatch}/${playerAnimDispatch} pRam=${playerRam} ballObj=$${ballObj}@${ballDispatch} ballRam=${ballRam} ballState=${ballState} ballAnim=${ballAnim} ballSpeed=${ballSpeedRam} owner=${originalOwner} camera=${cameraX.toString(16)}/${cameraY.toString(16)} ball=(${bx},${by},z=${bz}) curve=${curve} special=${special} act=${action} charge=${charge} keeper=${keeper}/${hold} restart=${restart}`;
+    stats.textContent = `build=${BUILD_ID} phase=${phase} input=$${touch.lastBits.toString(16).padStart(2, "0")} stick=${touch.axisX}/${touch.axisY} btn=${btnHold}/${btnPress} script=$${script} pauseRet=${pauseReturn} period=${period} swap=${swapped} cpu=${cpuTeam} menu=${menuTeam} wins=${wins} weather=${weather} wind=${wind} score=${api.score_left()}-${api.score_right()} time=${api.match_seconds_left()} tick=${api.game_tick_count()} players=${count} role=${roleInfo} pOrig=${playerOrig}@${playerDispatch}/${playerMainDispatch}/${playerAnimDispatch} pRam=${playerRam} ballObj=$${ballObj}@${ballDispatch} ballRam=${ballRam} ballState=${ballState} ballAnim=${ballAnim} ballSpeed=${ballSpeedRam} owner=${originalOwner} camera=${cameraX.toString(16)}/${cameraY.toString(16)} ball=(${bx},${by},z=${bz}) act=${action} restart=${restart}`;
   }
 }
 async function main() {
