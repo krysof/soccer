@@ -1169,7 +1169,7 @@ function loadOriginalSpriteRendererFromBin(api) {
 }
 async function loadWasm() {
   const filename = DEBUG ? "soccer_core_cpp.wasm" : "soccer_core_cpp_production.wasm";
-  const relative = DEBUG ? "../strict-tests.5ee21038.wasm" : "../soccer_core_cpp.d6c3b9c6.wasm";
+  const relative = DEBUG ? "../strict-tests.0a6ce3b5.wasm" : "../soccer_core_cpp.3f0aa4d9.wasm";
   const response = await fetchCoreResponse(filename, assetUrl(relative), rootAssetUrl(filename));
   const bytes = await response.arrayBuffer();
   const result = await WebAssembly.instantiate(bytes, {});
@@ -4063,14 +4063,11 @@ function render(api) {
   if (!isOriginalResultScreen) drawScore(api, screenW, drewOriginalMinimap);
   if (DEBUG && !isOriginalResultScreen) {
     const stamina = api.player_stamina(controlled);
-    const controlledInjury = api.player_injury ? api.player_injury(controlled) : 0;
     ctx.fillStyle = "rgba(0,0,0,.45)";
     ctx.fillRect(16, 16, 132, 16);
     ctx.fillStyle = stamina > 30 ? "#62e572" : "#ffcc4d";
     ctx.fillRect(18, 18, Math.max(0, stamina) * 1.28, 12);
-    ctx.fillStyle = "#ff7777";
     ctx.font = "11px ui-monospace, Consolas, monospace";
-    ctx.fillText(`INJ ${controlledInjury}`, 154, 28);
     if (api.player_role_speed) {
       ctx.fillStyle = "rgba(0,0,0,.45)";
       ctx.fillRect(16, 36, 260, 18);
@@ -4105,7 +4102,7 @@ function render(api) {
   }
   const restart = api.restart_team ? api.restart_team() : 0;
   const lastTouch = api.last_touch_team ? api.last_touch_team() : 0;
-  const action = api.player_action ? api.player_action(controlled) : 0;
+  const action = api.original_player_action ? api.original_player_action(controlled) : 0;
   const charge = api.shot_charge ? api.shot_charge() : 0;
   const curve = api.ball_curve ? api.ball_curve() : 0;
   const keeper = api.keeper_outcome ? api.keeper_outcome() : 0;
