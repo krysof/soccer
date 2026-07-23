@@ -162,6 +162,15 @@ const runtimeLifecycle = {
 let wakeLockSentinel = null;
 const originalAssets = {
   field: null,
+  logicalVideo: {
+    bytes: new Uint8Array(0x4000),
+    valid: new Uint8Array(0x4000),
+    serial: null,
+    processedCount: 0,
+    revision: 0,
+    frameWrites: [],
+    lastWriteBySource: new Map(),
+  },
   splash: { states: new Map(), last: null },
   staticBackgrounds: new Map(),
   modeSelection: {
@@ -275,6 +284,102 @@ const originalAssets = {
     backgroundTileCache: new Map(),
   },
 };
+function normalizeOriginalVideoAddress(address) {
+  let normalized = address & 0x3fff;
+  if (normalized >= 0x3000 && normalized < 0x3f00) normalized -= 0x1000;
+  if (normalized >= 0x3f00) {
+    normalized = 0x3f00 | (normalized & 0x1f);
+    if ((normalized & 0x13) === 0x10) normalized -= 0x10;
+  }
+  return normalized;
+}
+function resetOriginalLogicalVideo(api = null) {
+  const video = originalAssets.logicalVideo;
+  video.bytes.fill(0);
+  video.valid.fill(0);
+  video.serial = api?.game_video_write_serial
+    ? api.game_video_write_serial() >>> 0 : null;
+  video.processedCount = 0;
+  video.frameWrites = [];
+  video.lastWriteBySource.clear();
+  video.revision += 1;
+}
+function syncOriginalLogicalVideoWrites(api) {
+  if (!api.game_video_write_serial || !api.game_video_write_count
+      || !api.game_video_write_source || !api.game_video_write_address
+      || !api.game_video_write_increment || !api.game_video_write_size
+      || !api.game_video_write_byte) return 0;
+  const video = originalAssets.logicalVideo;
+  const serial = api.game_video_write_serial() >>> 0;
+  const count = Math.min(0x20, api.game_video_write_count() >>> 0);
+  if (video.serial !== serial || count < video.processedCount) {
+    video.serial = serial;
+    video.processedCount = 0;
+    video.frameWrites = [];
+  }
+  let applied = 0;
+  for (let command = video.processedCount; command < count; command += 1) {
+    const source = api.game_video_write_source(command) >>> 0;
+    const rawAddress = api.game_video_write_address(command) >>> 0;
+    const increment = api.game_video_write_increment(command) >>> 0;
+    const size = Math.min(0x2000, api.game_video_write_size(command) >>> 0);
+    if (source > 0xff || rawAddress > 0x3fff
+        || (increment !== 1 && increment !== 32)) continue;
+    const bytes = new Uint8Array(size);
+    let address = rawAddress;
+    for (let index = 0; index < size; index += 1) {
+      const value = api.game_video_write_byte(command, index) >>> 0;
+      if (value > 0xff) break;
+      bytes[index] = value;
+      const target = normalizeOriginalVideoAddress(address);
+      video.bytes[target] = value;
+      video.valid[target] = 1;
+      address = (address + increment) & 0x3fff;
+    }
+    const write = { source, address: rawAddress, increment, bytes };
+    video.frameWrites.push(write);
+    video.lastWriteBySource.set(source, write);
+    applied += 1;
+  }
+  video.processedCount = count;
+  if (applied) video.revision += 1;
+  return applied;
+}
+function originalLogicalNametable(destination, fallback) {
+  const nametable = fallback ? Uint8Array.from(fallback) : new Uint8Array(0x400);
+  const video = originalAssets.logicalVideo;
+  for (let offset = 0; offset < nametable.length; offset += 1) {
+    const address = normalizeOriginalVideoAddress(destination + offset);
+    if (video.valid[address]) nametable[offset] = video.bytes[address];
+  }
+  return nametable;
+}
+function latestOriginalLogicalVideoWrite(sources) {
+  const accepted = new Set(Array.isArray(sources) ? sources : [sources]);
+  const writes = originalAssets.logicalVideo.frameWrites;
+  for (let index = writes.length - 1; index >= 0; index -= 1) {
+    if (accepted.has(writes[index].source)) return writes[index];
+  }
+  for (const source of accepted) {
+    const write = originalAssets.logicalVideo.lastWriteBySource.get(source);
+    if (write) return write;
+  }
+  return null;
+}
+function applyOriginalLogicalFrameWrites(nametable, destination, sources) {
+  const accepted = new Set(Array.isArray(sources) ? sources : [sources]);
+  const begin = normalizeOriginalVideoAddress(destination);
+  const end = begin + nametable.length;
+  for (const write of originalAssets.logicalVideo.frameWrites) {
+    if (!accepted.has(write.source)) continue;
+    let address = write.address;
+    for (const value of write.bytes) {
+      const target = normalizeOriginalVideoAddress(address);
+      if (target >= begin && target < end) nametable[target - begin] = value;
+      address = (address + write.increment) & 0x3fff;
+    }
+  }
+}
 const verifiedRendererBins = new Map();
 const RENDERER_BIN_PATHS = new Set([
   "animation/sprite-renderer-82c6-af8d.bin",
@@ -1064,7 +1169,7 @@ function loadOriginalSpriteRendererFromBin(api) {
 }
 async function loadWasm() {
   const filename = DEBUG ? "soccer_core_cpp.wasm" : "soccer_core_cpp_production.wasm";
-  const relative = DEBUG ? "../strict-tests.ab98dc96.wasm" : "../soccer_core_cpp.477eeec5.wasm";
+  const relative = DEBUG ? "../strict-tests.29bbab4c.wasm" : "../soccer_core_cpp.cd9c9bb8.wasm";
   const response = await fetchCoreResponse(filename, assetUrl(relative), rootAssetUrl(filename));
   const bytes = await response.arrayBuffer();
   const result = await WebAssembly.instantiate(bytes, {});
@@ -1235,7 +1340,10 @@ function drawField(api, screenW, screenH, worldW = screenW, worldH = screenH, ca
     const sourceH = viewHeight * assetScale;
     if (originalFieldFullScreenActive(api)) {
       const layout = originalFullScreenLayout();
-      const fieldHeight = ORIGINAL_STATUSBAR_SPLIT_Y;
+      const fieldHeight = api.game_video_split_enabled?.()
+        && api.game_video_split_scanline
+        ? (api.game_video_split_scanline() & 0xFF) + 1
+        : ORIGINAL_STATUSBAR_SPLIT_Y;
       const clampedStatusCameraY = clamp(cameraY == null ? 0 : cameraY, 0, logicalHeight - fieldHeight);
       ctx.fillStyle = "#000";
       ctx.fillRect(0, 0, screenW, screenH);
@@ -1397,6 +1505,27 @@ function originalCommittedCamera(api, copy = false) {
     y: ((yHi() & 0xFF) << 8) | (yLo() & 0xFF),
   };
 }
+function originalCommittedVideoView(api) {
+  if (!api.game_video_view_serial || !api.game_video_view_scroll_x
+      || !api.game_video_view_scroll_y) return null;
+  const serial = api.game_video_view_serial() >>> 0;
+  if (!serial) return null;
+  return {
+    serial,
+    x: api.game_video_view_scroll_x() & 0xFFFF,
+    y: api.game_video_view_scroll_y() & 0xFFFF,
+    nametable: api.game_video_view_nametable
+      ? api.game_video_view_nametable() & 0x03 : 0,
+    banks: api.game_video_view_background_bank
+      ? [api.game_video_view_background_bank(0) & 0xFF,
+        api.game_video_view_background_bank(1) & 0xFF]
+      : [],
+    split: api.game_video_split_enabled ? api.game_video_split_enabled() !== 0 : false,
+    splitScanline: api.game_video_split_scanline
+      ? api.game_video_split_scanline() & 0xFF : 0,
+    splitKind: api.game_video_split_kind ? api.game_video_split_kind() & 0xFF : 0,
+  };
+}
 function originalPlayerPosition(api, index) {
   if (api.original_player_x_lo && api.original_player_x_hi && api.original_player_y_lo && api.original_player_y_hi) {
     return {
@@ -1462,9 +1591,13 @@ function drawOriginalControlNumberMarker(api, view, playerPosition, screenPositi
     scale,
   );
 }
-function originalMinimapStatusbarActive(api) {
-  return (api.original_screen_number?.() & 0xFF) === 0x00
-    && (api.original_statusbar_view?.() & 0x7F) === 0x06;
+function originalStatusbarSplitActive(api) {
+  if ((api.original_screen_number?.() & 0xFF) !== 0x00) return false;
+  if (api.game_video_split_enabled && api.game_video_split_kind) {
+    return api.game_video_split_enabled() !== 0
+      && (api.game_video_split_kind() & 0xFF) === 0x02;
+  }
+  return (api.original_statusbar_view?.() & 0x7F) === 0x06;
 }
 function originalFieldFullScreenActive(api) {
   return (api.original_screen_number?.() & 0xFF) === 0x00;
@@ -1475,7 +1608,7 @@ function originalStatusbarTilePalette(api, palettePair, row, column) {
   return palettePair[Math.max(0, Math.min(1, paletteIndex - 2))] || palettePair[0];
 }
 function drawOriginalMatchStatusbar(api, view) {
-  if (!view?.statusbarLayout || !originalMinimapStatusbarActive(api)) return false;
+  if (!view?.statusbarLayout || !originalStatusbarSplitActive(api)) return false;
   const layout = view.statusbarLayout;
   const scale = layout.scale;
   const statusbarApi = originalAssets.statusbar.api;
@@ -1489,9 +1622,14 @@ function drawOriginalMatchStatusbar(api, view) {
   const palettePair = palettes?.background_pairs?.[paletteNumber];
   if (!palettePair?.[0]) return false;
   const teamByte = api.original_team_number ? api.original_team_number(1) & 0xFF : 0;
-  const bank0 = teamByte & 0x40 ? 0x06 : 0x04;
-  const bank1 = 0x02;
-  const panelLogicalY = ORIGINAL_STATUSBAR_SPLIT_Y;
+  const bank0 = api.game_video_split_background_bank
+    ? api.game_video_split_background_bank(0) & 0xFF
+    : (teamByte & 0x40 ? 0x06 : 0x04);
+  const bank1 = api.game_video_split_background_bank
+    ? api.game_video_split_background_bank(1) & 0xFF : 0x02;
+  const panelLogicalY = api.game_video_split_scanline
+    ? (api.game_video_split_scanline() & 0xFF) + 1
+    : ORIGINAL_STATUSBAR_SPLIT_Y;
   for (let row = 0; row < 7; row++) {
     for (let column = 0; column < 32; column++) {
       const palette = originalStatusbarTilePalette(statusbarApi, palettePair, row, column);
@@ -1508,6 +1646,7 @@ function drawOriginalMatchStatusbar(api, view) {
       );
     }
   }
+  if ((api.original_statusbar_view?.() & 0x7F) !== 0x06) return true;
   const markers = [];
   const committedCopyCamera = originalCommittedCamera(api, true);
   const copyCameraX = committedCopyCamera?.x ?? (api.original_copy_camera_x_lo && api.original_copy_camera_x_hi
@@ -1551,6 +1690,8 @@ function drawOriginalMatchStatusbar(api, view) {
     debugTarget: "__soccerStatusbarLogicalOam",
   });
   if (DEBUG) {
+    const fieldWrites = originalAssets.logicalVideo.frameWrites
+      .filter((write) => write.source === 4);
     window.__soccerMinimap = {
       visible: true,
       view: api.original_statusbar_view() & 0xFF,
@@ -1561,8 +1702,8 @@ function drawOriginalMatchStatusbar(api, view) {
       fullHud: true,
       panel: { x: 0x60, y: panelLogicalY, width: 64, height: 48 },
       buffers: {
-        left: Array.from({ length: 31 }, (_, index) => api.original_attribute_buffer(index) & 0xFF),
-        right: Array.from({ length: 31 }, (_, index) => api.original_graphics_buffer(index) & 0xFF),
+        left: fieldWrites[0] ? Array.from(fieldWrites[0].bytes) : [],
+        right: fieldWrites[1] ? Array.from(fieldWrites[1].bytes) : [],
       },
     };
   }
@@ -2439,12 +2580,9 @@ function composeOriginalModeSelectionScreen(api) {
   if (!subPalettes) return null;
   const state = api.original_option_counter ? api.original_option_counter() & 0xff : 0;
   const option = api.original_option_number ? api.original_option_number() & 0xff : 0xff;
-  const count = api.original_attribute_buffer_count
-    ? Math.min(0x20, api.original_attribute_buffer_count() & 0xff) : 0;
-  const address = api.original_attribute_buffer_address
-    ? api.original_attribute_buffer_address() & 0x3fff : 0;
-  const patch = Array.from({ length: count }, (_, index) =>
-    api.original_attribute_buffer ? api.original_attribute_buffer(index) & 0xff : 0);
+  const videoWrite = latestOriginalLogicalVideoWrite(0);
+  const address = videoWrite?.address ?? 0;
+  const patch = videoWrite ? Array.from(videoWrite.bytes) : [];
   const packed = Array.from({ length: 10 }, (_, index) =>
     api.original_ram_046e ? api.original_ram_046e(index) & 0xff : 0);
   if (!mode.canvas) {
@@ -2453,18 +2591,8 @@ function composeOriginalModeSelectionScreen(api) {
     mode.canvas.height = 240;
     mode.context = mode.canvas.getContext("2d");
   }
-  if (!mode.nametable || state === 0 || mode.previousState === 0xff) {
-    mode.nametable = Uint8Array.from(background.stream);
-    mode.key = "";
-  }
-  if (state !== 0 && address >= 0x2000 && address < 0x2400) {
-    let offset = address - 0x2000;
-    for (const tile of patch) {
-      if (offset >= 0 && offset < mode.nametable.length) mode.nametable[offset] = tile;
-      offset++;
-    }
-  }
-  const key = `${state}:${option}:${address}:${patch.join(",")}:${packed.join(",")}`;
+  mode.nametable = originalLogicalNametable(0x2000, background.stream);
+  const key = `${state}:${option}:${originalAssets.logicalVideo.revision}:${packed.join(",")}`;
   if (key !== mode.key) {
     if (!renderOriginalDynamicBackgroundNametable(
       mode.context,
@@ -2939,19 +3067,13 @@ function composeOriginalPlayerOrderScreen(api) {
       || background.stream.length !== 0x400) return null;
   const subPalettes = originalBackgroundSubPalettes(background.palette0, background.palette1);
   if (!subPalettes) return null;
-  const attributeCount = api.original_attribute_buffer_count
-    ? Math.min(0x20, api.original_attribute_buffer_count() & 0xFF) : 0;
-  const graphicsCount = api.original_graphics_buffer_count
-    ? Math.min(0x20, api.original_graphics_buffer_count() & 0xFF) : 0;
-  const attributeAddress = api.original_attribute_buffer_address
-    ? api.original_attribute_buffer_address() & 0x3FFF : 0;
-  const graphicsAddress = api.original_graphics_buffer_address
-    ? api.original_graphics_buffer_address() & 0x3FFF : 0;
-  const attributeBytes = Array.from({ length: attributeCount }, (_, index) =>
-    api.original_attribute_buffer(index) & 0xFF);
-  const graphicsBytes = Array.from({ length: graphicsCount }, (_, index) =>
-    api.original_graphics_buffer(index) & 0xFF);
-  const key = `${attributeAddress}:${attributeBytes.join(",")}:${graphicsAddress}:${graphicsBytes.join(",")}`;
+  const attributeWrite = latestOriginalLogicalVideoWrite(0);
+  const graphicsWrite = latestOriginalLogicalVideoWrite(1);
+  const attributeAddress = attributeWrite?.address ?? 0;
+  const graphicsAddress = graphicsWrite?.address ?? 0;
+  const attributeBytes = attributeWrite ? Array.from(attributeWrite.bytes) : [];
+  const graphicsBytes = graphicsWrite ? Array.from(graphicsWrite.bytes) : [];
+  const key = `${originalAssets.logicalVideo.revision}`;
   if (order.canvas && order.key === key) return order.canvas;
   if (!order.canvas) {
     order.canvas = document.createElement("canvas");
@@ -2959,9 +3081,7 @@ function composeOriginalPlayerOrderScreen(api) {
     order.canvas.height = 240;
     order.context = order.canvas.getContext("2d");
   }
-  const nametable = Uint8Array.from(background.stream);
-  writeOriginalWeatherPreviewTiles(nametable, attributeAddress, attributeBytes);
-  writeOriginalWeatherPreviewTiles(nametable, graphicsAddress, graphicsBytes);
+  const nametable = originalLogicalNametable(0x2000, background.stream);
   if (!renderOriginalDynamicBackgroundNametable(
     order.context,
     nametable,
@@ -3201,10 +3321,10 @@ function composeOriginalPlayerProfileScreen(api) {
     ? api.original_text_effect_alt_cursor() & 0xff : 0xff;
   const textWorkspace = Array.from({ length: 14 }, (_, index) =>
     api.original_meeting_name_workspace ? api.original_meeting_name_workspace(index) & 0xff : 0);
-  const blinkAddress = api.original_attribute_buffer_address
-    ? api.original_attribute_buffer_address() & 0x3fff : 0;
-  const blinkTile = api.original_attribute_buffer ? api.original_attribute_buffer(0) & 0xff : 0xff;
-  const key = `${selected}:${effectState}:${effectStatus}:${effectScriptId}:${effectCursor}:${effectAltCursor}:${textWorkspace.join(",")}:${blinkAddress}:${blinkTile}`;
+  const blinkWrite = latestOriginalLogicalVideoWrite(0);
+  const blinkAddress = blinkWrite?.address ?? 0;
+  const blinkTile = blinkWrite?.bytes[0] ?? 0xff;
+  const key = `${selected}:${effectState}:${effectStatus}:${effectScriptId}:${effectCursor}:${effectAltCursor}:${textWorkspace.join(",")}:${originalAssets.logicalVideo.revision}`;
   if (profile.canvas && profile.key === key) return profile.canvas;
   if (!profile.canvas) {
     profile.canvas = document.createElement("canvas");
@@ -3217,6 +3337,7 @@ function composeOriginalPlayerProfileScreen(api) {
     const tile = api.player_profile_renderer_overlay_tile(0x2000 + offset) >>> 0;
     if (tile !== 0xffffffff) nametable[offset] = tile & 0xff;
   }
+  applyOriginalLogicalFrameWrites(nametable, 0x2000, 0);
   if (!renderOriginalDynamicBackgroundNametable(
     profile.context,
     nametable,
@@ -3264,17 +3385,10 @@ function composeOriginalMusicSelectionScreen(api) {
   const option = api.original_option_number ? api.original_option_number() & 0xff : 0xff;
   const hiddenNumber = api.original_option_number_05cb
     ? api.original_option_number_05cb() & 0xff : 0;
-  const bufferAddress = api.original_graphics_buffer_address
-    ? api.original_graphics_buffer_address() & 0x3fff : 0;
-  const bufferCount = api.original_graphics_buffer_count
-    ? Math.min(0x20, api.original_graphics_buffer_count() & 0xff) : 0;
-  const buffer = [];
-  if (bufferAddress >= 0x2000 && bufferAddress < 0x2400) {
-    for (let index = 0; index < bufferCount; index++) {
-      buffer.push(api.original_graphics_buffer(index) & 0xff);
-    }
-  }
-  const key = `${option}:${hiddenNumber}:${bufferAddress}:${buffer.join(",")}`;
+  const graphicsWrite = latestOriginalLogicalVideoWrite(1);
+  const bufferAddress = graphicsWrite?.address ?? 0;
+  const buffer = graphicsWrite ? Array.from(graphicsWrite.bytes) : [];
+  const key = `${option}:${hiddenNumber}:${originalAssets.logicalVideo.revision}`;
   if (music.canvas && music.key === key) return music.canvas;
   if (!music.canvas) {
     music.canvas = document.createElement("canvas");
@@ -3282,15 +3396,7 @@ function composeOriginalMusicSelectionScreen(api) {
     music.canvas.height = 240;
     music.context = music.canvas.getContext("2d");
   }
-  const nametable = Uint8Array.from(background.stream);
-  if (bufferAddress >= 0x2000 && bufferAddress < 0x2400) {
-    let address = bufferAddress;
-    for (const tile of buffer) {
-      nametable[address - 0x2000] = tile;
-      address++;
-      if (address >= 0x2400) break;
-    }
-  }
+  const nametable = originalLogicalNametable(0x2000, background.stream);
   music.context.clearRect(0, 0, 256, 240);
   music.context.imageSmoothingEnabled = false;
   renderOriginalDynamicBackgroundNametable(
@@ -3498,19 +3604,6 @@ function drawOriginalMenuScreen(api) {
   }
   drawOriginalMenuObjects(api, layout, subtype);
 }
-function applyOriginalCreditsBuffer(api, nametable, bufferName, countName, addressName) {
-  if (!api[bufferName] || !api[countName] || !api[addressName]) return "";
-  const count = Math.min(0x20, api[countName]() & 0xff);
-  const address = api[addressName]() & 0x3fff;
-  const values = [];
-  for (let index = 0; index < count; index++) {
-    const value = api[bufferName](index) & 0xff;
-    values.push(value);
-    const target = address + index;
-    if (target >= 0x2000 && target < 0x2400) nametable[target - 0x2000] = value;
-  }
-  return `${address.toString(16)}:${values.join(",")}`;
-}
 function composeOriginalCreditsBackground(api, backgroundId) {
   const credits = originalAssets.credits;
   if (!credits.base) credits.base = decodeOriginalBackgroundImageFromCpp(api, 0x1c);
@@ -3540,15 +3633,8 @@ function composeOriginalCreditsBackground(api, backgroundId) {
     };
     credits.states.set(backgroundId, state);
   }
-  const attrSignature = applyOriginalCreditsBuffer(
-    api, state.nametable, "original_attribute_buffer",
-    "original_attribute_buffer_count", "original_attribute_buffer_address",
-  );
-  const graphicsSignature = applyOriginalCreditsBuffer(
-    api, state.nametable, "original_graphics_buffer",
-    "original_graphics_buffer_count", "original_graphics_buffer_address",
-  );
-  const signature = `${attrSignature}|${graphicsSignature}`;
+  state.nametable = originalLogicalNametable(0x2000, state.nametable);
+  const signature = `${originalAssets.logicalVideo.revision}`;
   if (state.signature !== signature || !state.rendered) {
     const background = state.background;
     const subPalettes = originalBackgroundSubPalettes(background.palette0, background.palette1);
@@ -3723,10 +3809,11 @@ function render(api) {
   const bspecial = api.ball_special_timer ? api.ball_special_timer() : 0;
   const exposesOriginalCamera = api.original_camera_x_lo && api.original_camera_x_hi
     && api.original_camera_y_lo && api.original_camera_y_hi;
+  const committedVideoView = originalCommittedVideoView(api);
   const committedCamera = originalScreen === 0x00 ? originalCommittedCamera(api, false) : null;
-  const rawCameraX = committedCamera?.x ?? (exposesOriginalCamera
+  const rawCameraX = committedVideoView?.x ?? committedCamera?.x ?? (exposesOriginalCamera
     ? ((api.original_camera_x_hi() << 8) | api.original_camera_x_lo()) : 0);
-  const rawCameraY = committedCamera?.y ?? (exposesOriginalCamera
+  const rawCameraY = committedVideoView?.y ?? committedCamera?.y ?? (exposesOriginalCamera
     ? ((api.original_camera_y_hi() << 8) | api.original_camera_y_lo()) : 0);
   const cameraX = exposesOriginalCamera
     ? rawCameraX
@@ -3802,6 +3889,7 @@ function render(api) {
   }
   if (DEBUG) {
     window.__soccerView = { cameraX: view.cameraX, cameraY: view.cameraY, sourceX: view.sourceX, sourceY: view.sourceY, sourceW: view.sourceW, sourceH: view.sourceH, destX: view.destX, destY: view.destY, destW: view.destW, destH: view.destH };
+    window.__soccerVideoView = committedVideoView;
     window.__soccerObjectView = isOriginalResultScreen ? {
       cameraX: objectView.cameraX,
       cameraY: objectView.cameraY,
@@ -4093,6 +4181,7 @@ async function main() {
   document.body.dataset.backgroundRendererSource = "classified-bin-cpp";
   document.body.dataset.fieldRendererSource = "classified-bin-cpp";
   document.body.dataset.logicalOamRendererSource = "cpp-logical-oam";
+  document.body.dataset.logicalVideoRendererSource = "cpp-logical-video";
   document.body.dataset.resultRendererSource = "classified-bin-cpp";
   document.body.dataset.modeSelectionRendererSource = "classified-bin-cpp";
   document.body.dataset.opponentSelectionRendererSource = "classified-bin-cpp";
@@ -4109,6 +4198,8 @@ async function main() {
   document.body.dataset.creditsRendererSource = "classified-bin-cpp";
   wasmNesApu.bindCore(api);
   api.game_init();
+  resetOriginalLogicalVideo(api);
+  syncOriginalLogicalVideoWrites(api);
   if (!api.game_initialization_ready || api.game_initialization_ready() !== 1) {
     throw new Error("C++ game initialization refused an invalid resource catalog");
   }
@@ -4120,6 +4211,8 @@ async function main() {
       bytes: api.cpp_asset_loaded_bytes ? api.cpp_asset_loaded_bytes() : 0,
     });
     window.__soccerRender = () => render(api);
+    window.__soccerVideoViewState = () => originalCommittedVideoView(api);
+    window.__soccerStatusbarSplitActive = () => originalStatusbarSplitActive(api);
     window.__soccerCreditsBackground = (backgroundId) => {
       const id = backgroundId & 0xff;
       const canvas = composeOriginalCreditsBackground(api, id);
@@ -4184,6 +4277,36 @@ async function main() {
       loadedKeys: Array.from(originalAssets.field?.renderedKeys || []),
       source: originalAssets.field?.geometry?.source || "",
     });
+    window.__soccerLogicalVideo = () => ({
+      serial: originalAssets.logicalVideo.serial,
+      processedCount: originalAssets.logicalVideo.processedCount,
+      revision: originalAssets.logicalVideo.revision,
+      writes: originalAssets.logicalVideo.frameWrites.map((write) => ({
+        source: write.source,
+        address: write.address,
+        increment: write.increment,
+        bytes: Array.from(write.bytes),
+      })),
+    });
+    window.__soccerSyncLogicalVideo = () => syncOriginalLogicalVideoWrites(api);
+    window.__soccerResetLogicalVideo = () => resetOriginalLogicalVideo(api);
+    window.__soccerLogicalVideoByte = (address) => {
+      const target = normalizeOriginalVideoAddress(address >>> 0);
+      return originalAssets.logicalVideo.valid[target]
+        ? originalAssets.logicalVideo.bytes[target] : null;
+    };
+    window.__soccerCommitLogicalVideoNmi = () => {
+      const branch = api.debug_apply_original_nmi_screen_transfer_state();
+      syncOriginalLogicalVideoWrites(api);
+      return branch;
+    };
+    window.__soccerAdvanceLogicalTestFrame = (bits = 0) => {
+      api.debug_apply_original_nmi_screen_transfer_state();
+      syncOriginalLogicalVideoWrites(api);
+      const result = api.game_tick(bits >>> 0);
+      syncOriginalLogicalVideoWrites(api);
+      return result;
+    };
     window.__soccerConsumeTouchTapLatchSoftwareFrame = () => consumeTapLatchesAfterSoftwareFrame();
     window.__soccerSpriteFrame = (index) => {
       const frame = resolveOriginalObjectFrame(api, index);
@@ -4214,6 +4337,7 @@ async function main() {
   const advanceInputVideoFrame = () => {
     const bits = inputBits();
     const ranSoftwareFrame = advanceVideoFrame(bits);
+    syncOriginalLogicalVideoWrites(api);
     runtimeLifecycle.videoFramesAdvanced += 1;
     wasmNesApu.advanceFrame();
     if (wasmNesApu.claimsAudio) {
@@ -4236,6 +4360,8 @@ async function main() {
     }
     if (resetRequested) {
       api.game_init();
+      resetOriginalLogicalVideo(api);
+      syncOriginalLogicalVideoWrites(api);
       wasmNesApu.reset();
       resetRequested = false;
     }

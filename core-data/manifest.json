@@ -2000,6 +2000,48 @@
       ]
     },
     {
+      "path": "field/goal-overlay-center-f328-f33a.bin",
+      "category": "field",
+      "source": "src/bank_FF.asm:F328",
+      "bank": "07",
+      "address": "0xF328",
+      "symbol": "tbl_F328/tbl_F331",
+      "layout": "two nine-byte center goal-overlay vertical tile streams",
+      "length": 18,
+      "sha256": "376f1f67821c163cfecea5092ebe0b6f571c469b980eef30d8083189e8d9901e",
+      "source_ranges": [
+        {
+          "bank": "07",
+          "start": "0xF328",
+          "length": 18
+        }
+      ],
+      "consumers": [
+        "wasm-game/cpp-core/src/screens/nmi_transfer.cpp"
+      ]
+    },
+    {
+      "path": "field/goal-overlay-side-f248-f2ac.bin",
+      "category": "field",
+      "source": "src/bank_FF.asm:F248",
+      "bank": "07",
+      "address": "0xF248",
+      "symbol": "tbl_F248/tbl_F24C/off_F250..off_F295",
+      "layout": "two goal-side pointer tables followed by four 23-byte vertical tile streams",
+      "length": 100,
+      "sha256": "cf6a5de133334c57e0b61a6effcb90e555b40a6d533a8d960eabf3339b7a313d",
+      "source_ranges": [
+        {
+          "bank": "07",
+          "start": "0xF248",
+          "length": 100
+        }
+      ],
+      "consumers": [
+        "wasm-game/cpp-core/src/screens/nmi_transfer.cpp"
+      ]
+    },
+    {
       "path": "field/goal-particles-dddb-de0b.bin",
       "category": "field",
       "source": "src/bank_FF.asm:DDDB",
@@ -2018,6 +2060,48 @@
       ],
       "consumers": [
         "wasm-game/cpp-core/src/screens/weather_nmi.cpp"
+      ]
+    },
+    {
+      "path": "field/statusbar-view-pointers-e219-e227.bin",
+      "category": "field",
+      "source": "src/bank_FF.asm:E219",
+      "bank": "07",
+      "address": "0xE219",
+      "symbol": "tbl_E219",
+      "layout": "seven little-endian pointers selecting the NMI statusbar view records",
+      "length": 14,
+      "sha256": "4d759fa16eaf1e0b98aa5f02cfedeb711ab2eb4a8f869dc149e3682bc8c92f95",
+      "source_ranges": [
+        {
+          "bank": "07",
+          "start": "0xE219",
+          "length": 14
+        }
+      ],
+      "consumers": [
+        "wasm-game/cpp-core/src/screens/nmi_transfer.cpp"
+      ]
+    },
+    {
+      "path": "field/statusbar-view-tiles-e227-e3d9.bin",
+      "category": "field",
+      "source": "src/bank_FF.asm:E227",
+      "bank": "07",
+      "address": "0xE227",
+      "symbol": "off_E227_00..off_E39B_06",
+      "layout": "seven contiguous 62-byte statusbar nametable view records",
+      "length": 434,
+      "sha256": "3c3df19b9501a2430738c2885ebd1857e22901085ea78f5e0ec864e5fbc77b06",
+      "source_ranges": [
+        {
+          "bank": "07",
+          "start": "0xE227",
+          "length": 434
+        }
+      ],
+      "consumers": [
+        "wasm-game/cpp-core/src/screens/nmi_transfer.cpp"
       ]
     },
     {
@@ -4021,8 +4105,7 @@
         }
       ],
       "consumers": [
-        "wasm-game/cpp-core/src/screens/result_renderer.cpp",
-        "wasm-game/cpp-core/src/screens/result_supporters.cpp"
+        "wasm-game/cpp-core/src/screens/result_renderer.cpp"
       ]
     },
     {
