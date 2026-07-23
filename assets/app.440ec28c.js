@@ -1169,7 +1169,7 @@ function loadOriginalSpriteRendererFromBin(api) {
 }
 async function loadWasm() {
   const filename = DEBUG ? "soccer_core_cpp.wasm" : "soccer_core_cpp_production.wasm";
-  const relative = DEBUG ? "../strict-tests.29bbab4c.wasm" : "../soccer_core_cpp.cd9c9bb8.wasm";
+  const relative = DEBUG ? "../strict-tests.812bc743.wasm" : "../soccer_core_cpp.edb86ba5.wasm";
   const response = await fetchCoreResponse(filename, assetUrl(relative), rootAssetUrl(filename));
   const bytes = await response.arrayBuffer();
   const result = await WebAssembly.instantiate(bytes, {});
@@ -2494,7 +2494,7 @@ function composeOriginalBracketScreen(api) {
   const backgroundId = api.original_background_image_id
     ? api.original_background_image_id() & 0xff : 0;
   if (backgroundId !== 0x15 || !api.bracket_renderer_overlay_tile
-      || !api.original_ram_054b) return null;
+      || !api.tournament_bracket_slot) return null;
   if (!bracket.background) {
     bracket.background = decodeOriginalBackgroundImageFromCpp(api, backgroundId);
   }
@@ -2503,8 +2503,8 @@ function composeOriginalBracketScreen(api) {
       || background.stream.length !== 0x400) return null;
   const subPalettes = originalBackgroundSubPalettes(background.palette0, background.palette1);
   if (!subPalettes) return null;
-  const round = api.original_ram_054a ? api.original_ram_054a() & 0xff : 0;
-  const slots = Array.from({ length: 10 }, (_, index) => api.original_ram_054b(index) & 0xff);
+  const round = api.tournament_bracket_stage ? api.tournament_bracket_stage() & 0xff : 0;
+  const slots = Array.from({ length: 10 }, (_, index) => api.tournament_bracket_slot(index) & 0xff);
   const teams = [0, 1].map((side) => api.original_team_number ? api.original_team_number(side) & 0xff : 0);
   const key = `${round}:${slots.join(",")}:${teams.join(",")}`;
   if (bracket.canvas && bracket.key === key) return bracket.canvas;
@@ -2584,7 +2584,7 @@ function composeOriginalModeSelectionScreen(api) {
   const address = videoWrite?.address ?? 0;
   const patch = videoWrite ? Array.from(videoWrite.bytes) : [];
   const packed = Array.from({ length: 10 }, (_, index) =>
-    api.original_ram_046e ? api.original_ram_046e(index) & 0xff : 0);
+    api.tournament_persistent_byte ? api.tournament_persistent_byte(index) & 0xff : 0);
   if (!mode.canvas) {
     mode.canvas = document.createElement("canvas");
     mode.canvas.width = 256;
@@ -2709,7 +2709,7 @@ function composeOriginalFormationControlScreen(api) {
   const state = api.original_option_counter ? api.original_option_counter() & 0xFF : 0;
   const selectedFormation = api.original_team_formation
     ? api.original_team_formation(side) & 0x03 : 0;
-  const config = api.original_ram_05d3 ? api.original_ram_05d3(side) & 0xFF : 0;
+  const config = api.team_tactical_instruction ? api.team_tactical_instruction(side) & 0xFF : 0;
   const playerNumbers = Array.from({ length: 6 }, (_, slot) => api.original_player_number
     ? api.original_player_number(slot * 2 + side) & 0xFF : slot);
   const assignmentSlot = api.original_option_number_05cb
@@ -2997,12 +2997,12 @@ function composeOriginalOpponentSelectionScreen(api) {
   const statuses = Array.from({ length: 12 }, (_, index) =>
     api.original_team_status_053e ? api.original_team_status_053e(index) & 0xff : 0);
   const values = [
-    api.original_ram_0558 ? api.original_ram_0558() & 0xff : 0,
-    api.original_ram_0557 ? api.original_ram_0557() & 0xff : 0,
-    api.original_ram_0555 ? api.original_ram_0555() & 0xff : 0,
+    api.tournament_win_count ? api.tournament_win_count() & 0xff : 0,
+    api.tournament_loss_count ? api.tournament_loss_count() & 0xff : 0,
+    api.tournament_progress_score ? api.tournament_progress_score() & 0xff : 0,
   ];
   const packed = Array.from({ length: 10 }, (_, index) =>
-    api.original_ram_046e ? api.original_ram_046e(index) & 0xff : 0);
+    api.tournament_persistent_byte ? api.tournament_persistent_byte(index) & 0xff : 0);
   const option = api.original_option_number ? api.original_option_number() & 0xff : 0xff;
   const key = `${statuses.join(",")}:${values.join(",")}:${packed.join(",")}:${option}`;
   if (opponent.canvas && opponent.key === key) return opponent.canvas;
@@ -3191,12 +3191,12 @@ function composeOriginalTournamentRecordScreen(api) {
   const statuses = Array.from({ length: 12 }, (_, index) =>
     api.original_team_status_053e ? api.original_team_status_053e(index) & 0xff : 0);
   const values = [
-    api.original_ram_0558 ? api.original_ram_0558() & 0xff : 0,
-    api.original_ram_0557 ? api.original_ram_0557() & 0xff : 0,
-    api.original_ram_0555 ? api.original_ram_0555() & 0xff : 0,
+    api.tournament_win_count ? api.tournament_win_count() & 0xff : 0,
+    api.tournament_loss_count ? api.tournament_loss_count() & 0xff : 0,
+    api.tournament_progress_score ? api.tournament_progress_score() & 0xff : 0,
   ];
   const packed = Array.from({ length: 10 }, (_, index) =>
-    api.original_ram_046e ? api.original_ram_046e(index) & 0xff : 0);
+    api.tournament_persistent_byte ? api.tournament_persistent_byte(index) & 0xff : 0);
   const key = `${statuses.join(",")}:${values.join(",")}:${packed.join(",")}`;
   if (record.canvas && record.key === key) return record.canvas;
   if (!record.canvas) {
