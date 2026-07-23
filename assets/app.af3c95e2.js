@@ -1169,7 +1169,7 @@ function loadOriginalSpriteRendererFromBin(api) {
 }
 async function loadWasm() {
   const filename = DEBUG ? "soccer_core_cpp.wasm" : "soccer_core_cpp_production.wasm";
-  const relative = DEBUG ? "../strict-tests.e26e6523.wasm" : "../soccer_core_cpp.ae69592e.wasm";
+  const relative = DEBUG ? "../strict-tests.99602603.wasm" : "../soccer_core_cpp.533bd9b8.wasm";
   const response = await fetchCoreResponse(filename, assetUrl(relative), rootAssetUrl(filename));
   const bytes = await response.arrayBuffer();
   const result = await WebAssembly.instantiate(bytes, {});
@@ -4034,19 +4034,11 @@ function render(api) {
   const originalOwner = api.original_ball_owner ? api.original_ball_owner() : 0;
   const roleInfo = api.player_role_speed ? `${api.player_role_speed(controlled)}/${api.player_role_power(controlled)}/${api.player_role_stamina(controlled)}/${api.player_role_tackle(controlled)}/${api.player_role_keeper(controlled)}` : "0";
   const playerOrig = api.original_player_motion ? `${api.original_player_motion(controlled).toString(16).padStart(2, "0")}/${api.original_player_action(controlled).toString(16).padStart(2, "0")}/${api.original_player_state(controlled).toString(16).padStart(2, "0")}` : "??/??/??";
-  const playerDispatch = api.original_player_current_motion_dispatch_addr ? api.original_player_current_motion_dispatch_addr(controlled).toString(16).padStart(4, "0") : "????";
-  const playerMainDispatch = api.original_player_current_main_motion_dispatch_addr ? api.original_player_current_main_motion_dispatch_addr(controlled).toString(16).padStart(4, "0") : "????";
-  const playerAnimDispatch = api.original_player_current_animation_script_addr
-    ? api.original_player_current_animation_script_addr(controlled).toString(16).padStart(4, "0")
-    : (api.original_player_current_animation_script_dispatch_addr ? api.original_player_current_animation_script_dispatch_addr(controlled).toString(16).padStart(4, "0") : "????");
   const playerRam = api.original_player_x_lo
     ? `${api.original_player_x_hi(controlled).toString(16).padStart(2, "0")}${api.original_player_x_lo(controlled).toString(16).padStart(2, "0")}/${api.original_player_y_hi(controlled).toString(16).padStart(2, "0")}${api.original_player_y_lo(controlled).toString(16).padStart(2, "0")}/${api.original_player_z_hi(controlled).toString(16).padStart(2, "0")}${api.original_player_z_lo(controlled).toString(16).padStart(2, "0")}`
     : "????/????/????";
   const script = api.original_game_script ? api.original_game_script().toString(16).padStart(2, "0") : "??";
   const ballObj = api.original_ball_object_id ? api.original_ball_object_id().toString(16).padStart(2, "0") : "??";
-  const ballDispatch = api.original_ball_current_motion_dispatch_addr
-    ? api.original_ball_current_motion_dispatch_addr().toString(16).padStart(4, "0")
-    : "????";
   const ballRam = api.original_ball_x_lo
     ? `${api.original_ball_x_hi().toString(16).padStart(2, "0")}${api.original_ball_x_lo().toString(16).padStart(2, "0")}/${api.original_ball_y_hi().toString(16).padStart(2, "0")}${api.original_ball_y_lo().toString(16).padStart(2, "0")}/${api.original_ball_z_hi().toString(16).padStart(2, "0")}${api.original_ball_z_lo().toString(16).padStart(2, "0")}`
     : "????/????/????";
@@ -4063,7 +4055,7 @@ function render(api) {
   const btnPress = api.debug_original_button_ram ? api.debug_original_button_ram(0, 0x08).toString(16).padStart(2, "0") : "??";
   if (DEBUG) {
     stats.hidden = false;
-    stats.textContent = `build=${BUILD_ID} phase=${phase} input=$${touch.lastBits.toString(16).padStart(2, "0")} stick=${touch.axisX}/${touch.axisY} btn=${btnHold}/${btnPress} script=$${script} period=${period} swap=${swapped} cpu=${cpuTeam} menu=${menuTeam} wins=${wins} weather=${weather} wind=${wind} score=${api.score_left()}-${api.score_right()} time=${api.match_seconds_left()} tick=${api.game_tick_count()} players=${count} role=${roleInfo} pOrig=${playerOrig}@${playerDispatch}/${playerMainDispatch}/${playerAnimDispatch} pRam=${playerRam} ballObj=$${ballObj}@${ballDispatch} ballRam=${ballRam} ballState=${ballState} ballAnim=${ballAnim} ballSpeed=${ballSpeedRam} owner=${originalOwner} camera=${cameraX.toString(16)}/${cameraY.toString(16)} ball=(${bx},${by},z=${bz}) act=${action}`;
+    stats.textContent = `build=${BUILD_ID} phase=${phase} input=$${touch.lastBits.toString(16).padStart(2, "0")} stick=${touch.axisX}/${touch.axisY} btn=${btnHold}/${btnPress} script=$${script} period=${period} swap=${swapped} cpu=${cpuTeam} menu=${menuTeam} wins=${wins} weather=${weather} wind=${wind} score=${api.score_left()}-${api.score_right()} time=${api.match_seconds_left()} tick=${api.game_tick_count()} players=${count} role=${roleInfo} pOrig=${playerOrig} pRam=${playerRam} ballObj=$${ballObj} ballRam=${ballRam} ballState=${ballState} ballAnim=${ballAnim} ballSpeed=${ballSpeedRam} owner=${originalOwner} camera=${cameraX.toString(16)}/${cameraY.toString(16)} ball=(${bx},${by},z=${bz}) act=${action}`;
   }
 }
 async function main() {
