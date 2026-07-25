@@ -1192,7 +1192,7 @@ function loadOriginalSpriteRendererFromBin(api) {
 }
 async function loadWasm() {
   const filename = DEBUG ? "soccer_core_cpp.wasm" : "soccer_core_cpp_production.wasm";
-  const relative = DEBUG ? "../strict-tests.c6514e9f.wasm" : "../soccer_core_cpp.2c4c053b.wasm";
+  const relative = DEBUG ? "../strict-tests.997c6ab1.wasm" : "../soccer_core_cpp.054efc93.wasm";
   const response = await fetchCoreResponse(filename, assetUrl(relative), rootAssetUrl(filename));
   const bytes = await response.arrayBuffer();
   const result = await WebAssembly.instantiate(bytes, {});
@@ -2498,8 +2498,7 @@ function composeOriginalMatchSettingsScreen(api) {
   }
   const background = settings.background;
   if (!background || background.destination !== 0x2000
-      || background.stream.length < 0x800
-      || !api.match_settings_renderer_overlay_tile) return null;
+      || background.stream.length < 0x800) return null;
   const subPalettes = originalBackgroundSubPalettes(
     background.palette0, background.palette1,
   );
@@ -2509,7 +2508,8 @@ function composeOriginalMatchSettingsScreen(api) {
   const rainWind = api.original_rain_wind_option ? api.original_rain_wind_option() & 0xff : 0;
   const storm = api.original_lightning_tornado_direction
     ? api.original_lightning_tornado_direction() & 0xff : 0;
-  const key = `${continent}:${surfaceWetness}:${rainWind}:${storm}`;
+  const logicalRevision = originalAssets.logicalVideo.revision;
+  const key = `${logicalRevision}:${continent}:${surfaceWetness}:${rainWind}:${storm}`;
   if (settings.canvas && settings.key === key) return settings.canvas;
   if (!settings.canvas) {
     settings.canvas = document.createElement("canvas");
@@ -2524,16 +2524,9 @@ function composeOriginalMatchSettingsScreen(api) {
     });
   }
   const nametables = [
-    Uint8Array.from(background.stream.slice(0, 0x400)),
-    Uint8Array.from(background.stream.slice(0x400, 0x800)),
+    originalLogicalNametable(0x2000, background.stream.slice(0, 0x400)),
+    originalLogicalNametable(0x2800, background.stream.slice(0x400, 0x800)),
   ];
-  for (let page = 0; page < 2; page++) {
-    const ppuBase = page === 0 ? 0x2000 : 0x2800;
-    for (let offset = 0; offset < 0x400; offset++) {
-      const tile = api.match_settings_renderer_overlay_tile(ppuBase + offset) >>> 0;
-      if (tile !== 0xffffffff) nametables[page][offset] = tile & 0xff;
-    }
-  }
   settings.context.clearRect(0, 0, 256, 480);
   settings.context.imageSmoothingEnabled = false;
   for (let page = 0; page < 2; page++) {
@@ -3435,13 +3428,20 @@ function drawOriginalMenuScreen(api) {
         };
         if (subtype === 0x06) {
           const background = originalAssets.matchSettings.background;
-          rendererState.source = "classified-bin-cpp";
+          rendererState.source = "logical-video-cpp";
           rendererState.destination = background?.destination ?? 0;
           rendererState.chr0 = background?.chr0 ?? 0;
           rendererState.chr1 = background?.chr1 ?? 0;
           rendererState.paletteNumbers = background
             ? [background.palette0, background.palette1] : [];
           rendererState.mirroring = background?.mirroring ?? 0;
+          rendererState.logicalRevision = originalAssets.logicalVideo.revision;
+          rendererState.writes = originalAssets.logicalVideo.frameWrites.map((write) => ({
+            source: write.source,
+            address: write.address,
+            increment: write.increment,
+            bytes: Array.from(write.bytes),
+          }));
           rendererState.nametables = originalAssets.matchSettings.nametables
             ? originalAssets.matchSettings.nametables.map((table) => Array.from(table))
             : [];
@@ -3970,7 +3970,7 @@ async function main() {
   document.body.dataset.playerCountPreviewRendererSource = "logical-video-cpp";
   document.body.dataset.playerOrderRendererSource = "classified-bin-cpp";
   document.body.dataset.bracketRendererSource = "logical-video-cpp";
-  document.body.dataset.matchSettingsRendererSource = "classified-bin-cpp";
+  document.body.dataset.matchSettingsRendererSource = "logical-video-cpp";
   document.body.dataset.formationControlRendererSource = "classified-bin-cpp";
   document.body.dataset.weatherPreviewRendererSource = "logical-video-cpp";
   document.body.dataset.tournamentRecordRendererSource = "logical-video-cpp";

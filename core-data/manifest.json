@@ -3300,8 +3300,7 @@
         }
       ],
       "consumers": [
-        "wasm-game/cpp-core/src/screens/match_settings_renderer.cpp",
-        "wasm-game/cpp-core/src/screens/menu_settings.cpp"
+        "wasm-game/cpp-core/src/screens/match_settings_renderer.cpp"
       ]
     },
     {
@@ -3322,7 +3321,6 @@
         }
       ],
       "consumers": [
-        "wasm-game/cpp-core/src/screens/match_settings_renderer.cpp",
         "wasm-game/cpp-core/src/screens/menu_settings.cpp"
       ]
     },
