@@ -1188,7 +1188,7 @@ function loadOriginalSpriteRendererFromBin(api) {
 }
 async function loadWasm() {
   const filename = DEBUG ? "soccer_core_cpp.wasm" : "soccer_core_cpp_production.wasm";
-  const relative = DEBUG ? "../strict-tests.f4d04fd7.wasm" : "../soccer_core_cpp.04c6bd9d.wasm";
+  const relative = DEBUG ? "../strict-tests.e1737c58.wasm" : "../soccer_core_cpp.968ef853.wasm";
   const response = await fetchCoreResponse(filename, assetUrl(relative), rootAssetUrl(filename));
   const bytes = await response.arrayBuffer();
   const result = await WebAssembly.instantiate(bytes, {});
@@ -2858,18 +2858,8 @@ function composeOriginalOpponentSelectionScreen(api) {
     opponent.context = opponent.canvas.getContext("2d");
   }
   const nametable = originalLogicalNametable(0x2000, background.stream);
-  let highlightAddress = 0;
-  let highlightBytes = [];
-  if ((option & 0x80) === 0) {
-    const attributePairs = [0xAA, 0xFA, 0xAF, 0xFA, 0xAF, 0xAA, 0xFF, 0xAA];
-    const row = option & 3;
-    highlightAddress = 0x23C8 + row * 8;
-    highlightBytes = [
-      ...Array(8).fill(attributePairs[row * 2]),
-      ...Array(8).fill(attributePairs[row * 2 + 1]),
-    ];
-    writeOriginalWeatherPreviewTiles(nametable, highlightAddress, highlightBytes);
-  }
+  const attributeWrite = latestOriginalLogicalVideoWrite(0);
+  const graphicsWrite = latestOriginalLogicalVideoWrite(1);
   if (!renderOriginalDynamicBackgroundNametable(
     opponent.context,
     nametable,
@@ -2883,8 +2873,8 @@ function composeOriginalOpponentSelectionScreen(api) {
       option,
       logicalRevision,
       recordWrite: latestOriginalLogicalVideoWrite(VIDEO_WRITE_TOURNAMENT_RECORD),
-      highlightAddress,
-      highlightBytes: [...highlightBytes],
+      attributeWrite,
+      graphicsWrite,
       backgroundId: background.imageId,
       destination: background.destination,
       chr0: background.chr0,
