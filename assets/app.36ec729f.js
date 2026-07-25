@@ -272,9 +272,6 @@ const originalAssets = {
     context: null,
     key: "",
   },
-  statusbar: {
-    api: null,
-  },
   result: {
     backgrounds: new Map(),
     canvas: null,
@@ -1195,7 +1192,7 @@ function loadOriginalSpriteRendererFromBin(api) {
 }
 async function loadWasm() {
   const filename = DEBUG ? "soccer_core_cpp.wasm" : "soccer_core_cpp_production.wasm";
-  const relative = DEBUG ? "../strict-tests.ce555275.wasm" : "../soccer_core_cpp.b4021f08.wasm";
+  const relative = DEBUG ? "../strict-tests.f8edd56b.wasm" : "../soccer_core_cpp.9bd31840.wasm";
   const response = await fetchCoreResponse(filename, assetUrl(relative), rootAssetUrl(filename));
   const bytes = await response.arrayBuffer();
   const result = await WebAssembly.instantiate(bytes, {});
@@ -1628,20 +1625,21 @@ function originalStatusbarSplitActive(api) {
 function originalFieldFullScreenActive(api) {
   return (api.original_screen_number?.() & 0xFF) === 0x00;
 }
-function originalStatusbarTilePalette(api, palettePair, row, column) {
-  const paletteIndex = api.statusbar_renderer_palette_index(row, column) >>> 0;
-  if (paletteIndex > 3) return palettePair[0];
+function originalStatusbarTilePalette(nametable, palettePair, row, column) {
+  const attributeRow = Math.min(1, Math.floor(row / 4));
+  const attribute = nametable[0x3E0 + attributeRow * 8 + Math.floor(column / 4)];
+  const shift = Math.floor((row & 3) / 2) * 4
+    + Math.floor((column & 3) / 2) * 2;
+  const paletteIndex = (attribute >> shift) & 3;
   return palettePair[Math.max(0, Math.min(1, paletteIndex - 2))] || palettePair[0];
 }
 function drawOriginalMatchStatusbar(api, view) {
   if (!view?.statusbarLayout || !originalStatusbarSplitActive(api)) return false;
   const layout = view.statusbarLayout;
   const scale = layout.scale;
-  const statusbarApi = originalAssets.statusbar.api;
-  if (!statusbarApi?.statusbar_renderer_composed_tile
-      || !statusbarApi?.statusbar_renderer_palette_index
-      || statusbarApi.statusbar_renderer_tile_width() !== 32
-      || statusbarApi.statusbar_renderer_tile_height() !== 7) return false;
+  const statusbarAddress = normalizeOriginalVideoAddress(0x2A00);
+  if (!originalAssets.logicalVideo.valid[statusbarAddress]) return false;
+  const statusbarNametable = originalLogicalNametable(0x2800);
   const palettes = originalAssets.sprite.palettes;
   const paletteNumber = api.original_background_palette_number
     ? api.original_background_palette_number(1) & 0xFF : 0x29;
@@ -1658,9 +1656,9 @@ function drawOriginalMatchStatusbar(api, view) {
     : ORIGINAL_STATUSBAR_SPLIT_Y;
   for (let row = 0; row < 7; row++) {
     for (let column = 0; column < 32; column++) {
-      const palette = originalStatusbarTilePalette(statusbarApi, palettePair, row, column);
-      const tileId = statusbarApi.statusbar_renderer_composed_tile(row, column) >>> 0;
-      if (tileId > 0xFF) continue;
+      const palette = originalStatusbarTilePalette(
+        statusbarNametable, palettePair, row, column);
+      const tileId = statusbarNametable[0x200 + row * 32 + column];
       const tile = originalBackgroundTile(bank0, bank1, tileId, palette);
       if (!tile) continue;
       ctx.drawImage(
@@ -3953,8 +3951,7 @@ async function main() {
   originalAssets.sprite.manifest = spriteManifest;
   originalAssets.sprite.patternApi = api;
   originalAssets.sprite.palettes = palettes;
-  originalAssets.statusbar.api = api;
-  document.body.dataset.statusbarRendererSource = "classified-bin-cpp";
+  document.body.dataset.statusbarRendererSource = "logical-video-cpp";
   document.body.dataset.splashRendererSource = "classified-bin-cpp";
   document.body.dataset.backgroundRendererSource = "classified-bin-cpp";
   document.body.dataset.fieldRendererSource = "classified-bin-cpp";
