@@ -160,14 +160,19 @@ const runtimeLifecycle = {
   resetClock: null,
 };
 let wakeLockSentinel = null;
+const VIDEO_WRITE_BACKGROUND_UPLOAD = 3;
+const VIDEO_WRITE_RESULT_SUPPORTER = 12;
+const VIDEO_WRITE_RESULT_STATIC = 13;
 const originalAssets = {
   field: null,
   logicalVideo: {
     bytes: new Uint8Array(0x4000),
     valid: new Uint8Array(0x4000),
+    sources: new Uint8Array(0x4000).fill(0xFF),
     serial: null,
     processedCount: 0,
     revision: 0,
+    backgroundRevision: 0,
     frameWrites: [],
     lastWriteBySource: new Map(),
   },
@@ -267,12 +272,7 @@ const originalAssets = {
     canvas: null,
     context: null,
     key: "",
-    appliedUpdates: 0,
-    mode: 0,
-    supporterFrame: 0,
-    supporterPpuLo: 0x18,
-    supporterPpuHi: 0x24,
-    supporterSubframe: 0,
+    logicalRevision: null,
     tileCache: new Map(),
   },
   sprite: {
@@ -297,9 +297,11 @@ function resetOriginalLogicalVideo(api = null) {
   const video = originalAssets.logicalVideo;
   video.bytes.fill(0);
   video.valid.fill(0);
+  video.sources.fill(0xFF);
   video.serial = api?.game_video_write_serial
     ? api.game_video_write_serial() >>> 0 : null;
   video.processedCount = 0;
+  video.backgroundRevision = 0;
   video.frameWrites = [];
   video.lastWriteBySource.clear();
   video.revision += 1;
@@ -325,6 +327,19 @@ function syncOriginalLogicalVideoWrites(api) {
     const size = Math.min(0x2000, api.game_video_write_size(command) >>> 0);
     if (source > 0xff || rawAddress > 0x3fff
         || (increment !== 1 && increment !== 32)) continue;
+    if (source === VIDEO_WRITE_BACKGROUND_UPLOAD) {
+      for (let target = 0; target < video.sources.length; target += 1) {
+        if (video.sources[target] === VIDEO_WRITE_RESULT_SUPPORTER
+            || video.sources[target] === VIDEO_WRITE_RESULT_STATIC) {
+          video.bytes[target] = 0;
+          video.valid[target] = 0;
+          video.sources[target] = 0xFF;
+        }
+      }
+      video.lastWriteBySource.delete(VIDEO_WRITE_RESULT_SUPPORTER);
+      video.lastWriteBySource.delete(VIDEO_WRITE_RESULT_STATIC);
+      video.backgroundRevision += 1;
+    }
     const bytes = new Uint8Array(size);
     let address = rawAddress;
     for (let index = 0; index < size; index += 1) {
@@ -334,6 +349,7 @@ function syncOriginalLogicalVideoWrites(api) {
       const target = normalizeOriginalVideoAddress(address);
       video.bytes[target] = value;
       video.valid[target] = 1;
+      video.sources[target] = source;
       address = (address + increment) & 0x3fff;
     }
     const write = { source, address: rawAddress, increment, bytes };
@@ -1169,7 +1185,7 @@ function loadOriginalSpriteRendererFromBin(api) {
 }
 async function loadWasm() {
   const filename = DEBUG ? "soccer_core_cpp.wasm" : "soccer_core_cpp_production.wasm";
-  const relative = DEBUG ? "../strict-tests.f579ca9f.wasm" : "../soccer_core_cpp.62b69d30.wasm";
+  const relative = DEBUG ? "../strict-tests.739b9361.wasm" : "../soccer_core_cpp.63f86193.wasm";
   const response = await fetchCoreResponse(filename, assetUrl(relative), rootAssetUrl(filename));
   const bytes = await response.arrayBuffer();
   const result = await WebAssembly.instantiate(bytes, {});
@@ -2244,161 +2260,14 @@ function writeOriginalResultTiles(resultContext, screenMeta, ppuAddress, tiles, 
     );
   }
 }
-function drawOriginalResultLargeDigit(resultContext, screenMeta, ppuAddress, digitTiles) {
-  for (let column = 0; column < 4; column++) {
-    for (let row = 0; row < 6; row++) {
-      drawOriginalResultTile(
-        resultContext,
-        screenMeta,
-        ppuAddress + column + row * 0x20,
-        digitTiles[column * 6 + row],
-      );
-    }
-  }
-}
-function drawOriginalResultNamesAndScore(api, resultContext, screenMeta) {
-  if (!api.result_renderer_team_name_tile
-      || !api.result_renderer_score_digit_tile
-      || !api.result_renderer_half_time_name_tile
-      || !api.result_renderer_team_name_ppu_address
-      || !api.result_renderer_score_ppu_address) return;
-  const subtype = api.original_screen_subtype ? api.original_screen_subtype() & 0x7F : 0;
-  if (subtype === 0x08) {
-    for (let row = 0; row < 2; row++) {
-      const tiles = Array.from({ length: 8 }, (_, index) =>
-        api.result_renderer_half_time_name_tile(row, index) & 0xFF);
-      writeOriginalResultTiles(resultContext, screenMeta, 0x24CC + row * 0x20, tiles);
-    }
-  } else {
-    for (let side = 0; side < 2; side++) {
-      const team = api.original_team_number ? api.original_team_number(side) & 0x0F : 0;
-      const tiles = Array.from({ length: 8 }, (_, index) =>
-        api.result_renderer_team_name_tile(team, index) & 0xFF);
-      const address = api.result_renderer_team_name_ppu_address(side) & 0x3FFF;
-      writeOriginalResultTiles(resultContext, screenMeta, address, tiles);
-      writeOriginalResultTiles(
-        resultContext,
-        screenMeta,
-        address + 0x20,
-        tiles.map((tile) => tile === 0x35 ? 0x35 : (tile + 0x10) & 0xFF),
-      );
-    }
-  }
-  const scores = [api.score_left ? api.score_left() : 0, api.score_right ? api.score_right() : 0];
-  for (let side = 0; side < 2; side++) {
-    const score = clamp(scores[side], 0, 99);
-    if (score < 10) {
-      const tiles = Array.from({ length: 24 }, (_, index) =>
-        api.result_renderer_score_digit_tile(score, index) & 0xFF);
-      drawOriginalResultLargeDigit(
-        resultContext,
-        screenMeta,
-        api.result_renderer_score_ppu_address(side, 0) & 0x3FFF,
-        tiles,
-      );
-    } else {
-      const tens = Math.floor(score / 10);
-      const ones = score % 10;
-      drawOriginalResultLargeDigit(
-        resultContext,
-        screenMeta,
-        api.result_renderer_score_ppu_address(side, 1) & 0x3FFF,
-        Array.from({ length: 24 }, (_, index) =>
-          api.result_renderer_score_digit_tile(tens, index) & 0xFF),
-      );
-      drawOriginalResultLargeDigit(
-        resultContext,
-        screenMeta,
-        api.result_renderer_score_ppu_address(side, 2) & 0x3FFF,
-        Array.from({ length: 24 }, (_, index) =>
-          api.result_renderer_score_digit_tile(ones, index) & 0xFF),
-      );
-    }
-  }
-  writeOriginalResultTiles(resultContext, screenMeta, 0x256F, [0x36, 0x46], 0x20);
-  writeOriginalResultTiles(resultContext, screenMeta, 0x2570, [0x36, 0x46], 0x20);
-}
-function drawOriginalResultWetnessRows(api, resultContext, screenMeta) {
-  if (!api.original_result_wetness_pattern_tile) return;
-  const wetness = api.original_surface_wetness ? api.original_surface_wetness() & 0x0F : 0;
-  const selectedWetness = Math.min(wetness, 2);
-  const pattern = Array.from({ length: 6 }, (_, index) =>
-    api.original_result_wetness_pattern_tile(selectedWetness, index) & 0xFF);
-  for (const base of [0x2300, 0x2700]) {
-    for (let column = 0; column < 0x20; column++) {
-      writeOriginalResultTiles(resultContext, screenMeta, base + column, pattern, 0x20);
-    }
-  }
-}
-function applyOriginalResultSupporterUpdate(resultContext, screenMeta) {
-  const result = originalAssets.result;
-  if (result.mode === 0) return;
-  if (result.mode === 1) {
-    do {
-      const group = result.supporterSubframe & 1;
-      const frame = result.supporterFrame;
-      if (!api.original_result_supporter_scroll_tile) return;
-      const strip = Array.from({ length: 18 }, (_, index) =>
-        api.original_result_supporter_scroll_tile(group, frame, index) & 0xFF);
-      const count = result.supporterPpuHi === 0x24
-        && result.supporterPpuLo >= 0x04 && result.supporterPpuLo < 0x1C ? 4 : 18;
-      writeOriginalResultTiles(
-        resultContext,
-        screenMeta,
-        (result.supporterPpuHi << 8) | result.supporterPpuLo,
-        strip.slice(0, count),
-        0x20,
-      );
-      result.supporterFrame = (result.supporterFrame + 1) & 0xFF;
-      result.supporterPpuLo = (result.supporterPpuLo + 1) & 0xFF;
-    } while ((result.supporterPpuLo & 1) !== 0);
-    if (result.supporterPpuLo >= 0x20) {
-      result.supporterPpuLo = 0;
-      result.supporterPpuHi = result.supporterPpuHi === 0x20 ? 0x24 : 0x20;
-    }
-    if (result.supporterFrame >= 0x12) {
-      result.supporterFrame = 0;
-      result.supporterSubframe = (result.supporterSubframe + 1) & 0xFF;
-      if (result.supporterPpuLo >= 0x14) {
-        result.supporterPpuLo = (result.supporterPpuLo - 0x14) & 0xFF;
-      } else {
-        result.supporterPpuLo = ((result.supporterPpuLo - 0x14) & 0xFF) & 0x1F;
-        result.supporterPpuHi = result.supporterPpuHi === 0x20 ? 0x24 : 0x20;
-      }
-    }
-    return;
-  }
-  const frame = result.supporterFrame;
-  if (!api.result_renderer_supporter_patch_ppu_address
-      || !api.result_renderer_supporter_patch_tile) return;
-  const tiles = Array.from({ length: 16 }, (_, index) =>
-    api.result_renderer_supporter_patch_tile(result.mode, index) & 0xFF);
-  for (let index = 0; index < 8; index++) {
-    const address = api.result_renderer_supporter_patch_ppu_address(
-      frame & 0x7F, index) & 0x3FFF;
-    const ppuLo = address & 0xFF;
-    let tileOffset = frame & 0x80 ? 8 : 0;
-    if ((((ppuLo >> 5) ^ ppuLo) & 0x02) !== 0) tileOffset += 4;
-    writeOriginalResultTiles(resultContext, screenMeta, address, tiles.slice(tileOffset, tileOffset + 2));
-    writeOriginalResultTiles(resultContext, screenMeta, address + 0x20, tiles.slice(tileOffset + 2, tileOffset + 4));
-  }
-  result.supporterFrame = (result.supporterFrame + 1) & 0xFF;
-  if ((result.supporterFrame & 0x7F) >= 0x0D) result.supporterFrame &= 0x80;
-  result.supporterFrame ^= 0x80;
-}
 function composeOriginalResultBackground(api, backgroundId) {
   const result = originalAssets.result;
+  const logicalVideo = originalAssets.logicalVideo;
   const screenMeta = originalResultScreenMetaFromCpp(api, backgroundId);
   const baseImage = composeOriginalStaticBackground(api, backgroundId);
   if (!baseImage || !screenMeta) return baseImage;
-  const teams = [0, 1].map((side) => api.original_team_number ? api.original_team_number(side) & 0x0F : 0);
-  const scores = [api.score_left ? api.score_left() : 0, api.score_right ? api.score_right() : 0];
-  const wetness = api.original_surface_wetness ? api.original_surface_wetness() & 0xFF : 0;
-  const subtype = api.original_screen_subtype ? api.original_screen_subtype() & 0x7F : 0;
-  const mode = api.original_footprint_ppu_lo ? api.original_footprint_ppu_lo() & 0xFF : 0;
-  const key = `${backgroundId}/${teams.join("/")}/${scores.join("/")}/${wetness}/${subtype}/${mode}`;
-  const targetUpdates = api.original_cutscene_timer ? api.original_cutscene_timer() & 0xFF : 0;
-  if (result.key !== key || targetUpdates < result.appliedUpdates) {
+  const key = `${backgroundId & 0xFF}/${logicalVideo.backgroundRevision}`;
+  if (result.key !== key || !result.canvas) {
     const resultCanvas = document.createElement("canvas");
     resultCanvas.width = 0x200;
     resultCanvas.height = 0xF0;
@@ -2412,28 +2281,35 @@ function composeOriginalResultBackground(api, backgroundId) {
     result.canvas = resultCanvas;
     result.context = resultContext;
     result.key = key;
-    result.appliedUpdates = 0;
-    result.mode = mode;
-    result.supporterFrame = 0;
-    result.supporterPpuLo = 0x18;
-    result.supporterPpuHi = 0x24;
-    result.supporterSubframe = 0;
-    drawOriginalResultNamesAndScore(api, resultContext, screenMeta);
-    drawOriginalResultWetnessRows(api, resultContext, screenMeta);
+    result.logicalRevision = null;
   }
-  while (result.appliedUpdates < targetUpdates) {
-    applyOriginalResultSupporterUpdate(result.context, screenMeta);
-    result.appliedUpdates++;
+  if (result.logicalRevision !== logicalVideo.revision) {
+    for (let address = 0x2000; address < 0x3000; address += 1) {
+      const normalized = normalizeOriginalVideoAddress(address);
+      const source = logicalVideo.sources[normalized];
+      if (logicalVideo.valid[normalized]
+          && (source === VIDEO_WRITE_RESULT_SUPPORTER
+              || source === VIDEO_WRITE_RESULT_STATIC)) {
+        drawOriginalResultTile(
+          result.context, screenMeta, address, logicalVideo.bytes[normalized]);
+      }
+    }
+    result.logicalRevision = logicalVideo.revision;
   }
   if (DEBUG) {
     window.__soccerResultRenderer = {
       backgroundId,
-      mode: result.mode,
-      updates: result.appliedUpdates,
-      frame: result.supporterFrame,
-      ppuLo: result.supporterPpuLo,
-      ppuHi: result.supporterPpuHi,
-      subframe: result.supporterSubframe,
+      logicalRevision: result.logicalRevision,
+      backgroundRevision: logicalVideo.backgroundRevision,
+      writes: logicalVideo.frameWrites
+        .filter((write) => write.source === VIDEO_WRITE_RESULT_SUPPORTER
+          || write.source === VIDEO_WRITE_RESULT_STATIC)
+        .map((write) => ({
+          source: write.source,
+          address: write.address,
+          increment: write.increment,
+          size: write.bytes.length,
+        })),
     };
   }
   return result.canvas;
