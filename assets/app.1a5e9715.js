@@ -318,7 +318,7 @@ function syncOriginalLogicalVideoWrites(api) {
       || !api.game_video_write_byte) return 0;
   const video = originalAssets.logicalVideo;
   const serial = api.game_video_write_serial() >>> 0;
-  const count = Math.min(0x40, api.game_video_write_count() >>> 0);
+  const count = Math.min(0x80, api.game_video_write_count() >>> 0);
   if (video.serial !== serial || count < video.processedCount) {
     video.serial = serial;
     video.processedCount = 0;
@@ -1192,7 +1192,7 @@ function loadOriginalSpriteRendererFromBin(api) {
 }
 async function loadWasm() {
   const filename = DEBUG ? "soccer_core_cpp.wasm" : "soccer_core_cpp_production.wasm";
-  const relative = DEBUG ? "../strict-tests.f8edd56b.wasm" : "../soccer_core_cpp.9bd31840.wasm";
+  const relative = DEBUG ? "../strict-tests.c6514e9f.wasm" : "../soccer_core_cpp.2c4c053b.wasm";
   const response = await fetchCoreResponse(filename, assetUrl(relative), rootAssetUrl(filename));
   const bytes = await response.arrayBuffer();
   const result = await WebAssembly.instantiate(bytes, {});
@@ -2358,10 +2358,10 @@ function drawOriginalMenuObjects(api, layout, subtype) {
 }
 function composeOriginalBracketScreen(api) {
   const bracket = originalAssets.bracket;
+  const logicalVideo = originalAssets.logicalVideo;
   const backgroundId = api.original_background_image_id
     ? api.original_background_image_id() & 0xff : 0;
-  if (backgroundId !== 0x15 || !api.bracket_renderer_overlay_tile
-      || !api.tournament_bracket_slot) return null;
+  if (backgroundId !== 0x15) return null;
   if (!bracket.background) {
     bracket.background = decodeOriginalBackgroundImageFromCpp(api, backgroundId);
   }
@@ -2370,10 +2370,7 @@ function composeOriginalBracketScreen(api) {
       || background.stream.length !== 0x400) return null;
   const subPalettes = originalBackgroundSubPalettes(background.palette0, background.palette1);
   if (!subPalettes) return null;
-  const round = api.tournament_bracket_stage ? api.tournament_bracket_stage() & 0xff : 0;
-  const slots = Array.from({ length: 10 }, (_, index) => api.tournament_bracket_slot(index) & 0xff);
-  const teams = [0, 1].map((side) => api.original_team_number ? api.original_team_number(side) & 0xff : 0);
-  const key = `${round}:${slots.join(",")}:${teams.join(",")}`;
+  const key = `${logicalVideo.revision}`;
   if (bracket.canvas && bracket.key === key) return bracket.canvas;
   if (!bracket.canvas) {
     bracket.canvas = document.createElement("canvas");
@@ -2381,11 +2378,7 @@ function composeOriginalBracketScreen(api) {
     bracket.canvas.height = 240;
     bracket.context = bracket.canvas.getContext("2d");
   }
-  const nametable = Uint8Array.from(background.stream);
-  for (let offset = 0; offset < 0x400; offset++) {
-    const tile = api.bracket_renderer_overlay_tile(0x2000 + offset) >>> 0;
-    if (tile !== 0xffffffff) nametable[offset] = tile & 0xff;
-  }
+  const nametable = originalLogicalNametable(0x2000, background.stream);
   if (!renderOriginalDynamicBackgroundNametable(
     bracket.context,
     nametable,
@@ -2395,7 +2388,14 @@ function composeOriginalBracketScreen(api) {
   )) return null;
   bracket.key = key;
   if (DEBUG) {
+    const round = api.tournament_bracket_stage
+      ? api.tournament_bracket_stage() & 0xff : 0;
+    const slots = Array.from({ length: 10 }, (_, index) =>
+      api.tournament_bracket_slot ? api.tournament_bracket_slot(index) & 0xff : 0);
+    const teams = [0, 1].map((side) => api.original_team_number
+      ? api.original_team_number(side) & 0xff : 0);
     window.__soccerBracketRenderer = {
+      source: "logical-video-cpp",
       backgroundId,
       destination: background.destination,
       chr0: background.chr0,
@@ -2405,6 +2405,12 @@ function composeOriginalBracketScreen(api) {
       round,
       slots: [...slots],
       teams: [...teams],
+      logicalRevision: logicalVideo.revision,
+      writes: logicalVideo.frameWrites
+        .filter(({ source }) => source >= 0 && source <= 2)
+        .map(({ source, address, increment, bytes }) => ({
+          source, address, increment, bytes: Array.from(bytes),
+        })),
       key,
       nametable: Array.from(nametable),
     };
@@ -3963,7 +3969,7 @@ async function main() {
   document.body.dataset.teamPreviewRendererSource = "logical-video-cpp";
   document.body.dataset.playerCountPreviewRendererSource = "logical-video-cpp";
   document.body.dataset.playerOrderRendererSource = "classified-bin-cpp";
-  document.body.dataset.bracketRendererSource = "classified-bin-cpp";
+  document.body.dataset.bracketRendererSource = "logical-video-cpp";
   document.body.dataset.matchSettingsRendererSource = "classified-bin-cpp";
   document.body.dataset.formationControlRendererSource = "classified-bin-cpp";
   document.body.dataset.weatherPreviewRendererSource = "logical-video-cpp";
