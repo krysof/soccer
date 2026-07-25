@@ -1195,7 +1195,7 @@ function loadOriginalSpriteRendererFromBin(api) {
 }
 async function loadWasm() {
   const filename = DEBUG ? "soccer_core_cpp.wasm" : "soccer_core_cpp_production.wasm";
-  const relative = DEBUG ? "../strict-tests.37d28ce2.wasm" : "../soccer_core_cpp.4ca9cb73.wasm";
+  const relative = DEBUG ? "../strict-tests.ce555275.wasm" : "../soccer_core_cpp.b4021f08.wasm";
   const response = await fetchCoreResponse(filename, assetUrl(relative), rootAssetUrl(filename));
   const bytes = await response.arrayBuffer();
   const result = await WebAssembly.instantiate(bytes, {});
@@ -2641,7 +2641,7 @@ function composeOriginalFormationControlScreen(api) {
   formation.key = key;
   return formation.canvas;
 }
-function writeOriginalWeatherPreviewTiles(nametable, address, tiles) {
+function writeOriginalNametableTiles(nametable, address, tiles) {
   let offset = (address - 0x2000) & 0x03ff;
   for (const tile of tiles || []) {
     if (offset >= 0 && offset < nametable.length) nametable[offset] = tile & 0xff;
@@ -2655,20 +2655,13 @@ function composeOriginalWeatherPreviewScreen(api) {
   }
   const background = weather.background;
   if (!background || background.destination !== 0x2000
-      || background.stream.length !== 0x400
-      || !api.weather_preview_renderer_continent_selector
-      || !api.weather_preview_renderer_condition_selector
-      || !api.weather_preview_renderer_overlay_tile) return null;
+      || background.stream.length !== 0x400) return null;
   const subPalettes = originalBackgroundSubPalettes(
     background.palette0, background.palette1,
   );
   if (!subPalettes) return null;
-  const continentPatchIndex = api.weather_preview_renderer_continent_selector() & 0xff;
-  const conditionIndex = api.weather_preview_renderer_condition_selector() & 0xff;
-  const rainWind = api.original_rain_wind_option ? api.original_rain_wind_option() & 0xff : 0;
-  const storm = api.original_lightning_tornado_direction
-    ? api.original_lightning_tornado_direction() & 0xff : 0;
-  const key = `${continentPatchIndex}:${conditionIndex}:${rainWind}:${storm}`;
+  const logicalVideo = originalAssets.logicalVideo;
+  const key = `${logicalVideo.revision}`;
   if (weather.canvas && weather.key === key) return weather.canvas;
   if (!weather.canvas) {
     weather.canvas = document.createElement("canvas");
@@ -2676,11 +2669,7 @@ function composeOriginalWeatherPreviewScreen(api) {
     weather.canvas.height = 240;
     weather.context = weather.canvas.getContext("2d");
   }
-  const nametable = Uint8Array.from(background.stream);
-  for (let offset = 0; offset < 0x400; offset++) {
-    const tile = api.weather_preview_renderer_overlay_tile(0x2000 + offset) >>> 0;
-    if (tile !== 0xffffffff) nametable[offset] = tile & 0xff;
-  }
+  const nametable = originalLogicalNametable(0x2000, background.stream);
   if (!renderOriginalDynamicBackgroundNametable(
     weather.context,
     nametable,
@@ -2693,17 +2682,20 @@ function composeOriginalWeatherPreviewScreen(api) {
   if (DEBUG) {
     window.__soccerWeatherPreviewRenderer = {
       subtype: 0x08,
-      source: "classified-bin-cpp",
+      source: "logical-video-cpp",
       backgroundId: background.imageId,
       destination: background.destination,
       chr0: background.chr0,
       chr1: background.chr1,
       paletteNumbers: [background.palette0, background.palette1],
       mirroring: background.mirroring,
-      continentPatchIndex,
-      conditionIndex,
-      windOffset: (rainWind & 0x70) >> 1,
-      storm,
+      logicalRevision: logicalVideo.revision,
+      writes: logicalVideo.frameWrites.map((write) => ({
+        source: write.source,
+        address: write.address,
+        increment: write.increment,
+        bytes: Array.from(write.bytes),
+      })),
       key,
       nametable: Array.from(nametable),
     };
@@ -3156,8 +3148,8 @@ function originalPlayerProfileDoubleHeightTiles(values, textEffect = false) {
 }
 function writeOriginalPlayerProfileDoubleHeightRow(nametable, address, values, textEffect = false) {
   const converted = originalPlayerProfileDoubleHeightTiles(values, textEffect);
-  writeOriginalWeatherPreviewTiles(nametable, address, converted.top);
-  writeOriginalWeatherPreviewTiles(nametable, address + 0x20, converted.bottom);
+  writeOriginalNametableTiles(nametable, address, converted.top);
+  writeOriginalNametableTiles(nametable, address + 0x20, converted.bottom);
 }
 function replayOriginalTextEffect(
   nametable, script, effectCursor, effectStatus, effectAltCursor, workspace, startAddress,
@@ -3977,7 +3969,7 @@ async function main() {
   document.body.dataset.bracketRendererSource = "classified-bin-cpp";
   document.body.dataset.matchSettingsRendererSource = "classified-bin-cpp";
   document.body.dataset.formationControlRendererSource = "classified-bin-cpp";
-  document.body.dataset.weatherPreviewRendererSource = "classified-bin-cpp";
+  document.body.dataset.weatherPreviewRendererSource = "logical-video-cpp";
   document.body.dataset.tournamentRecordRendererSource = "logical-video-cpp";
   document.body.dataset.playerProfileRendererSource = "classified-bin-cpp";
   document.body.dataset.musicSelectionRendererSource = "classified-bin-cpp";

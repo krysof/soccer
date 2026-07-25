@@ -4509,7 +4509,7 @@
         }
       ],
       "consumers": [
-        "soccer::screens::team_preview_overlay_tile",
+        "soccer::screens::emit_team_preview_logical_video",
         "wasm-game/cpp-core/src/screens/team_preview_renderer.cpp"
       ]
     },
@@ -4578,7 +4578,7 @@
         }
       ],
       "consumers": [
-        "soccer::screens::team_preview_overlay_tile",
+        "soccer::screens::emit_team_preview_logical_video",
         "wasm-game/cpp-core/src/screens/team_preview_renderer.cpp"
       ]
     },
@@ -4745,7 +4745,27 @@
         }
       ],
       "consumers": [
-        "wasm-game/cpp-core/src/screens/menu_weather.cpp",
+        "wasm-game/cpp-core/src/screens/weather_preview_renderer.cpp"
+      ]
+    },
+    {
+      "path": "menu/weather-preview-condition-copy-table-bf55-bf65.bin",
+      "category": "menu",
+      "source": "src/bank_05.asm:BF55",
+      "bank": "05",
+      "address": "0xBF55",
+      "symbol": "tbl_BF55",
+      "layout": "eight little-endian CHR source offsets for 18x3 weather-condition records",
+      "length": 16,
+      "sha256": "2f7b2fbf84e65f28b5ce69dc9f1c60d4be8e2b1fe49d5abfd80519d9f53eb5c6",
+      "source_ranges": [
+        {
+          "bank": "05",
+          "start": "0xBF55",
+          "length": 16
+        }
+      ],
+      "consumers": [
         "wasm-game/cpp-core/src/screens/weather_preview_renderer.cpp"
       ]
     },
@@ -4772,7 +4792,28 @@
         }
       ],
       "consumers": [
-        "soccer::screens::weather_preview_overlay_tile",
+        "soccer::screens::emit_weather_preview_logical_video",
+        "wasm-game/cpp-core/src/screens/weather_preview_renderer.cpp"
+      ]
+    },
+    {
+      "path": "menu/weather-preview-continent-copy-table-bfa2-bfca.bin",
+      "category": "menu",
+      "source": "src/bank_05.asm:BFA2",
+      "bank": "05",
+      "address": "0xBFA2",
+      "symbol": "tbl_BFA2",
+      "layout": "twenty little-endian CHR source offsets for 14x2 continent/team headings",
+      "length": 40,
+      "sha256": "b56d19b55c0a35c0a5ebd2350c81cbc3fa7ea94fca2f05fe04ff33e6f7d57797",
+      "source_ranges": [
+        {
+          "bank": "05",
+          "start": "0xBFA2",
+          "length": 40
+        }
+      ],
+      "consumers": [
         "wasm-game/cpp-core/src/screens/weather_preview_renderer.cpp"
       ]
     },
@@ -4799,7 +4840,7 @@
         }
       ],
       "consumers": [
-        "soccer::screens::weather_preview_overlay_tile",
+        "soccer::screens::emit_weather_preview_logical_video",
         "wasm-game/cpp-core/src/screens/weather_preview_renderer.cpp"
       ]
     },
