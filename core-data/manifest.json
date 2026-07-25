@@ -4623,8 +4623,7 @@
         }
       ],
       "consumers": [
-        "wasm-game/cpp-core/src/screens/tournament.cpp",
-        "wasm-game/cpp-core/src/screens/tournament_record_renderer.cpp"
+        "wasm-game/cpp-core/src/screens/tournament.cpp"
       ]
     },
     {

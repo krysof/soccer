@@ -163,6 +163,7 @@ let wakeLockSentinel = null;
 const VIDEO_WRITE_BACKGROUND_UPLOAD = 3;
 const VIDEO_WRITE_RESULT_SUPPORTER = 12;
 const VIDEO_WRITE_RESULT_STATIC = 13;
+const VIDEO_WRITE_TOURNAMENT_RECORD = 14;
 const originalAssets = {
   field: null,
   logicalVideo: {
@@ -330,7 +331,8 @@ function syncOriginalLogicalVideoWrites(api) {
     if (source === VIDEO_WRITE_BACKGROUND_UPLOAD) {
       for (let target = 0; target < video.sources.length; target += 1) {
         if (video.sources[target] === VIDEO_WRITE_RESULT_SUPPORTER
-            || video.sources[target] === VIDEO_WRITE_RESULT_STATIC) {
+            || video.sources[target] === VIDEO_WRITE_RESULT_STATIC
+            || video.sources[target] === VIDEO_WRITE_TOURNAMENT_RECORD) {
           video.bytes[target] = 0;
           video.valid[target] = 0;
           video.sources[target] = 0xFF;
@@ -338,6 +340,7 @@ function syncOriginalLogicalVideoWrites(api) {
       }
       video.lastWriteBySource.delete(VIDEO_WRITE_RESULT_SUPPORTER);
       video.lastWriteBySource.delete(VIDEO_WRITE_RESULT_STATIC);
+      video.lastWriteBySource.delete(VIDEO_WRITE_TOURNAMENT_RECORD);
       video.backgroundRevision += 1;
     }
     const bytes = new Uint8Array(size);
@@ -1185,7 +1188,7 @@ function loadOriginalSpriteRendererFromBin(api) {
 }
 async function loadWasm() {
   const filename = DEBUG ? "soccer_core_cpp.wasm" : "soccer_core_cpp_production.wasm";
-  const relative = DEBUG ? "../strict-tests.739b9361.wasm" : "../soccer_core_cpp.63f86193.wasm";
+  const relative = DEBUG ? "../strict-tests.f4d04fd7.wasm" : "../soccer_core_cpp.04c6bd9d.wasm";
   const response = await fetchCoreResponse(filename, assetUrl(relative), rootAssetUrl(filename));
   const bytes = await response.arrayBuffer();
   const result = await WebAssembly.instantiate(bytes, {});
@@ -2700,14 +2703,6 @@ function composeOriginalWeatherPreviewScreen(api) {
   }
   return weather.canvas;
 }
-function applyOriginalTournamentRecordOverlay(api, nametable) {
-  if (!api.tournament_record_renderer_overlay_tile) return false;
-  for (let offset = 0; offset < 0x400; offset++) {
-    const tile = api.tournament_record_renderer_overlay_tile(0x2000 + offset) >>> 0;
-    if (tile !== 0xffffffff) nametable[offset] = tile & 0xff;
-  }
-  return true;
-}
 function decodeOriginalBackgroundImageFromCpp(api, imageId) {
   if (!api.background_renderer_decode_image
       || !api.background_renderer_stream_byte
@@ -2849,21 +2844,12 @@ function composeOriginalOpponentSelectionScreen(api) {
   }
   const background = opponent.background;
   if (!background || background.destination !== 0x2000
-      || background.stream.length !== 0x400
-      || !api.tournament_record_renderer_overlay_tile) return null;
+      || background.stream.length !== 0x400) return null;
   const subPalettes = originalBackgroundSubPalettes(background.palette0, background.palette1);
   if (!subPalettes) return null;
-  const statuses = Array.from({ length: 12 }, (_, index) =>
-    api.original_team_status_053e ? api.original_team_status_053e(index) & 0xff : 0);
-  const values = [
-    api.tournament_win_count ? api.tournament_win_count() & 0xff : 0,
-    api.tournament_loss_count ? api.tournament_loss_count() & 0xff : 0,
-    api.tournament_progress_score ? api.tournament_progress_score() & 0xff : 0,
-  ];
-  const packed = Array.from({ length: 10 }, (_, index) =>
-    api.tournament_persistent_byte ? api.tournament_persistent_byte(index) & 0xff : 0);
   const option = api.original_option_number ? api.original_option_number() & 0xff : 0xff;
-  const key = `${statuses.join(",")}:${values.join(",")}:${packed.join(",")}:${option}`;
+  const logicalRevision = originalAssets.logicalVideo.revision;
+  const key = `${logicalRevision}:${option}`;
   if (opponent.canvas && opponent.key === key) return opponent.canvas;
   if (!opponent.canvas) {
     opponent.canvas = document.createElement("canvas");
@@ -2871,8 +2857,7 @@ function composeOriginalOpponentSelectionScreen(api) {
     opponent.canvas.height = 240;
     opponent.context = opponent.canvas.getContext("2d");
   }
-  const nametable = Uint8Array.from(background.stream);
-  applyOriginalTournamentRecordOverlay(api, nametable);
+  const nametable = originalLogicalNametable(0x2000, background.stream);
   let highlightAddress = 0;
   let highlightBytes = [];
   if ((option & 0x80) === 0) {
@@ -2896,9 +2881,8 @@ function composeOriginalOpponentSelectionScreen(api) {
   if (DEBUG) {
     window.__soccerOpponentSelectionRenderer = {
       option,
-      statuses,
-      values,
-      packed,
+      logicalRevision,
+      recordWrite: latestOriginalLogicalVideoWrite(VIDEO_WRITE_TOURNAMENT_RECORD),
       highlightAddress,
       highlightBytes: [...highlightBytes],
       backgroundId: background.imageId,
@@ -3038,7 +3022,7 @@ function composeOriginalTournamentRecordScreen(api) {
   const record = originalAssets.tournamentRecord;
   const backgroundId = api.original_background_image_id
     ? api.original_background_image_id() & 0xff : 0;
-  if (backgroundId !== 0x0d || !api.tournament_record_renderer_overlay_tile) return null;
+  if (backgroundId !== 0x0d) return null;
   if (!record.background) {
     record.background = decodeOriginalBackgroundImageFromCpp(api, backgroundId);
   }
@@ -3047,16 +3031,8 @@ function composeOriginalTournamentRecordScreen(api) {
       || background.stream.length !== 0x400) return null;
   const subPalettes = originalBackgroundSubPalettes(background.palette0, background.palette1);
   if (!subPalettes) return null;
-  const statuses = Array.from({ length: 12 }, (_, index) =>
-    api.original_team_status_053e ? api.original_team_status_053e(index) & 0xff : 0);
-  const values = [
-    api.tournament_win_count ? api.tournament_win_count() & 0xff : 0,
-    api.tournament_loss_count ? api.tournament_loss_count() & 0xff : 0,
-    api.tournament_progress_score ? api.tournament_progress_score() & 0xff : 0,
-  ];
-  const packed = Array.from({ length: 10 }, (_, index) =>
-    api.tournament_persistent_byte ? api.tournament_persistent_byte(index) & 0xff : 0);
-  const key = `${statuses.join(",")}:${values.join(",")}:${packed.join(",")}`;
+  const logicalRevision = originalAssets.logicalVideo.revision;
+  const key = `${logicalRevision}`;
   if (record.canvas && record.key === key) return record.canvas;
   if (!record.canvas) {
     record.canvas = document.createElement("canvas");
@@ -3064,8 +3040,7 @@ function composeOriginalTournamentRecordScreen(api) {
     record.canvas.height = 240;
     record.context = record.canvas.getContext("2d");
   }
-  const nametable = Uint8Array.from(background.stream);
-  applyOriginalTournamentRecordOverlay(api, nametable);
+  const nametable = originalLogicalNametable(0x2000, background.stream);
   if (!renderOriginalDynamicBackgroundNametable(
     record.context,
     nametable,
@@ -3083,9 +3058,9 @@ function composeOriginalTournamentRecordScreen(api) {
       chr1: background.chr1,
       paletteNumbers: [background.palette0, background.palette1],
       mirroring: background.mirroring,
-      statuses,
-      values,
-      packed,
+      logicalRevision,
+      recordWrite: latestOriginalLogicalVideoWrite(VIDEO_WRITE_TOURNAMENT_RECORD),
+      packedRowWrite: latestOriginalLogicalVideoWrite(0),
       key,
       nametable: Array.from(nametable),
     };
@@ -3965,7 +3940,7 @@ async function main() {
   document.body.dataset.matchSettingsRendererSource = "classified-bin-cpp";
   document.body.dataset.formationControlRendererSource = "classified-bin-cpp";
   document.body.dataset.weatherPreviewRendererSource = "classified-bin-cpp";
-  document.body.dataset.tournamentRecordRendererSource = "classified-bin-cpp";
+  document.body.dataset.tournamentRecordRendererSource = "logical-video-cpp";
   document.body.dataset.playerProfileRendererSource = "classified-bin-cpp";
   document.body.dataset.musicSelectionRendererSource = "classified-bin-cpp";
   document.body.dataset.meetingSecretRendererSource = "classified-bin-cpp";
