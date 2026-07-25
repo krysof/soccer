@@ -314,7 +314,7 @@ function syncOriginalLogicalVideoWrites(api) {
       || !api.game_video_write_byte) return 0;
   const video = originalAssets.logicalVideo;
   const serial = api.game_video_write_serial() >>> 0;
-  const count = Math.min(0x20, api.game_video_write_count() >>> 0);
+  const count = Math.min(0x40, api.game_video_write_count() >>> 0);
   if (video.serial !== serial || count < video.processedCount) {
     video.serial = serial;
     video.processedCount = 0;
@@ -1188,7 +1188,7 @@ function loadOriginalSpriteRendererFromBin(api) {
 }
 async function loadWasm() {
   const filename = DEBUG ? "soccer_core_cpp.wasm" : "soccer_core_cpp_production.wasm";
-  const relative = DEBUG ? "../strict-tests.e1737c58.wasm" : "../soccer_core_cpp.968ef853.wasm";
+  const relative = DEBUG ? "../strict-tests.26120af2.wasm" : "../soccer_core_cpp.3e0112ee.wasm";
   const response = await fetchCoreResponse(filename, assetUrl(relative), rootAssetUrl(filename));
   const bytes = await response.arrayBuffer();
   const result = await WebAssembly.instantiate(bytes, {});
@@ -3252,8 +3252,6 @@ function composeOriginalMusicSelectionScreen(api) {
 }
 function composeOriginalMeetingSecretScreen(api, backgroundId) {
   const meeting = originalAssets.meetingSecret;
-  if (!api.meeting_secret_renderer_overlay_tile
-      || !api.meeting_secret_renderer_signature) return null;
   if (!meeting.backgrounds.has(backgroundId)) {
     meeting.backgrounds.set(
       backgroundId,
@@ -3268,25 +3266,7 @@ function composeOriginalMeetingSecretScreen(api, backgroundId) {
     background.palette1,
   );
   if (!subPalettes) return null;
-  const state = api.original_option_counter ? api.original_option_counter() & 0xff : 0;
-  const option = api.original_option_number ? api.original_option_number() & 0xff : 0xff;
-  const selected = api.original_selected_player_number
-    ? api.original_selected_player_number() & 0xff : 0;
-  const firstRosterOption = api.original_meeting_first_roster_option
-    ? api.original_meeting_first_roster_option() & 0xff : 0;
-  const effectState = api.original_text_effect_state ? api.original_text_effect_state() & 0xff : 0;
-  const effectStatus = api.original_text_effect_status ? api.original_text_effect_status() & 0xff : 0;
-  const effectScriptId = api.original_text_effect_script_id
-    ? api.original_text_effect_script_id() & 0xff : 0;
-  const effectCursor = api.original_text_effect_cursor ? api.original_text_effect_cursor() & 0xffff : 0;
-  const effectAltCursor = api.original_text_effect_alt_cursor
-    ? api.original_text_effect_alt_cursor() & 0xff : 0xff;
-  const textWorkspace = Array.from({ length: 14 }, (_, index) =>
-    api.original_meeting_name_workspace ? api.original_meeting_name_workspace(index) & 0xff : 0);
-  const meetingPlayerData = Array.from({ length: 12 }, (_, index) =>
-    api.original_meeting_player_data ? api.original_meeting_player_data(index) & 0xff : 0);
-  const signature = api.meeting_secret_renderer_signature() >>> 0;
-  const key = `${backgroundId}:${signature}`;
+  const key = `${backgroundId}:${originalAssets.logicalVideo.revision}`;
   if (meeting.canvas && meeting.key === key) return meeting.canvas;
   if (!meeting.canvas) {
     meeting.canvas = document.createElement("canvas");
@@ -3294,11 +3274,7 @@ function composeOriginalMeetingSecretScreen(api, backgroundId) {
     meeting.canvas.height = 240;
     meeting.context = meeting.canvas.getContext("2d");
   }
-  const nametable = Uint8Array.from(background.stream);
-  for (let offset = 0; offset < 0x400; offset++) {
-    const tile = api.meeting_secret_renderer_overlay_tile(0x2000 + offset) >>> 0;
-    if (tile !== 0xffffffff) nametable[offset] = tile & 0xff;
-  }
+  const nametable = originalLogicalNametable(0x2000, background.stream);
   if (!renderOriginalDynamicBackgroundNametable(
     meeting.context,
     nametable,
@@ -3317,18 +3293,11 @@ function composeOriginalMeetingSecretScreen(api, backgroundId) {
       chr1: background.chr1,
       paletteNumbers: [background.palette0, background.palette1],
       mirroring: background.mirroring,
-      state,
-      option,
-      selected,
-      firstRosterOption,
-      effectState,
-      effectStatus,
-      effectScriptId,
-      effectCursor,
-      effectAltCursor,
-      textWorkspace,
-      meetingPlayerData,
-      signature,
+      logicalRevision: originalAssets.logicalVideo.revision,
+      writes: originalAssets.logicalVideo.frameWrites
+        .map(({ source, address, increment, bytes }) => ({
+          source, address, increment, bytes: Array.from(bytes),
+        })),
       key,
       nametable: Array.from(nametable),
     };
@@ -3933,7 +3902,7 @@ async function main() {
   document.body.dataset.tournamentRecordRendererSource = "logical-video-cpp";
   document.body.dataset.playerProfileRendererSource = "classified-bin-cpp";
   document.body.dataset.musicSelectionRendererSource = "classified-bin-cpp";
-  document.body.dataset.meetingSecretRendererSource = "classified-bin-cpp";
+  document.body.dataset.meetingSecretRendererSource = "logical-video-cpp";
   document.body.dataset.creditsRendererSource = "classified-bin-cpp";
   wasmNesApu.bindCore(api);
   api.game_init();
