@@ -164,6 +164,7 @@ const VIDEO_WRITE_BACKGROUND_UPLOAD = 3;
 const VIDEO_WRITE_RESULT_SUPPORTER = 12;
 const VIDEO_WRITE_RESULT_STATIC = 13;
 const VIDEO_WRITE_TOURNAMENT_RECORD = 14;
+const VIDEO_WRITE_MENU_CHR_COPY = 15;
 const originalAssets = {
   field: null,
   logicalVideo: {
@@ -194,6 +195,12 @@ const originalAssets = {
     key: "",
   },
   teamPreview: {
+    background: null,
+    canvas: null,
+    context: null,
+    key: "",
+  },
+  playerCountPreview: {
     background: null,
     canvas: null,
     context: null,
@@ -1188,7 +1195,7 @@ function loadOriginalSpriteRendererFromBin(api) {
 }
 async function loadWasm() {
   const filename = DEBUG ? "soccer_core_cpp.wasm" : "soccer_core_cpp_production.wasm";
-  const relative = DEBUG ? "../strict-tests.26120af2.wasm" : "../soccer_core_cpp.3e0112ee.wasm";
+  const relative = DEBUG ? "../strict-tests.37d28ce2.wasm" : "../soccer_core_cpp.4ca9cb73.wasm";
   const response = await fetchCoreResponse(filename, assetUrl(relative), rootAssetUrl(filename));
   const bytes = await response.arrayBuffer();
   const result = await WebAssembly.instantiate(bytes, {});
@@ -2943,9 +2950,10 @@ function composeOriginalPlayerOrderScreen(api) {
 }
 function composeOriginalTeamPreviewScreen(api) {
   const preview = originalAssets.teamPreview;
+  const logicalVideo = originalAssets.logicalVideo;
   const backgroundId = api.original_background_image_id
     ? api.original_background_image_id() & 0xFF : 0;
-  if (backgroundId !== 0x0B || !api.team_preview_renderer_overlay_tile) return null;
+  if (backgroundId !== 0x0B) return null;
   if (!preview.background) {
     preview.background = decodeOriginalBackgroundImageFromCpp(api, backgroundId);
   }
@@ -2965,7 +2973,8 @@ function composeOriginalTeamPreviewScreen(api) {
     : (slot === 0 ? background.palette0 : background.palette1));
   const subPalettes = originalBackgroundSubPalettes(paletteNumbers[0], paletteNumbers[1]);
   if (!subPalettes) return null;
-  const key = `${teams.join(",")}:${continent}:${bank0}:${bank1}:${paletteNumbers.join(",")}`;
+  const key = `${teams.join(",")}:${continent}:${bank0}:${bank1}:`
+    + `${paletteNumbers.join(",")}:${logicalVideo.revision}`;
   if (preview.canvas && preview.key === key) return preview.canvas;
   if (!preview.canvas) {
     preview.canvas = document.createElement("canvas");
@@ -2973,11 +2982,7 @@ function composeOriginalTeamPreviewScreen(api) {
     preview.canvas.height = 240;
     preview.context = preview.canvas.getContext("2d");
   }
-  const nametable = Uint8Array.from(background.stream);
-  for (let offset = 0; offset < 0x400; offset++) {
-    const tile = api.team_preview_renderer_overlay_tile(0x2000 + offset) >>> 0;
-    if (tile !== 0xffffffff) nametable[offset] = tile & 0xff;
-  }
+  const nametable = originalLogicalNametable(0x2000, background.stream);
   if (!renderOriginalDynamicBackgroundNametable(
     preview.context,
     nametable,
@@ -2988,6 +2993,7 @@ function composeOriginalTeamPreviewScreen(api) {
   preview.key = key;
   if (DEBUG) {
     window.__soccerTeamPreviewRenderer = {
+      source: "logical-video-cpp",
       backgroundId,
       destination: background.destination,
       teams: [...teams],
@@ -3002,6 +3008,76 @@ function composeOriginalTeamPreviewScreen(api) {
       expectedFlagPalettes: [0, 1].map((slot) => api.original_sprite_palette_number
         ? api.original_sprite_palette_number(slot) & 0xff : null),
       mirroring: background.mirroring,
+      logicalRevision: logicalVideo.revision,
+      writes: logicalVideo.frameWrites
+        .filter(({ source }) => source === VIDEO_WRITE_MENU_CHR_COPY)
+        .map(({ source, address, increment, bytes }) => ({
+          source, address, increment, bytes: Array.from(bytes),
+        })),
+      key,
+      nametable: Array.from(nametable),
+    };
+  }
+  return preview.canvas;
+}
+function composeOriginalPlayerCountPreviewScreen(api) {
+  const preview = originalAssets.playerCountPreview;
+  const logicalVideo = originalAssets.logicalVideo;
+  const backgroundId = api.original_background_image_id
+    ? api.original_background_image_id() & 0xFF : 0;
+  if (backgroundId !== 0x06) return null;
+  if (!preview.background) {
+    preview.background = decodeOriginalBackgroundImageFromCpp(api, backgroundId);
+  }
+  const background = preview.background;
+  if (!background || background.destination !== 0x2000
+      || background.stream.length < 0x400) return null;
+  const bank0 = api.original_background_bank
+    ? api.original_background_bank(0) & 0xFF : background.chr0;
+  const bank1 = api.original_background_bank
+    ? api.original_background_bank(1) & 0xFF : background.chr1;
+  const paletteNumbers = [0, 1].map((slot) => api.original_background_palette_number
+    ? api.original_background_palette_number(slot) & 0xFF
+    : (slot === 0 ? background.palette0 : background.palette1));
+  const subPalettes = originalBackgroundSubPalettes(
+    paletteNumbers[0], paletteNumbers[1]);
+  if (!subPalettes) return null;
+  const playersAmount = api.original_players_amount
+    ? api.original_players_amount() & 0xFF : 0;
+  const key = `${playersAmount}:${bank0}:${bank1}:${paletteNumbers.join(",")}:`
+    + `${logicalVideo.revision}`;
+  if (preview.canvas && preview.key === key) return preview.canvas;
+  if (!preview.canvas) {
+    preview.canvas = document.createElement("canvas");
+    preview.canvas.width = 256;
+    preview.canvas.height = 240;
+    preview.context = preview.canvas.getContext("2d");
+  }
+  const nametable = originalLogicalNametable(0x2000, background.stream);
+  if (!renderOriginalDynamicBackgroundNametable(
+    preview.context,
+    nametable,
+    bank0 || background.chr0,
+    bank1 || background.chr1,
+    subPalettes,
+  )) return null;
+  preview.key = key;
+  if (DEBUG) {
+    window.__soccerPlayerCountPreviewRenderer = {
+      source: "logical-video-cpp",
+      backgroundId,
+      playersAmount,
+      destination: background.destination,
+      chr0: bank0 || background.chr0,
+      chr1: bank1 || background.chr1,
+      paletteNumbers: [...paletteNumbers],
+      mirroring: background.mirroring,
+      logicalRevision: logicalVideo.revision,
+      writes: logicalVideo.frameWrites
+        .filter(({ source }) => source >= 0 && source <= 2)
+        .map(({ source, address, increment, bytes }) => ({
+          source, address, increment, bytes: Array.from(bytes),
+        })),
       key,
       nametable: Array.from(nametable),
     };
@@ -3320,6 +3396,8 @@ function drawOriginalMenuScreen(api) {
       ? (composeOriginalTeamPreviewScreen(api) || staticBackground)
     : subtype === 0x04
       ? (composeOriginalPlayerOrderScreen(api) || staticBackground)
+    : subtype === 0x05
+      ? (composeOriginalPlayerCountPreviewScreen(api) || staticBackground)
     : subtype === 0x06
       ? (composeOriginalMatchSettingsScreen(api) || staticBackground)
       : subtype === 0x07
@@ -3893,7 +3971,8 @@ async function main() {
   document.body.dataset.resultRendererSource = "classified-bin-cpp";
   document.body.dataset.modeSelectionRendererSource = "classified-bin-cpp";
   document.body.dataset.opponentSelectionRendererSource = "classified-bin-cpp";
-  document.body.dataset.teamPreviewRendererSource = "classified-bin-cpp";
+  document.body.dataset.teamPreviewRendererSource = "logical-video-cpp";
+  document.body.dataset.playerCountPreviewRendererSource = "logical-video-cpp";
   document.body.dataset.playerOrderRendererSource = "classified-bin-cpp";
   document.body.dataset.bracketRendererSource = "classified-bin-cpp";
   document.body.dataset.matchSettingsRendererSource = "classified-bin-cpp";

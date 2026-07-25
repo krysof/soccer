@@ -3979,20 +3979,41 @@
       ]
     },
     {
-      "path": "menu/prematch-preview-layout-8d69-8dbb.bin",
+      "path": "menu/prematch-preview-layout-8d69-8dbc.bin",
       "category": "menu",
       "source": "src/bank_05.asm:8D69",
       "bank": "05",
       "address": "0x8D69",
-      "symbol": "tbl_8D69/off_8D73/off_8D85/off_8D97/off_8DA9",
-      "layout": "five preview-layout pointers followed by four eighteen-byte rows",
-      "length": 82,
-      "sha256": "26d8e5effdbae1ee7f330816784eca564485103597908903b9197bed3c1ff19b",
+      "symbol": "tbl_8D69/off_8D73/off_8D85/off_8D97/off_8DA9 plus adjacent RTS opcode",
+      "layout": "five preview-layout pointers followed by four eighteen-byte rows and the intentional adjacent byte copied by 8D4A",
+      "length": 83,
+      "sha256": "015532a154a40d5ade824020357f869d5795edeee0ceada1df8fd425bab2321e",
       "source_ranges": [
         {
           "bank": "05",
           "start": "0x8D69",
-          "length": 82
+          "length": 83
+        }
+      ],
+      "consumers": [
+        "wasm-game/cpp-core/src/screens/menu.cpp"
+      ]
+    },
+    {
+      "path": "menu/prematch-preview-transfer-headers-8d61-8d69.bin",
+      "category": "menu",
+      "source": "src/bank_05.asm:8D61",
+      "bank": "05",
+      "address": "0x8D61",
+      "symbol": "tbl_8D61/tbl_8D66",
+      "layout": "attribute and graphics NMI headers used by the player-count preview",
+      "length": 8,
+      "sha256": "fc8fd86931943e1c6bb7c02d6fd98efd35dca9727d0b6ece85a90a045a4a6578",
+      "source_ranges": [
+        {
+          "bank": "05",
+          "start": "0x8D61",
+          "length": 8
         }
       ],
       "consumers": [
@@ -4445,6 +4466,27 @@
       ]
     },
     {
+      "path": "menu/team-preview-continent-copy-table-bf20-bf2a.bin",
+      "category": "menu",
+      "source": "src/bank_05.asm:BF20",
+      "bank": "05",
+      "address": "0xBF20",
+      "symbol": "tbl_BF20",
+      "layout": "five little-endian CHR source offsets for continent headings",
+      "length": 10,
+      "sha256": "9b28a5e9ae273315bcc3359dcd93b7a0167ca45ec87ef17785870242bae4b624",
+      "source_ranges": [
+        {
+          "bank": "05",
+          "start": "0xBF20",
+          "length": 10
+        }
+      ],
+      "consumers": [
+        "wasm-game/cpp-core/src/screens/team_preview_renderer.cpp"
+      ]
+    },
+    {
       "path": "menu/team-preview-continent-headings.bin",
       "category": "menu",
       "source": "src/CHR_ROM.chr:1D333",
@@ -4468,6 +4510,27 @@
       ],
       "consumers": [
         "soccer::screens::team_preview_overlay_tile",
+        "wasm-game/cpp-core/src/screens/team_preview_renderer.cpp"
+      ]
+    },
+    {
+      "path": "menu/team-preview-logo-copy-table-bed6-befa.bin",
+      "category": "menu",
+      "source": "src/bank_05.asm:BED6",
+      "bank": "05",
+      "address": "0xBED6",
+      "symbol": "tbl_BED6/tbl_BEDA",
+      "layout": "two nametable destinations followed by sixteen little-endian CHR source offsets",
+      "length": 36,
+      "sha256": "e42706cffa84ac5f46b066fc345f06965027f6108fbf9f3394fc2f7174598948",
+      "source_ranges": [
+        {
+          "bank": "05",
+          "start": "0xBED6",
+          "length": 36
+        }
+      ],
+      "consumers": [
         "wasm-game/cpp-core/src/screens/team_preview_renderer.cpp"
       ]
     },
