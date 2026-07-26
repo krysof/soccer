@@ -3842,8 +3842,7 @@
         }
       ],
       "consumers": [
-        "wasm-game/cpp-core/src/screens/menu_profile.cpp",
-        "wasm-game/cpp-core/src/screens/player_profile_renderer.cpp"
+        "wasm-game/cpp-core/src/screens/menu_profile.cpp"
       ]
     },
     {
@@ -3864,8 +3863,7 @@
         }
       ],
       "consumers": [
-        "wasm-game/cpp-core/src/screens/credits.cpp",
-        "wasm-game/cpp-core/src/screens/player_profile_renderer.cpp"
+        "wasm-game/cpp-core/src/screens/credits.cpp"
       ]
     },
     {
@@ -3886,8 +3884,7 @@
         }
       ],
       "consumers": [
-        "wasm-game/cpp-core/src/screens/credits.cpp",
-        "wasm-game/cpp-core/src/screens/player_profile_renderer.cpp"
+        "wasm-game/cpp-core/src/screens/credits.cpp"
       ]
     },
     {
@@ -5894,8 +5891,7 @@
       ],
       "consumers": [
         "wasm-game/cpp-core/src/screens/meeting.cpp",
-        "wasm-game/cpp-core/src/screens/menu_profile.cpp",
-        "wasm-game/cpp-core/src/screens/player_profile_renderer.cpp"
+        "wasm-game/cpp-core/src/screens/menu_profile.cpp"
       ]
     },
     {

@@ -1191,7 +1191,7 @@ function loadOriginalSpriteRendererFromBin(api) {
 }
 async function loadWasm() {
   const filename = DEBUG ? "soccer_core_cpp.wasm" : "soccer_core_cpp_production.wasm";
-  const relative = DEBUG ? "../strict-tests.1b2777ab.wasm" : "../soccer_core_cpp.07ff31e7.wasm";
+  const relative = DEBUG ? "../strict-tests.086f99ef.wasm" : "../soccer_core_cpp.6e7a2298.wasm";
   const response = await fetchCoreResponse(filename, assetUrl(relative), rootAssetUrl(filename));
   const bytes = await response.arrayBuffer();
   const result = await WebAssembly.instantiate(bytes, {});
@@ -3091,75 +3091,11 @@ function composeOriginalTournamentRecordScreen(api) {
   }
   return record.canvas;
 }
-function originalPlayerProfileDoubleHeightTiles(values, textEffect = false) {
-  const top = [];
-  const bottom = [];
-  for (const raw of values || []) {
-    const value = raw & 0xff;
-    if (textEffect && value === 0) {
-      top.push(0xff);
-      bottom.push(0xff);
-    } else if ((value & 0x80) !== 0 || value < (textEffect ? 0x20 : 0x10)) {
-      top.push(0xff);
-      bottom.push(value);
-    } else if (value < 0x50) {
-      top.push(0xda);
-      bottom.push(value | 0x80);
-    } else {
-      top.push(0xdb);
-      bottom.push((value + 0x50) & 0xff);
-    }
-  }
-  return { top, bottom };
-}
-function writeOriginalPlayerProfileDoubleHeightRow(nametable, address, values, textEffect = false) {
-  const converted = originalPlayerProfileDoubleHeightTiles(values, textEffect);
-  writeOriginalNametableTiles(nametable, address, converted.top);
-  writeOriginalNametableTiles(nametable, address + 0x20, converted.bottom);
-}
-function replayOriginalTextEffect(
-  nametable, script, effectCursor, effectStatus, effectAltCursor, workspace, startAddress,
-) {
-  let lineAddress = startAddress;
-  let textAddress = lineAddress;
-  const emit = (value) => {
-    writeOriginalPlayerProfileDoubleHeightRow(nametable, textAddress, [value], true);
-    textAddress++;
-  };
-  const emitWorkspace = (base, count) => {
-    for (let index = 0; index < count && base + index < workspace.length; index++) {
-      const value = workspace[base + index] & 0xff;
-      if (value === 0xf8) break;
-      if (value < 0xf0) emit(value);
-    }
-  };
-  const last = Math.min(effectCursor, script.length - 1);
-  for (let index = 0; index <= last; index++) {
-    const value = script[index] & 0xff;
-    if (value === 0xf4) {
-      lineAddress = startAddress;
-      textAddress = lineAddress;
-    } else if (value === 0xf7) {
-      lineAddress += 0x40;
-      textAddress = lineAddress;
-    } else if (value === 0xf0 || value === 0xf1) {
-      const activeBit = value === 0xf0 ? 0x04 : 0x08;
-      const base = value === 0xf0 ? 0 : 6;
-      const insertionIsActive = index === effectCursor && (effectStatus & activeBit) !== 0;
-      const count = insertionIsActive
-        ? (effectAltCursor === 0xff ? 0 : effectAltCursor + 1)
-        : workspace.length - base;
-      emitWorkspace(base, count);
-    } else if (value < 0xf0) {
-      emit(value);
-    }
-  }
-}
 function composeOriginalPlayerProfileScreen(api) {
   const profile = originalAssets.playerProfile;
   const backgroundId = api.original_background_image_id
     ? api.original_background_image_id() & 0xff : 0;
-  if (backgroundId !== 0x0c || !api.player_profile_renderer_overlay_tile) return null;
+  if (backgroundId !== 0x0c) return null;
   if (!profile.background) {
     profile.background = decodeOriginalBackgroundImageFromCpp(api, backgroundId);
   }
@@ -3179,10 +3115,8 @@ function composeOriginalPlayerProfileScreen(api) {
     ? api.original_text_effect_alt_cursor() & 0xff : 0xff;
   const textWorkspace = Array.from({ length: 14 }, (_, index) =>
     api.original_meeting_name_workspace ? api.original_meeting_name_workspace(index) & 0xff : 0);
-  const blinkWrite = latestOriginalLogicalVideoWrite(0);
-  const blinkAddress = blinkWrite?.address ?? 0;
-  const blinkTile = blinkWrite?.bytes[0] ?? 0xff;
-  const key = `${selected}:${effectState}:${effectStatus}:${effectScriptId}:${effectCursor}:${effectAltCursor}:${textWorkspace.join(",")}:${originalAssets.logicalVideo.revision}`;
+  const logicalVideo = originalAssets.logicalVideo;
+  const key = `${logicalVideo.revision}`;
   if (profile.canvas && profile.key === key) return profile.canvas;
   if (!profile.canvas) {
     profile.canvas = document.createElement("canvas");
@@ -3190,12 +3124,7 @@ function composeOriginalPlayerProfileScreen(api) {
     profile.canvas.height = 240;
     profile.context = profile.canvas.getContext("2d");
   }
-  const nametable = Uint8Array.from(background.stream);
-  for (let offset = 0; offset < 0x400; offset++) {
-    const tile = api.player_profile_renderer_overlay_tile(0x2000 + offset) >>> 0;
-    if (tile !== 0xffffffff) nametable[offset] = tile & 0xff;
-  }
-  applyOriginalLogicalFrameWrites(nametable, 0x2000, 0);
+  const nametable = originalLogicalNametable(0x2000, background.stream);
   if (!renderOriginalDynamicBackgroundNametable(
     profile.context,
     nametable,
@@ -3207,7 +3136,7 @@ function composeOriginalPlayerProfileScreen(api) {
   if (DEBUG) {
     window.__soccerPlayerProfileRenderer = {
       subtype: 0x0a,
-      source: "classified-bin-cpp",
+      source: "logical-video-cpp",
       backgroundId,
       destination: background.destination,
       chr0: background.chr0,
@@ -3221,6 +3150,13 @@ function composeOriginalPlayerProfileScreen(api) {
       effectCursor,
       effectAltCursor,
       textWorkspace,
+      logicalRevision: logicalVideo.revision,
+      writes: logicalVideo.frameWrites.map((write) => ({
+        source: write.source,
+        address: write.address,
+        increment: write.increment,
+        bytes: Array.from(write.bytes),
+      })),
       key,
       nametable: Array.from(nametable),
     };
@@ -3950,7 +3886,7 @@ async function main() {
   document.body.dataset.formationControlRendererSource = "logical-video-cpp";
   document.body.dataset.weatherPreviewRendererSource = "logical-video-cpp";
   document.body.dataset.tournamentRecordRendererSource = "logical-video-cpp";
-  document.body.dataset.playerProfileRendererSource = "classified-bin-cpp";
+  document.body.dataset.playerProfileRendererSource = "logical-video-cpp";
   document.body.dataset.musicSelectionRendererSource = "classified-bin-cpp";
   document.body.dataset.meetingSecretRendererSource = "logical-video-cpp";
   document.body.dataset.creditsRendererSource = "classified-bin-cpp";
