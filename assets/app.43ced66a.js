@@ -233,7 +233,6 @@ const originalAssets = {
   },
   formationControl: {
     background: null,
-    teamOverlays: new Map(),
     teamOverlayId: 0xffffffff,
     pageCanvases: null,
     nametables: null,
@@ -1192,7 +1191,7 @@ function loadOriginalSpriteRendererFromBin(api) {
 }
 async function loadWasm() {
   const filename = DEBUG ? "soccer_core_cpp.wasm" : "soccer_core_cpp_production.wasm";
-  const relative = DEBUG ? "../strict-tests.997c6ab1.wasm" : "../soccer_core_cpp.054efc93.wasm";
+  const relative = DEBUG ? "../strict-tests.1b2777ab.wasm" : "../soccer_core_cpp.07ff31e7.wasm";
   const response = await fetchCoreResponse(filename, assetUrl(relative), rootAssetUrl(filename));
   const bytes = await response.arrayBuffer();
   const result = await WebAssembly.instantiate(bytes, {});
@@ -2544,17 +2543,6 @@ function composeOriginalMatchSettingsScreen(api) {
   settings.key = key;
   return settings.canvas;
 }
-function writeOriginalFormationControlPatch(nametables, address, tiles) {
-  if (!Array.isArray(tiles) && !(tiles instanceof Uint8Array)) return;
-  const tableIndex = (address & 0x0800) !== 0 ? 1 : 0;
-  let offset = address & 0x03FF;
-  for (const tile of tiles) {
-    if (offset >= 0 && offset < nametables[tableIndex].length) {
-      nametables[tableIndex][offset] = tile & 0xFF;
-    }
-    offset++;
-  }
-}
 function composeOriginalFormationControlScreen(api) {
   const formation = originalAssets.formationControl;
   if (!formation.background) {
@@ -2562,26 +2550,21 @@ function composeOriginalFormationControlScreen(api) {
   }
   const background = formation.background;
   if (!background || background.destination !== 0x2000
-      || background.stream.length < 0x800
-      || !api.formation_control_renderer_team_overlay_id
-      || !api.formation_control_renderer_overlay_tile) return null;
+      || background.stream.length < 0x800) return null;
   const subPalettes = originalBackgroundSubPalettes(
     background.palette0, background.palette1,
   );
   if (!subPalettes) return null;
+  const logicalVideo = originalAssets.logicalVideo;
   const side = api.original_substitution_counter
     ? api.original_substitution_counter() & 1 : 0;
   const team = api.original_team_number ? api.original_team_number(side) & 0x0F : 0;
   const state = api.original_option_counter ? api.original_option_counter() & 0xFF : 0;
-  const selectedFormation = api.original_team_formation
-    ? api.original_team_formation(side) & 0x03 : 0;
-  const config = api.team_tactical_instruction ? api.team_tactical_instruction(side) & 0xFF : 0;
-  const playerNumbers = Array.from({ length: 6 }, (_, slot) => api.original_player_number
-    ? api.original_player_number(slot * 2 + side) & 0xFF : slot);
-  const assignmentSlot = api.original_option_number_05cb
-    ? api.original_option_number_05cb() & 0xFF : 0xFF;
-  const teamOverlayId = api.formation_control_renderer_team_overlay_id() >>> 0;
-  const key = `${side}:${team}:${state}:${selectedFormation}:${config}:${assignmentSlot}:${teamOverlayId}:${playerNumbers.join(",")}`;
+  const currentBackgroundId = api.original_background_image_id
+    ? api.original_background_image_id() & 0xFF : 0x05;
+  const teamOverlayId = currentBackgroundId === 0x05
+    ? 0xffffffff : currentBackgroundId;
+  const key = `${logicalVideo.revision}`;
   if (formation.canvas && formation.key === key) return formation.canvas;
   if (!formation.canvas) {
     formation.canvas = document.createElement("canvas");
@@ -2596,30 +2579,9 @@ function composeOriginalFormationControlScreen(api) {
     });
   }
   const nametables = [
-    Uint8Array.from(background.stream.slice(0, 0x400)),
-    Uint8Array.from(background.stream.slice(0x400, 0x800)),
+    originalLogicalNametable(0x2000, background.stream.slice(0, 0x400)),
+    originalLogicalNametable(0x2800, background.stream.slice(0x400, 0x800)),
   ];
-  if (teamOverlayId !== 0xffffffff) {
-    if (!formation.teamOverlays.has(teamOverlayId)) {
-      formation.teamOverlays.set(
-        teamOverlayId,
-        decodeOriginalBackgroundImageFromCpp(api, teamOverlayId),
-      );
-    }
-    const overlay = formation.teamOverlays.get(teamOverlayId);
-    if (!overlay || overlay.chr0 !== background.chr0
-        || overlay.chr1 !== background.chr1) return null;
-    writeOriginalFormationControlPatch(
-      nametables, overlay.destination, overlay.stream,
-    );
-  }
-  for (let page = 0; page < 2; page++) {
-    const ppuBase = page === 0 ? 0x2000 : 0x2800;
-    for (let offset = 0; offset < 0x400; offset++) {
-      const tile = api.formation_control_renderer_overlay_tile(ppuBase + offset) >>> 0;
-      if (tile !== 0xffffffff) nametables[page][offset] = tile & 0xff;
-    }
-  }
   formation.context.clearRect(0, 0, 256, 480);
   formation.context.imageSmoothingEnabled = false;
   for (let page = 0; page < 2; page++) {
@@ -2635,6 +2597,13 @@ function composeOriginalFormationControlScreen(api) {
   }
   formation.teamOverlayId = teamOverlayId;
   formation.nametables = nametables;
+  formation.logicalRevision = logicalVideo.revision;
+  formation.writes = logicalVideo.frameWrites.map((write) => ({
+    source: write.source,
+    address: write.address,
+    increment: write.increment,
+    bytes: Array.from(write.bytes),
+  }));
   formation.key = key;
   return formation.canvas;
 }
@@ -3450,7 +3419,7 @@ function drawOriginalMenuScreen(api) {
         else {
           const background = originalAssets.formationControl.background;
           rendererState.backgroundId = background?.imageId ?? 0;
-          rendererState.source = "classified-bin-cpp";
+          rendererState.source = "logical-video-cpp";
           rendererState.destination = background?.destination ?? 0;
           rendererState.chr0 = background?.chr0 ?? 0;
           rendererState.chr1 = background?.chr1 ?? 0;
@@ -3458,6 +3427,13 @@ function drawOriginalMenuScreen(api) {
             ? [background.palette0, background.palette1] : [];
           rendererState.mirroring = background?.mirroring ?? 0;
           rendererState.teamOverlayId = originalAssets.formationControl.teamOverlayId;
+          rendererState.logicalRevision = originalAssets.logicalVideo.revision;
+          rendererState.writes = originalAssets.logicalVideo.frameWrites.map((write) => ({
+            source: write.source,
+            address: write.address,
+            increment: write.increment,
+            bytes: Array.from(write.bytes),
+          }));
           rendererState.nametables = originalAssets.formationControl.nametables
             ? originalAssets.formationControl.nametables.map((table) => Array.from(table))
             : [];
@@ -3971,7 +3947,7 @@ async function main() {
   document.body.dataset.playerOrderRendererSource = "classified-bin-cpp";
   document.body.dataset.bracketRendererSource = "logical-video-cpp";
   document.body.dataset.matchSettingsRendererSource = "logical-video-cpp";
-  document.body.dataset.formationControlRendererSource = "classified-bin-cpp";
+  document.body.dataset.formationControlRendererSource = "logical-video-cpp";
   document.body.dataset.weatherPreviewRendererSource = "logical-video-cpp";
   document.body.dataset.tournamentRecordRendererSource = "logical-video-cpp";
   document.body.dataset.playerProfileRendererSource = "classified-bin-cpp";

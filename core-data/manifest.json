@@ -3170,7 +3170,6 @@
         }
       ],
       "consumers": [
-        "wasm-game/cpp-core/src/screens/formation_control_renderer.cpp",
         "wasm-game/cpp-core/src/screens/menu_formation.cpp"
       ]
     },
@@ -3213,7 +3212,6 @@
         }
       ],
       "consumers": [
-        "wasm-game/cpp-core/src/screens/formation_control_renderer.cpp",
         "wasm-game/cpp-core/src/screens/menu_formation.cpp"
       ]
     },
@@ -3235,7 +3233,6 @@
         }
       ],
       "consumers": [
-        "wasm-game/cpp-core/src/screens/formation_control_renderer.cpp",
         "wasm-game/cpp-core/src/screens/menu_formation.cpp"
       ]
     },
@@ -3257,7 +3254,6 @@
         }
       ],
       "consumers": [
-        "wasm-game/cpp-core/src/screens/formation_control_renderer.cpp",
         "wasm-game/cpp-core/src/screens/menu_formation.cpp"
       ]
     },
