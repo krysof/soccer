@@ -1191,7 +1191,7 @@ function loadOriginalSpriteRendererFromBin(api) {
 }
 async function loadWasm() {
   const filename = DEBUG ? "soccer_core_cpp.wasm" : "soccer_core_cpp_production.wasm";
-  const relative = DEBUG ? "../strict-tests.6dd8d9c1.wasm" : "../soccer_core_cpp.93f5971d.wasm";
+  const relative = DEBUG ? "../strict-tests.86355526.wasm" : "../soccer_core_cpp.c757d941.wasm";
   const response = await fetchCoreResponse(filename, assetUrl(relative), rootAssetUrl(filename));
   const bytes = await response.arrayBuffer();
   const result = await WebAssembly.instantiate(bytes, {});
@@ -1861,8 +1861,8 @@ function originalSpriteBankForObject(api, objectIndex, bankSlot) {
   const screen = api.original_screen_number ? api.original_screen_number() & 0xFF : 0;
   const subtype = api.original_screen_subtype ? api.original_screen_subtype() & 0x7F : 0;
   if (screen === 0x02 && subtype === 0x05
-      && (bankSlot === 1 || bankSlot === 2) && api.original_object_work_0061) {
-    return api.original_object_work_0061(bankSlot === 1 ? 5 : 6) & 0xFF;
+      && (bankSlot === 1 || bankSlot === 2) && api.original_object_graphics_group) {
+    return api.original_object_graphics_group(bankSlot === 1 ? 5 : 6) & 0xFF;
   }
   if (objectIndex <= 0x0C && originalCommittedSpriteFrameActive(api)
       && api.original_committed_sprite_bank) {
@@ -1902,14 +1902,14 @@ function originalObjectAnimation(api, objectIndex) {
 }
 function resolveOriginalObjectFrame(api, objectIndex) {
   const manifest = originalAssets.sprite.manifest;
-  if (!manifest || !api.original_object_work_0061) return null;
+  if (!manifest || !api.original_object_graphics_group) return null;
   const animation = originalObjectAnimation(api, objectIndex);
   if (!Number.isFinite(animation)) return null;
   const groupNumber = objectIndex <= 0x0C && api.original_committed_sprite_group
       && api.original_committed_sprite_serial
       && api.original_committed_sprite_serial() !== 0
     ? api.original_committed_sprite_group(objectIndex) & 0xFF
-    : api.original_object_work_0061(objectIndex) & 0xFF;
+    : api.original_object_graphics_group(objectIndex) & 0xFF;
   if (groupNumber === 3) {
     const index = animation & 0x7F;
     const tile = manifest.specialGroup3Tiles[index];
@@ -2350,8 +2350,8 @@ function drawOriginalMenuObjects(api, layout, subtype) {
       subtype,
       drawnObjectIds,
       logicalOamCount: api.game_sprite_draw_count ? api.game_sprite_draw_count() >>> 0 : 0,
-      stagedBank1: api.original_object_work_0061 ? api.original_object_work_0061(5) & 0xFF : null,
-      stagedBank2: api.original_object_work_0061 ? api.original_object_work_0061(6) & 0xFF : null,
+      stagedBank1: api.original_object_graphics_group ? api.original_object_graphics_group(5) & 0xFF : null,
+      stagedBank2: api.original_object_graphics_group ? api.original_object_graphics_group(6) & 0xFF : null,
     };
   }
 }
@@ -3177,8 +3177,8 @@ function composeOriginalMusicSelectionScreen(api) {
   );
   if (!subPalettes) return null;
   const option = api.original_option_number ? api.original_option_number() & 0xff : 0xff;
-  const hiddenNumber = api.original_option_number_05cb
-    ? api.original_option_number_05cb() & 0xff : 0;
+  const hiddenNumber = api.original_secondary_option_number
+    ? api.original_secondary_option_number() & 0xff : 0;
   const graphicsWrite = latestOriginalLogicalVideoWrite(1);
   const bufferAddress = graphicsWrite?.address ?? 0;
   const buffer = graphicsWrite ? Array.from(graphicsWrite.bytes) : [];
