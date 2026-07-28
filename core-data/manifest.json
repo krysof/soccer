@@ -2984,7 +2984,7 @@
         }
       ],
       "consumers": [
-        "wasm-game/cpp-core/src/player/live_frame.cpp"
+        "wasm-game/cpp-core/src/player/field_frame.cpp"
       ]
     },
     {
