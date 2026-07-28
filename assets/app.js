@@ -1191,7 +1191,7 @@ function loadOriginalSpriteRendererFromBin(api) {
 }
 async function loadWasm() {
   const filename = DEBUG ? "soccer_core_cpp.wasm" : "soccer_core_cpp_production.wasm";
-  const relative = DEBUG ? "../strict-tests.6c1aabe3.wasm" : "../soccer_core_cpp.083686b5.wasm";
+  const relative = DEBUG ? "../strict-tests.7e59299f.wasm" : "../soccer_core_cpp.9eb2e5f3.wasm";
   const response = await fetchCoreResponse(filename, assetUrl(relative), rootAssetUrl(filename));
   const bytes = await response.arrayBuffer();
   const result = await WebAssembly.instantiate(bytes, {});
@@ -1553,8 +1553,8 @@ function originalPlayerPosition(api, index) {
     return {
       x: (api.player_position_x_high(index) << 8) | api.player_position_x_low(index),
       y: (api.player_position_y_high(index) << 8) | api.player_position_y_low(index),
-      z: api.original_player_z_lo && api.original_player_z_hi
-        ? ((api.original_player_z_hi(index) << 8) | api.original_player_z_lo(index))
+      z: api.player_position_z_low && api.player_position_z_high
+        ? ((api.player_position_z_high(index) << 8) | api.player_position_z_low(index))
         : 0,
     };
   }
@@ -1565,8 +1565,8 @@ function originalBallPosition(api) {
     return {
       x: (api.ball_position_x_high() << 8) | api.ball_position_x_low(),
       y: (api.ball_position_y_high() << 8) | api.ball_position_y_low(),
-      z: api.original_ball_z_lo && api.original_ball_z_hi
-        ? ((api.original_ball_z_hi() << 8) | api.original_ball_z_lo())
+      z: api.ball_position_z_low && api.ball_position_z_high
+        ? ((api.ball_position_z_high() << 8) | api.ball_position_z_low())
         : 0,
     };
   }
@@ -1881,9 +1881,9 @@ function originalObjectVisibleForCommittedFrame(api, objectIndex) {
     return (api.original_committed_sprite_visibility(objectIndex) & 0xFF) !== 0;
   }
   if (objectIndex === 0x0C) {
-    return !api.original_ball_visibility_flag || api.original_ball_visibility_flag() !== 0;
+    return !api.ball_visibility_flag || api.ball_visibility_flag() !== 0;
   }
-  return !api.original_visibility || api.original_visibility(objectIndex) !== 0;
+  return !api.player_visibility || api.player_visibility(objectIndex) !== 0;
 }
 function originalObjectAnimation(api, objectIndex) {
   if (objectIndex <= 0x0C && api.original_committed_sprite_animation
@@ -1898,7 +1898,7 @@ function originalObjectAnimation(api, objectIndex) {
     return api.original_field_marker_animation
       ? api.original_field_marker_animation(objectIndex - 0x0E) & 0xFF : null;
   }
-  return api.original_player_animation ? api.original_player_animation(objectIndex) & 0xFF : null;
+  return api.player_animation ? api.player_animation(objectIndex) & 0xFF : null;
 }
 function resolveOriginalObjectFrame(api, objectIndex) {
   const manifest = originalAssets.sprite.manifest;
@@ -2961,7 +2961,7 @@ function composeOriginalTeamPreviewScreen(api) {
       paletteNumbers: [...paletteNumbers],
       expectedFlagAnimations: [
         api.ball_animation ? api.ball_animation() & 0xff : null,
-        api.original_player_animation ? api.original_player_animation(0) & 0xff : null,
+        api.player_animation ? api.player_animation(0) & 0xff : null,
       ],
       expectedFlagPalettes: [0, 1].map((slot) => api.original_sprite_palette_number
         ? api.original_sprite_palette_number(slot) & 0xff : null),
@@ -3831,21 +3831,21 @@ function render(api) {
   const roleInfo = api.player_role_speed ? `${api.player_role_speed(controlled)}/${api.player_role_power(controlled)}/${api.player_role_stamina(controlled)}/${api.player_role_tackle(controlled)}/${api.player_role_keeper(controlled)}` : "0";
   const playerOrig = api.player_motion ? `${api.player_motion(controlled).toString(16).padStart(2, "0")}/${api.player_action_id(controlled).toString(16).padStart(2, "0")}/${api.player_state_flags(controlled).toString(16).padStart(2, "0")}` : "??/??/??";
   const playerRam = api.player_position_x_low
-    ? `${api.player_position_x_high(controlled).toString(16).padStart(2, "0")}${api.player_position_x_low(controlled).toString(16).padStart(2, "0")}/${api.player_position_y_high(controlled).toString(16).padStart(2, "0")}${api.player_position_y_low(controlled).toString(16).padStart(2, "0")}/${api.original_player_z_hi(controlled).toString(16).padStart(2, "0")}${api.original_player_z_lo(controlled).toString(16).padStart(2, "0")}`
+    ? `${api.player_position_x_high(controlled).toString(16).padStart(2, "0")}${api.player_position_x_low(controlled).toString(16).padStart(2, "0")}/${api.player_position_y_high(controlled).toString(16).padStart(2, "0")}${api.player_position_y_low(controlled).toString(16).padStart(2, "0")}/${api.player_position_z_high(controlled).toString(16).padStart(2, "0")}${api.player_position_z_low(controlled).toString(16).padStart(2, "0")}`
     : "????/????/????";
   const script = api.original_game_script ? api.original_game_script().toString(16).padStart(2, "0") : "??";
   const ballObj = api.ball_object_id ? api.ball_object_id().toString(16).padStart(2, "0") : "??";
   const ballRam = api.ball_position_x_low
-    ? `${api.ball_position_x_high().toString(16).padStart(2, "0")}${api.ball_position_x_low().toString(16).padStart(2, "0")}/${api.ball_position_y_high().toString(16).padStart(2, "0")}${api.ball_position_y_low().toString(16).padStart(2, "0")}/${api.original_ball_z_hi().toString(16).padStart(2, "0")}${api.original_ball_z_lo().toString(16).padStart(2, "0")}`
+    ? `${api.ball_position_x_high().toString(16).padStart(2, "0")}${api.ball_position_x_low().toString(16).padStart(2, "0")}/${api.ball_position_y_high().toString(16).padStart(2, "0")}${api.ball_position_y_low().toString(16).padStart(2, "0")}/${api.ball_position_z_high().toString(16).padStart(2, "0")}${api.ball_position_z_low().toString(16).padStart(2, "0")}`
     : "????/????/????";
   const ballState = api.ball_motion
-    ? `${api.ball_motion().toString(16).padStart(2, "0")}/${api.ball_shot_type().toString(16).padStart(2, "0")}/${api.ball_state_flags().toString(16).padStart(2, "0")}/${api.original_ball_action_timer().toString(16).padStart(2, "0")}/${api.original_ball_hp().toString(16).padStart(2, "0")}`
+    ? `${api.ball_motion().toString(16).padStart(2, "0")}/${api.ball_shot_type().toString(16).padStart(2, "0")}/${api.ball_state_flags().toString(16).padStart(2, "0")}/${api.ball_action_timer().toString(16).padStart(2, "0")}/${api.ball_health_points().toString(16).padStart(2, "0")}`
     : "??/??/??/??/??";
   const ballAnim = api.ball_animation
     ? `${api.ball_animation().toString(16).padStart(2, "0")}/${api.ball_animation_frame().toString(16).padStart(2, "0")}/${api.ball_animation_timer().toString(16).padStart(2, "0")}`
     : "??/??/??";
-  const ballSpeedRam = api.original_ball_spd_x_lo
-    ? `${api.original_ball_spd_x_hi().toString(16).padStart(2, "0")}${api.original_ball_spd_x_lo().toString(16).padStart(2, "0")}/${api.original_ball_spd_y_hi().toString(16).padStart(2, "0")}${api.original_ball_spd_y_lo().toString(16).padStart(2, "0")}/${api.original_ball_spd_z_hi().toString(16).padStart(2, "0")}${api.original_ball_spd_z_lo().toString(16).padStart(2, "0")}/g${api.original_ball_gravity_hi().toString(16).padStart(2, "0")}${api.original_ball_gravity_lo().toString(16).padStart(2, "0")}`
+  const ballSpeedRam = api.ball_velocity_x_low
+    ? `${api.ball_velocity_x_high().toString(16).padStart(2, "0")}${api.ball_velocity_x_low().toString(16).padStart(2, "0")}/${api.ball_velocity_y_high().toString(16).padStart(2, "0")}${api.ball_velocity_y_low().toString(16).padStart(2, "0")}/${api.ball_velocity_z_high().toString(16).padStart(2, "0")}${api.ball_velocity_z_low().toString(16).padStart(2, "0")}/g${api.ball_gravity_high().toString(16).padStart(2, "0")}${api.ball_gravity_low().toString(16).padStart(2, "0")}`
     : "????/????/????/g????";
   const btnHold = api.debug_original_button_ram ? api.debug_original_button_ram(0, 0x04).toString(16).padStart(2, "0") : "??";
   const btnPress = api.debug_original_button_ram ? api.debug_original_button_ram(0, 0x08).toString(16).padStart(2, "0") : "??";
