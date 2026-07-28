@@ -1191,7 +1191,7 @@ function loadOriginalSpriteRendererFromBin(api) {
 }
 async function loadWasm() {
   const filename = DEBUG ? "soccer_core_cpp.wasm" : "soccer_core_cpp_production.wasm";
-  const relative = DEBUG ? "../strict-tests.b1f2a9c7.wasm" : "../soccer_core_cpp.f0068470.wasm";
+  const relative = DEBUG ? "../strict-tests.b204875c.wasm" : "../soccer_core_cpp.126c3177.wasm";
   const response = await fetchCoreResponse(filename, assetUrl(relative), rootAssetUrl(filename));
   const bytes = await response.arrayBuffer();
   const result = await WebAssembly.instantiate(bytes, {});
@@ -1255,8 +1255,8 @@ function drawOriginalFieldFootprints(api, fieldContext, fieldColor) {
   const mapTileWidth = geometry.logical_width >> 3;
   const palettes = originalFieldSubpalettes(fieldColor);
   if (!palettes || api.field_renderer_prepare() !== 1) return;
-  const fieldBank = api.original_field_bg_bank
-    ? (api.original_field_bg_bank() & 0xFF) || geometry.default_field_bank
+  const fieldBank = api.field_background_bank
+    ? (api.field_background_bank() & 0xFF) || geometry.default_field_bank
     : geometry.default_field_bank;
   for (const footprint of field.footprints.values()) {
     const tileX = footprint.x >> 3;
@@ -1285,14 +1285,14 @@ function drawOriginalFieldFootprints(api, fieldContext, fieldColor) {
 function composeOriginalField(api) {
   const field = originalAssets.field;
   if (!field?.geometry || api.field_renderer_prepare() !== 1) return null;
-  const coverage = clamp(api.original_field_puddle_coverage ? api.original_field_puddle_coverage() : 0, 0, 2);
-  const fieldColor = clamp(api.original_field_color ? api.original_field_color() : 0, 0, 4);
-  const puddleSet = api.original_puddle_set ? api.original_puddle_set() & 0xFF : 0;
-  const fieldPrgBank = api.original_field_prg_bank
-    ? (api.original_field_prg_bank() & 0xFF) || field.geometry.default_prg_bank
+  const coverage = clamp(api.field_puddle_coverage ? api.field_puddle_coverage() : 0, 0, 2);
+  const fieldColor = clamp(api.field_color ? api.field_color() : 0, 0, 4);
+  const puddleSet = api.puddle_set ? api.puddle_set() & 0xFF : 0;
+  const fieldPrgBank = api.field_program_bank
+    ? (api.field_program_bank() & 0xFF) || field.geometry.default_prg_bank
     : field.geometry.default_prg_bank;
-  const fieldBank = api.original_field_bg_bank
-    ? (api.original_field_bg_bank() & 0xFF) || field.geometry.default_field_bank
+  const fieldBank = api.field_background_bank
+    ? (api.field_background_bank() & 0xFF) || field.geometry.default_field_bank
     : field.geometry.default_field_bank;
   const key = `${fieldPrgBank}/${fieldBank}/${coverage}/${fieldColor}/${puddleSet}`;
   if (field.footprintBaseKey && field.footprintBaseKey !== key) {
@@ -2016,14 +2016,14 @@ function drawWeather(api, view, screenW, screenH) {
   }
 }
 function drawOriginalWeatherSprites(api, view) {
-  if (!view?.original || !api.original_weather_effect
+  if (!view?.original || !api.weather_effect_state
       || !api.weather_sprite_count) {
     if (DEBUG) window.__soccerWeatherSprites = [];
     return [];
   }
   const effect = api.weather_sprite_effect
     ? api.weather_sprite_effect() & 0x7F
-    : api.original_weather_effect() & 0x7F;
+    : api.weather_effect_state() & 0x7F;
   if (![0x01, 0x02, 0x03, 0x04, 0x05, 0x06].includes(effect)) {
     if (DEBUG) window.__soccerWeatherSprites = [];
     return [];
@@ -2503,7 +2503,7 @@ function composeOriginalMatchSettingsScreen(api) {
   );
   if (!subPalettes) return null;
   const continent = api.continent_option ? api.continent_option() & 0xff : 0;
-  const surfaceWetness = api.original_surface_wetness ? api.original_surface_wetness() & 0xff : 0;
+  const surfaceWetness = api.surface_wetness ? api.surface_wetness() & 0xff : 0;
   const rainWind = api.rain_wind_option ? api.rain_wind_option() & 0xff : 0;
   const storm = api.lightning_tornado_direction
     ? api.lightning_tornado_direction() & 0xff : 0;
@@ -2556,8 +2556,8 @@ function composeOriginalFormationControlScreen(api) {
   );
   if (!subPalettes) return null;
   const logicalVideo = originalAssets.logicalVideo;
-  const side = api.original_substitution_counter
-    ? api.original_substitution_counter() & 1 : 0;
+  const side = api.substitution_counter
+    ? api.substitution_counter() & 1 : 0;
   const team = api.team_number ? api.team_number(side) & 0x0F : 0;
   const state = api.option_repeat_counter ? api.option_repeat_counter() & 0xFF : 0;
   const currentBackgroundId = api.background_image_id
@@ -3106,15 +3106,15 @@ function composeOriginalPlayerProfileScreen(api) {
   if (!subPalettes) return null;
   const selected = api.selected_player_index
     ? api.selected_player_index() & 0xff : 0;
-  const effectState = api.original_text_effect_state ? api.original_text_effect_state() & 0xff : 0x80;
-  const effectStatus = api.original_text_effect_status ? api.original_text_effect_status() & 0xff : 0;
-  const effectScriptId = api.original_text_effect_script_id
-    ? api.original_text_effect_script_id() & 0xff : selected + 1;
-  const effectCursor = api.original_text_effect_cursor ? api.original_text_effect_cursor() & 0xffff : 0;
-  const effectAltCursor = api.original_text_effect_alt_cursor
-    ? api.original_text_effect_alt_cursor() & 0xff : 0xff;
+  const effectState = api.text_effect_state ? api.text_effect_state() & 0xff : 0x80;
+  const effectStatus = api.text_effect_status ? api.text_effect_status() & 0xff : 0;
+  const effectScriptId = api.text_effect_script_id
+    ? api.text_effect_script_id() & 0xff : selected + 1;
+  const effectCursor = api.text_effect_cursor ? api.text_effect_cursor() & 0xffff : 0;
+  const effectAltCursor = api.text_effect_alternate_cursor
+    ? api.text_effect_alternate_cursor() & 0xff : 0xff;
   const textWorkspace = Array.from({ length: 14 }, (_, index) =>
-    api.original_meeting_name_workspace ? api.original_meeting_name_workspace(index) & 0xff : 0);
+    api.meeting_name_workspace_byte ? api.meeting_name_workspace_byte(index) & 0xff : 0);
   const logicalVideo = originalAssets.logicalVideo;
   const key = `${logicalVideo.revision}`;
   if (profile.canvas && profile.key === key) return profile.canvas;
@@ -3435,8 +3435,8 @@ function drawOriginalCreditsScreen(api) {
     ? composeOriginalSplashBackground(api, 0, false)
     : composeOriginalCreditsBackground(api, backgroundId);
   const layout = originalFullScreenLayout();
-  const cameraX = api.original_camera_x_lo && api.original_camera_x_hi
-    ? (api.original_camera_x_hi() << 8) | api.original_camera_x_lo() : 0;
+  const cameraX = api.camera_x_low && api.camera_x_high
+    ? (api.camera_x_high() << 8) | api.camera_x_low() : 0;
   const cameraY = api.camera_y_low && api.camera_y_high
     ? (api.camera_y_high() << 8) | api.camera_y_low() : 0;
   const brightness = api.current_brightness ? api.current_brightness() : 0x40;
@@ -3491,8 +3491,8 @@ function drawOriginalCreditsScreen(api) {
         ? [creditsBackground.palette0, creditsBackground.palette1] : [],
       mirroring: creditsBackground?.mirroring ?? 0,
       nametable: creditsState ? Array.from(creditsState.nametable) : [],
-      scene: api.original_credits_scene_index ? api.original_credits_scene_index() : 0,
-      effectDone: api.original_credits_effect_done ? api.original_credits_effect_done() : 0,
+      scene: api.credits_scene_index ? api.credits_scene_index() : 0,
+      effectDone: api.credits_effect_done ? api.credits_effect_done() : 0,
       drawnObjects,
     };
   }
@@ -3534,12 +3534,12 @@ function render(api) {
   const bx = ballPosition.x;
   const by = ballPosition.y;
   const bz = normalizeOriginalHeight(ballPosition.z);
-  const exposesOriginalCamera = api.original_camera_x_lo && api.original_camera_x_hi
+  const exposesOriginalCamera = api.camera_x_low && api.camera_x_high
     && api.camera_y_low && api.camera_y_high;
   const committedVideoView = originalCommittedVideoView(api);
   const committedCamera = originalScreen === 0x00 ? originalCommittedCamera(api, false) : null;
   const rawCameraX = committedVideoView?.x ?? committedCamera?.x ?? (exposesOriginalCamera
-    ? ((api.original_camera_x_hi() << 8) | api.original_camera_x_lo()) : 0);
+    ? ((api.camera_x_high() << 8) | api.camera_x_low()) : 0);
   const rawCameraY = committedVideoView?.y ?? committedCamera?.y ?? (exposesOriginalCamera
     ? ((api.camera_y_high() << 8) | api.camera_y_low()) : 0);
   const cameraX = exposesOriginalCamera
