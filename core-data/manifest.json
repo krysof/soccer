@@ -1204,6 +1204,50 @@
       ]
     },
     {
+      "path": "audio/music-sequences.bin",
+      "category": "audio",
+      "source": "src/bank_00.asm:9442",
+      "bank": "00",
+      "address": "0x9442",
+      "symbol": "music sequence region",
+      "layout": "music headers, channel streams, instruments and note command streams for ids $01-$0E",
+      "length": 6613,
+      "sha256": "5a8f9c7573de89d3f6b75acb6fc7584de3fa36f9fecf3ab58f8bc86867a978d7",
+      "source_ranges": [
+        {
+          "bank": "00",
+          "start": "0x9442",
+          "length": 6613
+        }
+      ],
+      "consumers": [
+        "soccer::audio::SoundProgramCpu",
+        "wasm-game/cpp-core/src/audio/audio_driver.cpp"
+      ]
+    },
+    {
+      "path": "audio/note-period-tables.bin",
+      "category": "audio",
+      "source": "src/bank_00.asm:897B",
+      "bank": "00",
+      "address": "0x897B",
+      "symbol": "note period tables",
+      "layout": "65 low bytes followed by 65 high bytes; the driver masks the note index to 6 bits, so only the first 64 entries of each half are reachable",
+      "length": 130,
+      "sha256": "399335c5eee410a4b84ab633eba5e2a52ab4cd718136c8034eb9cf2a9b97980b",
+      "source_ranges": [
+        {
+          "bank": "00",
+          "start": "0x897B",
+          "length": 130
+        }
+      ],
+      "consumers": [
+        "soccer::audio::SoundProgramCpu",
+        "wasm-game/cpp-core/src/audio/audio_driver.cpp"
+      ]
+    },
+    {
       "path": "audio/sound-command-handlers.bin",
       "category": "audio-code",
       "source": "src/bank_00.asm:83AE",
@@ -1270,6 +1314,28 @@
       ]
     },
     {
+      "path": "audio/sound-effect-sequences.bin",
+      "category": "audio",
+      "source": "src/bank_00.asm:8AAC",
+      "bank": "00",
+      "address": "0x8AAC",
+      "symbol": "sound-effect sequence region",
+      "layout": "sound-effect headers, channel streams, envelopes and DPCM effect records for ids $20-$50",
+      "length": 2454,
+      "sha256": "422676486f0791521f7e6bffc5c291b89ad7050e309a94725b02165b561b791f",
+      "source_ranges": [
+        {
+          "bank": "00",
+          "start": "0x8AAC",
+          "length": 2454
+        }
+      ],
+      "consumers": [
+        "soccer::audio::SoundProgramCpu",
+        "wasm-game/cpp-core/src/audio/audio_driver.cpp"
+      ]
+    },
+    {
       "path": "audio/sound-executable-opcode-starts.bin",
       "category": "audio-metadata",
       "source": "src/bank_00.asm:8000",
@@ -1297,20 +1363,42 @@
       ]
     },
     {
-      "path": "audio/sound-sequences.bin",
-      "category": "audio",
-      "source": "src/bank_00.asm:897B",
+      "path": "audio/sound-id-sequence-pointers.bin",
+      "category": "audio-metadata",
+      "source": "src/bank_00.asm:89FD",
       "bank": "00",
-      "address": "0x897B",
-      "symbol": "music and sound-effect sequence region",
-      "layout": "pointer tables, instruments, note streams and sound-effect command streams",
-      "length": 9372,
-      "sha256": "6948861488ccf9cf48d59ccf6d45e22150a7b27edce003c94df10a40ef8afce1",
+      "address": "0x89FD",
+      "symbol": "sound-id sequence pointer table",
+      "layout": "80 little-endian pointers for music ids $01-$0E and sound-effect ids $20-$50",
+      "length": 160,
+      "sha256": "fe2e1da7a041c0fb9edc4cd319cab0d441ffaba577fa80da22ffb2314b2da681",
       "source_ranges": [
         {
           "bank": "00",
-          "start": "0x897B",
-          "length": 9372
+          "start": "0x89FD",
+          "length": 160
+        }
+      ],
+      "consumers": [
+        "soccer::audio::SoundProgramCpu",
+        "wasm-game/cpp-core/src/audio/audio_driver.cpp"
+      ]
+    },
+    {
+      "path": "audio/sound-sequence-padding.bin",
+      "category": "audio-padding",
+      "source": "src/bank_00.asm:8A9D",
+      "bank": "00",
+      "address": "0x8A9D",
+      "symbol": "unreferenced sequence-table padding",
+      "layout": "15 source bytes between the sound-id pointer table and the first reachable sound effect",
+      "length": 15,
+      "sha256": "a2dd5196b65c74206641a16c999c494bf38718fe8ae094d8997a9ea9595eae54",
+      "source_ranges": [
+        {
+          "bank": "00",
+          "start": "0x8A9D",
+          "length": 15
         }
       ],
       "consumers": [
