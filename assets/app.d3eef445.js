@@ -1191,7 +1191,7 @@ function loadOriginalSpriteRendererFromBin(api) {
 }
 async function loadWasm() {
   const filename = DEBUG ? "soccer_core_cpp.wasm" : "soccer_core_cpp_production.wasm";
-  const relative = DEBUG ? "../strict-tests.b12cf8cf.wasm" : "../soccer_core_cpp.28d83cdb.wasm";
+  const relative = DEBUG ? "../strict-tests.934045ea.wasm" : "../soccer_core_cpp.84e6e30e.wasm";
   const response = await fetchCoreResponse(filename, assetUrl(relative), rootAssetUrl(filename));
   const bytes = await response.arrayBuffer();
   const result = await WebAssembly.instantiate(bytes, {});
@@ -1600,7 +1600,7 @@ function drawOriginalControlNumberMarker(api, view, playerPosition, screenPositi
   const tile = manifest?.specialGroup3Tiles?.[animation & 0x7F];
   if (!Number.isFinite(tile)) return;
   const paletteSlot = ((animation & 1) + 1) & 3;
-  const paletteNumber = api.original_sprite_palette_number(paletteSlot) & 0xFF;
+  const paletteNumber = api.sprite_palette_id(paletteSlot) & 0xFF;
   const bankSlot = tile >> 6;
   const bankNumber = api.sprite_bank(bankSlot) & 0xFF;
   const tileCanvas = originalSpriteTile(bankNumber, tile & 0x3F, paletteNumber);
@@ -1640,8 +1640,8 @@ function drawOriginalMatchStatusbar(api, view) {
   if (!originalAssets.logicalVideo.valid[statusbarAddress]) return false;
   const statusbarNametable = originalLogicalNametable(0x2800);
   const palettes = originalAssets.sprite.palettes;
-  const paletteNumber = api.original_background_palette_number
-    ? api.original_background_palette_number(1) & 0xFF : 0x29;
+  const paletteNumber = api.background_palette_id
+    ? api.background_palette_id(1) & 0xFF : 0x29;
   const palettePair = palettes?.background_pairs?.[paletteNumber];
   if (!palettePair?.[0]) return false;
   const teamByte = api.team_number ? api.team_number(1) & 0xFF : 0;
@@ -2040,7 +2040,7 @@ function drawOriginalWeatherSprites(api, view) {
     const bankSlot = tileNumber >> 6;
     const bankNumber = api.sprite_bank(bankSlot) & 0xFF;
     const paletteSlot = attribute & 0x03;
-    const paletteNumber = api.original_sprite_palette_number(paletteSlot) & 0xFF;
+    const paletteNumber = api.sprite_palette_id(paletteSlot) & 0xFF;
     const tileCanvas = originalSpriteTile(bankNumber, tileNumber & 0x3F, paletteNumber);
     if (!tileCanvas) continue;
     drawOriginalSpriteTile(
@@ -2098,7 +2098,7 @@ function drawOriginalSplash(api) {
   const blinkOff = id === 1 && (subtype === 0x07 || subtype === 0x0A)
     && api.frame_counter && (api.frame_counter() & 4) !== 0;
   const img = composeOriginalSplashBackground(api, id, blinkOff);
-  const brightness = api.original_current_brightness ? api.original_current_brightness() : 0x40;
+  const brightness = api.current_brightness ? api.current_brightness() : 0x40;
   const alpha = Math.max(0, Math.min(1, brightness / 0x40));
   let layout = originalFullScreenLayout();
   if (img) {
@@ -2749,10 +2749,10 @@ function composeOriginalSplashBackground(api, imageId, blinkOff = false) {
     ? api.background_bank(1) & 0xff : background.chr1;
   const bank0 = bank0Value || background.chr0;
   const bank1 = bank1Value || background.chr1;
-  const palette0 = api.original_background_palette_number
-    ? api.original_background_palette_number(0) & 0xff : background.palette0;
-  const palette1 = api.original_background_palette_number
-    ? api.original_background_palette_number(1) & 0xff : background.palette1;
+  const palette0 = api.background_palette_id
+    ? api.background_palette_id(0) & 0xff : background.palette0;
+  const palette1 = api.background_palette_id
+    ? api.background_palette_id(1) & 0xff : background.palette1;
   const key = `${id}:${bank0}:${bank1}:${palette0}:${palette1}:${blinkOff ? 1 : 0}`;
   const cached = originalAssets.splash.states.get(key);
   if (cached) {
@@ -2926,8 +2926,8 @@ function composeOriginalTeamPreviewScreen(api) {
     ? api.background_bank(0) & 0xFF : background.chr0;
   const bank1 = api.background_bank
     ? api.background_bank(1) & 0xFF : background.chr1;
-  const paletteNumbers = [0, 1].map((slot) => api.original_background_palette_number
-    ? api.original_background_palette_number(slot) & 0xFF
+  const paletteNumbers = [0, 1].map((slot) => api.background_palette_id
+    ? api.background_palette_id(slot) & 0xFF
     : (slot === 0 ? background.palette0 : background.palette1));
   const subPalettes = originalBackgroundSubPalettes(paletteNumbers[0], paletteNumbers[1]);
   if (!subPalettes) return null;
@@ -2963,8 +2963,8 @@ function composeOriginalTeamPreviewScreen(api) {
         api.ball_animation ? api.ball_animation() & 0xff : null,
         api.player_animation ? api.player_animation(0) & 0xff : null,
       ],
-      expectedFlagPalettes: [0, 1].map((slot) => api.original_sprite_palette_number
-        ? api.original_sprite_palette_number(slot) & 0xff : null),
+      expectedFlagPalettes: [0, 1].map((slot) => api.sprite_palette_id
+        ? api.sprite_palette_id(slot) & 0xff : null),
       mirroring: background.mirroring,
       logicalRevision: logicalVideo.revision,
       writes: logicalVideo.frameWrites
@@ -2994,8 +2994,8 @@ function composeOriginalPlayerCountPreviewScreen(api) {
     ? api.background_bank(0) & 0xFF : background.chr0;
   const bank1 = api.background_bank
     ? api.background_bank(1) & 0xFF : background.chr1;
-  const paletteNumbers = [0, 1].map((slot) => api.original_background_palette_number
-    ? api.original_background_palette_number(slot) & 0xFF
+  const paletteNumbers = [0, 1].map((slot) => api.background_palette_id
+    ? api.background_palette_id(slot) & 0xFF
     : (slot === 0 ? background.palette0 : background.palette1));
   const subPalettes = originalBackgroundSubPalettes(
     paletteNumbers[0], paletteNumbers[1]);
@@ -3309,7 +3309,7 @@ function drawOriginalMenuScreen(api) {
         ? (composeOriginalMeetingSecretScreen(api, id) || staticBackground)
       : staticBackground;
   const layout = originalFullScreenLayout();
-  const brightness = api.original_current_brightness ? api.original_current_brightness() : 0x40;
+  const brightness = api.current_brightness ? api.current_brightness() : 0x40;
   if (img) {
     ctx.imageSmoothingEnabled = false;
     ctx.globalAlpha = Math.max(0, Math.min(1, brightness / 0x40));
@@ -3439,7 +3439,7 @@ function drawOriginalCreditsScreen(api) {
     ? (api.original_camera_x_hi() << 8) | api.original_camera_x_lo() : 0;
   const cameraY = api.camera_y_low && api.camera_y_high
     ? (api.camera_y_high() << 8) | api.camera_y_low() : 0;
-  const brightness = api.original_current_brightness ? api.original_current_brightness() : 0x40;
+  const brightness = api.current_brightness ? api.current_brightness() : 0x40;
   if (background) {
     ctx.imageSmoothingEnabled = false;
     ctx.globalAlpha = Math.max(0, Math.min(1, brightness / 0x40));
@@ -3573,8 +3573,8 @@ function render(api) {
     ctx.fillRect(0, 0, canvas.width, canvas.height);
     const layout = originalFullScreenLayout();
     if (originalResultBackground) {
-      const brightness = api.original_current_brightness
-        ? api.original_current_brightness() : 0x40;
+      const brightness = api.current_brightness
+        ? api.current_brightness() : 0x40;
       ctx.imageSmoothingEnabled = false;
       ctx.globalAlpha = Math.max(0, Math.min(1, brightness / 0x40));
       const resultWidth = originalResultBackground.naturalWidth || originalResultBackground.width;
