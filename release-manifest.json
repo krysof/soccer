@@ -1,24 +1,24 @@
 {
   "schema": 1,
-  "version": "20260728.50",
+  "version": "20260728.51",
   "release_date": 20260728,
-  "release_revision": 50,
+  "release_revision": 51,
   "artifacts": {
     "javascript": {
-      "path": "assets/app.71d355df.js",
-      "sha256": "71d355df9a787cdab8e44581c2f55a5d7efe2415579d9a118963667de699f088"
+      "path": "assets/app.efbbabff.js",
+      "sha256": "efbbabff7843ce29d0989066a1bc14f36c17520a9cf83073231031cffbfeb1f0"
     },
     "stylesheet": {
       "path": "assets/app.e6a4cdc4.css",
       "sha256": "e6a4cdc43bb446441f1b64f701254a5f62bfa0fa4f182c60a0367bfc4f520007"
     },
     "wasm": {
-      "path": "soccer_core_cpp.4e247a4c.wasm",
-      "sha256": "4e247a4c71fbba8af05f1d1274628c580a4079d23d1a1e1185f9eeb2a0c8981d"
+      "path": "soccer_core_cpp.954910b0.wasm",
+      "sha256": "954910b01e7048d9528e35b62c0d6e58659e86008e95e5c4d2e4919de672b4f7"
     },
     "strict_tests": {
-      "path": "strict-tests.dbc535c9.wasm",
-      "sha256": "dbc535c95fd6b573826ef9fcf46be1b06450a6bc4e357374dc120f03b6d0cbbe"
+      "path": "strict-tests.35b48156.wasm",
+      "sha256": "35b48156517c2f2054acd83d5b8a98ff02c94f9e91f8673b47f1ce645e4e21dc"
     }
   }
 }
