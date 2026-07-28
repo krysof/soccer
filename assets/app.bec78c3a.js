@@ -1191,7 +1191,7 @@ function loadOriginalSpriteRendererFromBin(api) {
 }
 async function loadWasm() {
   const filename = DEBUG ? "soccer_core_cpp.wasm" : "soccer_core_cpp_production.wasm";
-  const relative = DEBUG ? "../strict-tests.af88fa10.wasm" : "../soccer_core_cpp.67c59f81.wasm";
+  const relative = DEBUG ? "../strict-tests.76fed8d0.wasm" : "../soccer_core_cpp.02c05ec7.wasm";
   const response = await fetchCoreResponse(filename, assetUrl(relative), rootAssetUrl(filename));
   const bytes = await response.arrayBuffer();
   const result = await WebAssembly.instantiate(bytes, {});
