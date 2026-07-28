@@ -557,13 +557,13 @@ function ensureAudio() {
   return sfx.ctx;
 }
 function drainOriginalSoundEvents(api, consume) {
-  if (api.original_sound_event_serial && api.original_sound_event) {
-    const current = api.original_sound_event_serial() >>> 0;
+  if (api.sound_event_serial && api.sound_event_at_serial) {
+    const current = api.sound_event_serial() >>> 0;
     let previous = sfx.lastEventSerial >>> 0;
     if (current < previous) previous = 0;
     if (current - previous > 16) previous = current - 16;
     for (let serial = previous + 1; serial <= current; serial++) {
-      const soundId = api.original_sound_event(serial >>> 0) & 0xFF;
+      const soundId = api.sound_event_at_serial(serial >>> 0) & 0xFF;
       if (soundId !== 0xFF) consume(soundId);
     }
     sfx.lastEventSerial = current;
@@ -1191,7 +1191,7 @@ function loadOriginalSpriteRendererFromBin(api) {
 }
 async function loadWasm() {
   const filename = DEBUG ? "soccer_core_cpp.wasm" : "soccer_core_cpp_production.wasm";
-  const relative = DEBUG ? "../strict-tests.03926f77.wasm" : "../soccer_core_cpp.1be55098.wasm";
+  const relative = DEBUG ? "../strict-tests.3cc54813.wasm" : "../soccer_core_cpp.67dc8158.wasm";
   const response = await fetchCoreResponse(filename, assetUrl(relative), rootAssetUrl(filename));
   const bytes = await response.arrayBuffer();
   const result = await WebAssembly.instantiate(bytes, {});
