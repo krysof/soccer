@@ -557,13 +557,13 @@ function ensureAudio() {
   return sfx.ctx;
 }
 function drainOriginalSoundEvents(api, consume) {
-  if (api.original_sound_event_serial && api.original_sound_event) {
-    const current = api.original_sound_event_serial() >>> 0;
+  if (api.sound_event_serial && api.sound_event_at_serial) {
+    const current = api.sound_event_serial() >>> 0;
     let previous = sfx.lastEventSerial >>> 0;
     if (current < previous) previous = 0;
     if (current - previous > 16) previous = current - 16;
     for (let serial = previous + 1; serial <= current; serial++) {
-      const soundId = api.original_sound_event(serial >>> 0) & 0xFF;
+      const soundId = api.sound_event_at_serial(serial >>> 0) & 0xFF;
       if (soundId !== 0xFF) consume(soundId);
     }
     sfx.lastEventSerial = current;
@@ -1191,7 +1191,7 @@ function loadOriginalSpriteRendererFromBin(api) {
 }
 async function loadWasm() {
   const filename = DEBUG ? "soccer_core_cpp.wasm" : "soccer_core_cpp_production.wasm";
-  const relative = DEBUG ? "../strict-tests.76fed8d0.wasm" : "../soccer_core_cpp.02c05ec7.wasm";
+  const relative = DEBUG ? "../strict-tests.b12cf8cf.wasm" : "../soccer_core_cpp.28d83cdb.wasm";
   const response = await fetchCoreResponse(filename, assetUrl(relative), rootAssetUrl(filename));
   const bytes = await response.arrayBuffer();
   const result = await WebAssembly.instantiate(bytes, {});
@@ -1549,24 +1549,24 @@ function originalCommittedVideoView(api) {
   };
 }
 function originalPlayerPosition(api, index) {
-  if (api.original_player_x_lo && api.original_player_x_hi && api.original_player_y_lo && api.original_player_y_hi) {
+  if (api.player_position_x_low && api.player_position_x_high && api.player_position_y_low && api.player_position_y_high) {
     return {
-      x: (api.original_player_x_hi(index) << 8) | api.original_player_x_lo(index),
-      y: (api.original_player_y_hi(index) << 8) | api.original_player_y_lo(index),
-      z: api.original_player_z_lo && api.original_player_z_hi
-        ? ((api.original_player_z_hi(index) << 8) | api.original_player_z_lo(index))
+      x: (api.player_position_x_high(index) << 8) | api.player_position_x_low(index),
+      y: (api.player_position_y_high(index) << 8) | api.player_position_y_low(index),
+      z: api.player_position_z_low && api.player_position_z_high
+        ? ((api.player_position_z_high(index) << 8) | api.player_position_z_low(index))
         : 0,
     };
   }
   return { x: api.player_x(index), y: api.player_y(index), z: 0 };
 }
 function originalBallPosition(api) {
-  if (api.original_ball_x_lo && api.original_ball_x_hi && api.original_ball_y_lo && api.original_ball_y_hi) {
+  if (api.ball_position_x_low && api.ball_position_x_high && api.ball_position_y_low && api.ball_position_y_high) {
     return {
-      x: (api.original_ball_x_hi() << 8) | api.original_ball_x_lo(),
-      y: (api.original_ball_y_hi() << 8) | api.original_ball_y_lo(),
-      z: api.original_ball_z_lo && api.original_ball_z_hi
-        ? ((api.original_ball_z_hi() << 8) | api.original_ball_z_lo())
+      x: (api.ball_position_x_high() << 8) | api.ball_position_x_low(),
+      y: (api.ball_position_y_high() << 8) | api.ball_position_y_low(),
+      z: api.ball_position_z_low && api.ball_position_z_high
+        ? ((api.ball_position_z_high() << 8) | api.ball_position_z_low())
         : 0,
     };
   }
@@ -1602,7 +1602,7 @@ function drawOriginalControlNumberMarker(api, view, playerPosition, screenPositi
   const paletteSlot = ((animation & 1) + 1) & 3;
   const paletteNumber = api.original_sprite_palette_number(paletteSlot) & 0xFF;
   const bankSlot = tile >> 6;
-  const bankNumber = api.original_sprite_bank(bankSlot) & 0xFF;
+  const bankNumber = api.sprite_bank(bankSlot) & 0xFF;
   const tileCanvas = originalSpriteTile(bankNumber, tile & 0x3F, paletteNumber);
   if (!tileCanvas) return;
   drawOriginalSpriteTile(
@@ -1614,7 +1614,7 @@ function drawOriginalControlNumberMarker(api, view, playerPosition, screenPositi
   );
 }
 function originalStatusbarSplitActive(api) {
-  if ((api.original_screen_number?.() & 0xFF) !== 0x00) return false;
+  if ((api.screen_id?.() & 0xFF) !== 0x00) return false;
   if (api.game_video_split_enabled && api.game_video_split_kind) {
     return api.game_video_split_enabled() !== 0
       && (api.game_video_split_kind() & 0xFF) === 0x02;
@@ -1622,7 +1622,7 @@ function originalStatusbarSplitActive(api) {
   return (api.original_statusbar_view?.() & 0x7F) === 0x06;
 }
 function originalFieldFullScreenActive(api) {
-  return (api.original_screen_number?.() & 0xFF) === 0x00;
+  return (api.screen_id?.() & 0xFF) === 0x00;
 }
 function originalStatusbarTilePalette(nametable, palettePair, row, column) {
   const attributeRow = Math.min(1, Math.floor(row / 4));
@@ -1644,7 +1644,7 @@ function drawOriginalMatchStatusbar(api, view) {
     ? api.original_background_palette_number(1) & 0xFF : 0x29;
   const palettePair = palettes?.background_pairs?.[paletteNumber];
   if (!palettePair?.[0]) return false;
-  const teamByte = api.original_team_number ? api.original_team_number(1) & 0xFF : 0;
+  const teamByte = api.team_number ? api.team_number(1) & 0xFF : 0;
   const bank0 = api.game_video_split_background_bank
     ? api.game_video_split_background_bank(0) & 0xFF
     : (teamByte & 0x40 ? 0x06 : 0x04);
@@ -1672,10 +1672,10 @@ function drawOriginalMatchStatusbar(api, view) {
   if ((api.original_statusbar_view?.() & 0x7F) !== 0x06) return true;
   const markers = [];
   const committedCopyCamera = originalCommittedCamera(api, true);
-  const copyCameraX = committedCopyCamera?.x ?? (api.original_copy_camera_x_lo && api.original_copy_camera_x_hi
-    ? (api.original_copy_camera_x_hi() << 8) | api.original_copy_camera_x_lo() : 0);
-  const copyCameraY = committedCopyCamera?.y ?? (api.original_copy_camera_y_lo && api.original_copy_camera_y_hi
-    ? (api.original_copy_camera_y_hi() << 8) | api.original_copy_camera_y_lo() : 0);
+  const copyCameraX = committedCopyCamera?.x ?? (api.camera_copy_x_low && api.camera_copy_x_high
+    ? (api.camera_copy_x_high() << 8) | api.camera_copy_x_low() : 0);
+  const copyCameraY = committedCopyCamera?.y ?? (api.camera_copy_y_low && api.camera_copy_y_high
+    ? (api.camera_copy_y_high() << 8) | api.camera_copy_y_low() : 0);
   const markerCount = api.original_field_marker_count ? api.original_field_marker_count() : 0;
   for (let slot = 0; slot < markerCount; slot++) {
     const animation = api.original_field_marker_animation(slot) & 0xFF;
@@ -1858,20 +1858,20 @@ function originalCommittedSpriteFrameActive(api) {
     && api.original_committed_sprite_serial() !== 0);
 }
 function originalSpriteBankForObject(api, objectIndex, bankSlot) {
-  const screen = api.original_screen_number ? api.original_screen_number() & 0xFF : 0;
-  const subtype = api.original_screen_subtype ? api.original_screen_subtype() & 0x7F : 0;
+  const screen = api.screen_id ? api.screen_id() & 0xFF : 0;
+  const subtype = api.screen_subtype ? api.screen_subtype() & 0x7F : 0;
   if (screen === 0x02 && subtype === 0x05
-      && (bankSlot === 1 || bankSlot === 2) && api.original_object_graphics_group) {
-    return api.original_object_graphics_group(bankSlot === 1 ? 5 : 6) & 0xFF;
+      && (bankSlot === 1 || bankSlot === 2) && api.object_graphics_group) {
+    return api.object_graphics_group(bankSlot === 1 ? 5 : 6) & 0xFF;
   }
   if (objectIndex <= 0x0C && originalCommittedSpriteFrameActive(api)
       && api.original_committed_sprite_bank) {
     return api.original_committed_sprite_bank(bankSlot) & 0xFF;
   }
-  return api.original_sprite_bank(bankSlot) & 0xFF;
+  return api.sprite_bank(bankSlot) & 0xFF;
 }
 function originalObjectVisibleForCommittedFrame(api, objectIndex) {
-  const screen = api.original_screen_number ? api.original_screen_number() & 0xFF : 0;
+  const screen = api.screen_id ? api.screen_id() & 0xFF : 0;
   if (screen === 0x02) {
     const animation = originalObjectAnimation(api, objectIndex);
     return Number.isFinite(animation) && (animation & 0x7F) !== 0x7F;
@@ -1881,9 +1881,9 @@ function originalObjectVisibleForCommittedFrame(api, objectIndex) {
     return (api.original_committed_sprite_visibility(objectIndex) & 0xFF) !== 0;
   }
   if (objectIndex === 0x0C) {
-    return !api.original_ball_visibility_flag || api.original_ball_visibility_flag() !== 0;
+    return !api.ball_visibility_flag || api.ball_visibility_flag() !== 0;
   }
-  return !api.original_visibility || api.original_visibility(objectIndex) !== 0;
+  return !api.player_visibility || api.player_visibility(objectIndex) !== 0;
 }
 function originalObjectAnimation(api, objectIndex) {
   if (objectIndex <= 0x0C && api.original_committed_sprite_animation
@@ -1892,24 +1892,24 @@ function originalObjectAnimation(api, objectIndex) {
     return api.original_committed_sprite_animation(objectIndex) & 0xFF;
   }
   if (objectIndex === 0x0C) {
-    return api.original_ball_animation ? api.original_ball_animation() & 0xFF : null;
+    return api.ball_animation ? api.ball_animation() & 0xFF : null;
   }
   if (objectIndex >= 0x0E && objectIndex <= 0x12) {
     return api.original_field_marker_animation
       ? api.original_field_marker_animation(objectIndex - 0x0E) & 0xFF : null;
   }
-  return api.original_player_animation ? api.original_player_animation(objectIndex) & 0xFF : null;
+  return api.player_animation ? api.player_animation(objectIndex) & 0xFF : null;
 }
 function resolveOriginalObjectFrame(api, objectIndex) {
   const manifest = originalAssets.sprite.manifest;
-  if (!manifest || !api.original_object_graphics_group) return null;
+  if (!manifest || !api.object_graphics_group) return null;
   const animation = originalObjectAnimation(api, objectIndex);
   if (!Number.isFinite(animation)) return null;
   const groupNumber = objectIndex <= 0x0C && api.original_committed_sprite_group
       && api.original_committed_sprite_serial
       && api.original_committed_sprite_serial() !== 0
     ? api.original_committed_sprite_group(objectIndex) & 0xFF
-    : api.original_object_graphics_group(objectIndex) & 0xFF;
+    : api.object_graphics_group(objectIndex) & 0xFF;
   if (groupNumber === 3) {
     const index = animation & 0x7F;
     const tile = manifest.specialGroup3Tiles[index];
@@ -2038,7 +2038,7 @@ function drawOriginalWeatherSprites(api, view) {
     const tileNumber = api.original_weather_sprite_tile(index) & 0xFF;
     const attribute = api.original_weather_sprite_attribute(index) & 0xFF;
     const bankSlot = tileNumber >> 6;
-    const bankNumber = api.original_sprite_bank(bankSlot) & 0xFF;
+    const bankNumber = api.sprite_bank(bankSlot) & 0xFF;
     const paletteSlot = attribute & 0x03;
     const paletteNumber = api.original_sprite_palette_number(paletteSlot) & 0xFF;
     const tileCanvas = originalSpriteTile(bankNumber, tileNumber & 0x3F, paletteNumber);
@@ -2064,10 +2064,10 @@ function drawScore(api, w, originalStatusbarDrawn = false) {
   const rightScore = api.score_right();
   const seconds = api.match_seconds_left ? api.match_seconds_left() : 0;
   const period = api.current_period ? api.current_period() : 1;
-  const cpuTeam = api.original_team_number
-    ? (api.original_team_number(1) & 0x0F) : 1;
-  const timeText = api.original_time_minutes
-    ? `${api.original_time_minutes()}:${api.original_time_seconds_tens()}${api.original_time_seconds_ones()}`
+  const cpuTeam = api.team_number
+    ? (api.team_number(1) & 0x0F) : 1;
+  const timeText = api.match_time_minutes
+    ? `${api.match_time_minutes()}:${api.match_time_seconds_tens()}${api.match_time_seconds_ones()}`
     : `${String(Math.floor(seconds / 60)).padStart(1, "0")}:${String(seconds % 60).padStart(2, "0")}`;
   ctx.fillStyle = "rgba(0,0,0,.62)";
   ctx.fillRect(w / 2 - 138, 10, 276, 46);
@@ -2093,10 +2093,10 @@ function drawOverlay(title, lines = []) {
 function drawOriginalSplash(api) {
   ctx.fillStyle = "#000";
   ctx.fillRect(0, 0, canvas.width, canvas.height);
-  const id = api.original_background_image_id ? api.original_background_image_id() : 0;
-  const subtype = api.original_screen_subtype ? api.original_screen_subtype() & 0x7F : 0;
+  const id = api.background_image_id ? api.background_image_id() : 0;
+  const subtype = api.screen_subtype ? api.screen_subtype() & 0x7F : 0;
   const blinkOff = id === 1 && (subtype === 0x07 || subtype === 0x0A)
-    && api.original_frame_counter && (api.original_frame_counter() & 4) !== 0;
+    && api.frame_counter && (api.frame_counter() & 4) !== 0;
   const img = composeOriginalSplashBackground(api, id, blinkOff);
   const brightness = api.original_current_brightness ? api.original_current_brightness() : 0x40;
   const alpha = Math.max(0, Math.min(1, brightness / 0x40));
@@ -2133,7 +2133,7 @@ function drawOriginalSplashObjects(api, layout, backgroundId, subtype, alpha) {
   }
   let playerPosition = null;
   let ballPosition = null;
-  if (kunioScene && api.original_player_x_lo) {
+  if (kunioScene && api.player_position_x_low) {
     const raw = originalPlayerPosition(api, 0);
     playerPosition = {
       x: originalSplashSignedCoordinate(raw.x),
@@ -2141,7 +2141,7 @@ function drawOriginalSplashObjects(api, layout, backgroundId, subtype, alpha) {
       z: normalizeOriginalHeight(raw.z),
     };
   }
-  if (api.original_ball_x_lo) {
+  if (api.ball_position_x_low) {
     const raw = originalBallPosition(api);
     ballPosition = {
       x: originalSplashSignedCoordinate(raw.x),
@@ -2350,16 +2350,16 @@ function drawOriginalMenuObjects(api, layout, subtype) {
       subtype,
       drawnObjectIds,
       logicalOamCount: api.game_sprite_draw_count ? api.game_sprite_draw_count() >>> 0 : 0,
-      stagedBank1: api.original_object_graphics_group ? api.original_object_graphics_group(5) & 0xFF : null,
-      stagedBank2: api.original_object_graphics_group ? api.original_object_graphics_group(6) & 0xFF : null,
+      stagedBank1: api.object_graphics_group ? api.object_graphics_group(5) & 0xFF : null,
+      stagedBank2: api.object_graphics_group ? api.object_graphics_group(6) & 0xFF : null,
     };
   }
 }
 function composeOriginalBracketScreen(api) {
   const bracket = originalAssets.bracket;
   const logicalVideo = originalAssets.logicalVideo;
-  const backgroundId = api.original_background_image_id
-    ? api.original_background_image_id() & 0xff : 0;
+  const backgroundId = api.background_image_id
+    ? api.background_image_id() & 0xff : 0;
   if (backgroundId !== 0x15) return null;
   if (!bracket.background) {
     bracket.background = decodeOriginalBackgroundImageFromCpp(api, backgroundId);
@@ -2391,8 +2391,8 @@ function composeOriginalBracketScreen(api) {
       ? api.tournament_bracket_stage() & 0xff : 0;
     const slots = Array.from({ length: 10 }, (_, index) =>
       api.tournament_bracket_slot ? api.tournament_bracket_slot(index) & 0xff : 0);
-    const teams = [0, 1].map((side) => api.original_team_number
-      ? api.original_team_number(side) & 0xff : 0);
+    const teams = [0, 1].map((side) => api.team_number
+      ? api.team_number(side) & 0xff : 0);
     window.__soccerBracketRenderer = {
       source: "logical-video-cpp",
       backgroundId,
@@ -2450,8 +2450,8 @@ function composeOriginalModeSelectionScreen(api) {
       || background.stream.length !== 0x400) return null;
   const subPalettes = originalBackgroundSubPalettes(background.palette0, background.palette1);
   if (!subPalettes) return null;
-  const state = api.original_option_counter ? api.original_option_counter() & 0xff : 0;
-  const option = api.original_option_number ? api.original_option_number() & 0xff : 0xff;
+  const state = api.option_repeat_counter ? api.option_repeat_counter() & 0xff : 0;
+  const option = api.primary_option_index ? api.primary_option_index() & 0xff : 0xff;
   const videoWrite = latestOriginalLogicalVideoWrite(0);
   const address = videoWrite?.address ?? 0;
   const patch = videoWrite ? Array.from(videoWrite.bytes) : [];
@@ -2502,11 +2502,11 @@ function composeOriginalMatchSettingsScreen(api) {
     background.palette0, background.palette1,
   );
   if (!subPalettes) return null;
-  const continent = api.original_continent_option ? api.original_continent_option() & 0xff : 0;
+  const continent = api.continent_option ? api.continent_option() & 0xff : 0;
   const surfaceWetness = api.original_surface_wetness ? api.original_surface_wetness() & 0xff : 0;
-  const rainWind = api.original_rain_wind_option ? api.original_rain_wind_option() & 0xff : 0;
-  const storm = api.original_lightning_tornado_direction
-    ? api.original_lightning_tornado_direction() & 0xff : 0;
+  const rainWind = api.rain_wind_option ? api.rain_wind_option() & 0xff : 0;
+  const storm = api.lightning_tornado_direction
+    ? api.lightning_tornado_direction() & 0xff : 0;
   const logicalRevision = originalAssets.logicalVideo.revision;
   const key = `${logicalRevision}:${continent}:${surfaceWetness}:${rainWind}:${storm}`;
   if (settings.canvas && settings.key === key) return settings.canvas;
@@ -2558,10 +2558,10 @@ function composeOriginalFormationControlScreen(api) {
   const logicalVideo = originalAssets.logicalVideo;
   const side = api.original_substitution_counter
     ? api.original_substitution_counter() & 1 : 0;
-  const team = api.original_team_number ? api.original_team_number(side) & 0x0F : 0;
-  const state = api.original_option_counter ? api.original_option_counter() & 0xFF : 0;
-  const currentBackgroundId = api.original_background_image_id
-    ? api.original_background_image_id() & 0xFF : 0x05;
+  const team = api.team_number ? api.team_number(side) & 0x0F : 0;
+  const state = api.option_repeat_counter ? api.option_repeat_counter() & 0xFF : 0;
+  const currentBackgroundId = api.background_image_id
+    ? api.background_image_id() & 0xFF : 0x05;
   const teamOverlayId = currentBackgroundId === 0x05
     ? 0xffffffff : currentBackgroundId;
   const key = `${logicalVideo.revision}`;
@@ -2743,10 +2743,10 @@ function composeOriginalSplashBackground(api, imageId, blinkOff = false) {
   const base = originalAssets.staticBackgrounds.get(id);
   if (!base || base.nametables.length !== 1) return base?.canvas || null;
   const background = base.background;
-  const bank0Value = api.original_background_bank
-    ? api.original_background_bank(0) & 0xff : background.chr0;
-  const bank1Value = api.original_background_bank
-    ? api.original_background_bank(1) & 0xff : background.chr1;
+  const bank0Value = api.background_bank
+    ? api.background_bank(0) & 0xff : background.chr0;
+  const bank1Value = api.background_bank
+    ? api.background_bank(1) & 0xff : background.chr1;
   const bank0 = bank0Value || background.chr0;
   const bank1 = bank1Value || background.chr1;
   const palette0 = api.original_background_palette_number
@@ -2812,7 +2812,7 @@ function composeOriginalOpponentSelectionScreen(api) {
       || background.stream.length !== 0x400) return null;
   const subPalettes = originalBackgroundSubPalettes(background.palette0, background.palette1);
   if (!subPalettes) return null;
-  const option = api.original_option_number ? api.original_option_number() & 0xff : 0xff;
+  const option = api.primary_option_index ? api.primary_option_index() & 0xff : 0xff;
   const logicalRevision = originalAssets.logicalVideo.revision;
   const key = `${logicalRevision}:${option}`;
   if (opponent.canvas && opponent.key === key) return opponent.canvas;
@@ -2854,8 +2854,8 @@ function composeOriginalOpponentSelectionScreen(api) {
 }
 function composeOriginalPlayerOrderScreen(api) {
   const order = originalAssets.playerOrder;
-  const backgroundId = api.original_background_image_id
-    ? api.original_background_image_id() & 0xFF : 0;
+  const backgroundId = api.background_image_id
+    ? api.background_image_id() & 0xFF : 0;
   if (backgroundId !== 0x13) return null;
   if (!order.background) {
     order.background = decodeOriginalBackgroundImageFromCpp(api, backgroundId);
@@ -2909,8 +2909,8 @@ function composeOriginalPlayerOrderScreen(api) {
 function composeOriginalTeamPreviewScreen(api) {
   const preview = originalAssets.teamPreview;
   const logicalVideo = originalAssets.logicalVideo;
-  const backgroundId = api.original_background_image_id
-    ? api.original_background_image_id() & 0xFF : 0;
+  const backgroundId = api.background_image_id
+    ? api.background_image_id() & 0xFF : 0;
   if (backgroundId !== 0x0B) return null;
   if (!preview.background) {
     preview.background = decodeOriginalBackgroundImageFromCpp(api, backgroundId);
@@ -2918,14 +2918,14 @@ function composeOriginalTeamPreviewScreen(api) {
   const background = preview.background;
   if (!background || background.destination !== 0x2000
       || background.stream.length !== 0x400) return null;
-  const teams = [0, 1].map((side) => api.original_team_number
-    ? api.original_team_number(side) & 0x0F : 0);
-  const continent = api.original_continent_option
-    ? Math.min(api.original_continent_option() & 0xFF, 4) : 0;
-  const bank0 = api.original_background_bank
-    ? api.original_background_bank(0) & 0xFF : background.chr0;
-  const bank1 = api.original_background_bank
-    ? api.original_background_bank(1) & 0xFF : background.chr1;
+  const teams = [0, 1].map((side) => api.team_number
+    ? api.team_number(side) & 0x0F : 0);
+  const continent = api.continent_option
+    ? Math.min(api.continent_option() & 0xFF, 4) : 0;
+  const bank0 = api.background_bank
+    ? api.background_bank(0) & 0xFF : background.chr0;
+  const bank1 = api.background_bank
+    ? api.background_bank(1) & 0xFF : background.chr1;
   const paletteNumbers = [0, 1].map((slot) => api.original_background_palette_number
     ? api.original_background_palette_number(slot) & 0xFF
     : (slot === 0 ? background.palette0 : background.palette1));
@@ -2960,8 +2960,8 @@ function composeOriginalTeamPreviewScreen(api) {
       bank1: bank1 || background.chr1,
       paletteNumbers: [...paletteNumbers],
       expectedFlagAnimations: [
-        api.original_ball_animation ? api.original_ball_animation() & 0xff : null,
-        api.original_player_animation ? api.original_player_animation(0) & 0xff : null,
+        api.ball_animation ? api.ball_animation() & 0xff : null,
+        api.player_animation ? api.player_animation(0) & 0xff : null,
       ],
       expectedFlagPalettes: [0, 1].map((slot) => api.original_sprite_palette_number
         ? api.original_sprite_palette_number(slot) & 0xff : null),
@@ -2981,8 +2981,8 @@ function composeOriginalTeamPreviewScreen(api) {
 function composeOriginalPlayerCountPreviewScreen(api) {
   const preview = originalAssets.playerCountPreview;
   const logicalVideo = originalAssets.logicalVideo;
-  const backgroundId = api.original_background_image_id
-    ? api.original_background_image_id() & 0xFF : 0;
+  const backgroundId = api.background_image_id
+    ? api.background_image_id() & 0xFF : 0;
   if (backgroundId !== 0x06) return null;
   if (!preview.background) {
     preview.background = decodeOriginalBackgroundImageFromCpp(api, backgroundId);
@@ -2990,18 +2990,18 @@ function composeOriginalPlayerCountPreviewScreen(api) {
   const background = preview.background;
   if (!background || background.destination !== 0x2000
       || background.stream.length < 0x400) return null;
-  const bank0 = api.original_background_bank
-    ? api.original_background_bank(0) & 0xFF : background.chr0;
-  const bank1 = api.original_background_bank
-    ? api.original_background_bank(1) & 0xFF : background.chr1;
+  const bank0 = api.background_bank
+    ? api.background_bank(0) & 0xFF : background.chr0;
+  const bank1 = api.background_bank
+    ? api.background_bank(1) & 0xFF : background.chr1;
   const paletteNumbers = [0, 1].map((slot) => api.original_background_palette_number
     ? api.original_background_palette_number(slot) & 0xFF
     : (slot === 0 ? background.palette0 : background.palette1));
   const subPalettes = originalBackgroundSubPalettes(
     paletteNumbers[0], paletteNumbers[1]);
   if (!subPalettes) return null;
-  const playersAmount = api.original_players_amount
-    ? api.original_players_amount() & 0xFF : 0;
+  const playersAmount = api.selected_player_count
+    ? api.selected_player_count() & 0xFF : 0;
   const key = `${playersAmount}:${bank0}:${bank1}:${paletteNumbers.join(",")}:`
     + `${logicalVideo.revision}`;
   if (preview.canvas && preview.key === key) return preview.canvas;
@@ -3044,8 +3044,8 @@ function composeOriginalPlayerCountPreviewScreen(api) {
 }
 function composeOriginalTournamentRecordScreen(api) {
   const record = originalAssets.tournamentRecord;
-  const backgroundId = api.original_background_image_id
-    ? api.original_background_image_id() & 0xff : 0;
+  const backgroundId = api.background_image_id
+    ? api.background_image_id() & 0xff : 0;
   if (backgroundId !== 0x0d) return null;
   if (!record.background) {
     record.background = decodeOriginalBackgroundImageFromCpp(api, backgroundId);
@@ -3093,8 +3093,8 @@ function composeOriginalTournamentRecordScreen(api) {
 }
 function composeOriginalPlayerProfileScreen(api) {
   const profile = originalAssets.playerProfile;
-  const backgroundId = api.original_background_image_id
-    ? api.original_background_image_id() & 0xff : 0;
+  const backgroundId = api.background_image_id
+    ? api.background_image_id() & 0xff : 0;
   if (backgroundId !== 0x0c) return null;
   if (!profile.background) {
     profile.background = decodeOriginalBackgroundImageFromCpp(api, backgroundId);
@@ -3104,8 +3104,8 @@ function composeOriginalPlayerProfileScreen(api) {
       || background.stream.length !== 0x400) return null;
   const subPalettes = originalBackgroundSubPalettes(background.palette0, background.palette1);
   if (!subPalettes) return null;
-  const selected = api.original_selected_player_number
-    ? api.original_selected_player_number() & 0xff : 0;
+  const selected = api.selected_player_index
+    ? api.selected_player_index() & 0xff : 0;
   const effectState = api.original_text_effect_state ? api.original_text_effect_state() & 0xff : 0x80;
   const effectStatus = api.original_text_effect_status ? api.original_text_effect_status() & 0xff : 0;
   const effectScriptId = api.original_text_effect_script_id
@@ -3176,9 +3176,9 @@ function composeOriginalMusicSelectionScreen(api) {
     background.palette1,
   );
   if (!subPalettes) return null;
-  const option = api.original_option_number ? api.original_option_number() & 0xff : 0xff;
-  const hiddenNumber = api.original_secondary_option_number
-    ? api.original_secondary_option_number() & 0xff : 0;
+  const option = api.primary_option_index ? api.primary_option_index() & 0xff : 0xff;
+  const hiddenNumber = api.secondary_option_index
+    ? api.secondary_option_index() & 0xff : 0;
   const graphicsWrite = latestOriginalLogicalVideoWrite(1);
   const bufferAddress = graphicsWrite?.address ?? 0;
   const buffer = graphicsWrite ? Array.from(graphicsWrite.bytes) : [];
@@ -3255,7 +3255,7 @@ function composeOriginalMeetingSecretScreen(api, backgroundId) {
   meeting.key = key;
   if (DEBUG) {
     window.__soccerMeetingSecretRenderer = {
-      subtype: api.original_screen_subtype ? api.original_screen_subtype() & 0x7f : 0,
+      subtype: api.screen_subtype ? api.screen_subtype() & 0x7f : 0,
       source: "classified-bin-cpp",
       backgroundId,
       destination: background.destination,
@@ -3277,8 +3277,8 @@ function composeOriginalMeetingSecretScreen(api, backgroundId) {
 function drawOriginalMenuScreen(api) {
   ctx.fillStyle = "#000";
   ctx.fillRect(0, 0, canvas.width, canvas.height);
-  const id = api.original_background_image_id ? api.original_background_image_id() : 0x02;
-  const subtype = api.original_screen_subtype ? api.original_screen_subtype() & 0x7f : 0;
+  const id = api.background_image_id ? api.background_image_id() : 0x02;
+  const subtype = api.screen_subtype ? api.screen_subtype() & 0x7f : 0;
   const staticBackground = composeOriginalStaticBackground(api, id);
   const img = subtype === 0x0f
     ? (composeOriginalBracketScreen(api) || staticBackground)
@@ -3314,8 +3314,8 @@ function drawOriginalMenuScreen(api) {
     ctx.imageSmoothingEnabled = false;
     ctx.globalAlpha = Math.max(0, Math.min(1, brightness / 0x40));
     if ((subtype === 0x06 || subtype === 0x07) && (img.height || img.naturalHeight) >= 480) {
-      const cameraY = api.original_camera_y_lo && api.original_camera_y_hi
-        ? ((api.original_camera_y_hi() << 8) | api.original_camera_y_lo())
+      const cameraY = api.camera_y_low && api.camera_y_high
+        ? ((api.camera_y_high() << 8) | api.camera_y_low())
         : 0;
       const sourceY = cameraY >= 0x0100 ? 240 : Math.min(cameraY, 240);
       ctx.drawImage(img, 0, sourceY, 256, 240, layout.x, layout.y, layout.w, layout.h);
@@ -3323,8 +3323,8 @@ function drawOriginalMenuScreen(api) {
         const rendererState = {
           subtype,
           backgroundId: id,
-          state: api.original_option_counter ? api.original_option_counter() & 0xff : 0,
-          option: api.original_option_number ? api.original_option_number() & 0xff : 0,
+          state: api.option_repeat_counter ? api.option_repeat_counter() & 0xff : 0,
+          option: api.primary_option_index ? api.primary_option_index() & 0xff : 0,
           cameraY,
           sourceY,
           key: subtype === 0x06
@@ -3428,17 +3428,17 @@ function composeOriginalCreditsBackground(api, backgroundId) {
 function drawOriginalCreditsScreen(api) {
   ctx.fillStyle = "#000";
   ctx.fillRect(0, 0, canvas.width, canvas.height);
-  const subtype = api.original_screen_subtype ? api.original_screen_subtype() & 0x7f : 0;
-  const backgroundId = api.original_background_image_id
-    ? api.original_background_image_id() & 0xff : 0x1c;
+  const subtype = api.screen_subtype ? api.screen_subtype() & 0x7f : 0;
+  const backgroundId = api.background_image_id
+    ? api.background_image_id() & 0xff : 0x1c;
   const background = backgroundId === 0
     ? composeOriginalSplashBackground(api, 0, false)
     : composeOriginalCreditsBackground(api, backgroundId);
   const layout = originalFullScreenLayout();
   const cameraX = api.original_camera_x_lo && api.original_camera_x_hi
     ? (api.original_camera_x_hi() << 8) | api.original_camera_x_lo() : 0;
-  const cameraY = api.original_camera_y_lo && api.original_camera_y_hi
-    ? (api.original_camera_y_hi() << 8) | api.original_camera_y_lo() : 0;
+  const cameraY = api.camera_y_low && api.camera_y_high
+    ? (api.camera_y_high() << 8) | api.camera_y_low() : 0;
   const brightness = api.original_current_brightness ? api.original_current_brightness() : 0x40;
   if (background) {
     ctx.imageSmoothingEnabled = false;
@@ -3504,7 +3504,7 @@ function render(api) {
   const screenW = canvas.width;
   const screenH = canvas.height;
   const phase = api.game_phase ? api.game_phase() : PHASE.PLAYING;
-  const originalScreen = api.original_screen_number ? api.original_screen_number() : 0;
+  const originalScreen = api.screen_id ? api.screen_id() : 0;
   synchronizeOriginalFieldFootprints(api, originalScreen);
   const originalField4x3 = originalFieldFullScreenActive(api);
   gameWrap.classList.toggle(
@@ -3524,24 +3524,24 @@ function render(api) {
     drawOriginalCreditsScreen(api);
     return;
   }
-  const originalSubtype = api.original_screen_subtype ? api.original_screen_subtype() : 0;
-  const cpuTeam = api.original_team_number
-    ? (api.original_team_number(1) & 0x0F) : 1;
-  const menuTeam = api.original_option_number
-    ? (api.original_option_number() & 0xFF) : 0;
+  const originalSubtype = api.screen_subtype ? api.screen_subtype() : 0;
+  const cpuTeam = api.team_number
+    ? (api.team_number(1) & 0x0F) : 1;
+  const menuTeam = api.primary_option_index
+    ? (api.primary_option_index() & 0xFF) : 0;
   const wins = api.tournament_win_count ? api.tournament_win_count() : 0;
   const ballPosition = originalBallPosition(api);
   const bx = ballPosition.x;
   const by = ballPosition.y;
   const bz = normalizeOriginalHeight(ballPosition.z);
   const exposesOriginalCamera = api.original_camera_x_lo && api.original_camera_x_hi
-    && api.original_camera_y_lo && api.original_camera_y_hi;
+    && api.camera_y_low && api.camera_y_high;
   const committedVideoView = originalCommittedVideoView(api);
   const committedCamera = originalScreen === 0x00 ? originalCommittedCamera(api, false) : null;
   const rawCameraX = committedVideoView?.x ?? committedCamera?.x ?? (exposesOriginalCamera
     ? ((api.original_camera_x_hi() << 8) | api.original_camera_x_lo()) : 0);
   const rawCameraY = committedVideoView?.y ?? committedCamera?.y ?? (exposesOriginalCamera
-    ? ((api.original_camera_y_hi() << 8) | api.original_camera_y_lo()) : 0);
+    ? ((api.camera_y_high() << 8) | api.camera_y_low()) : 0);
   const cameraX = exposesOriginalCamera
     ? rawCameraX
     : clamp(bx - ORIGINAL_CAMERA_VIEW_W / 2, 0, 1024 - ORIGINAL_CAMERA_VIEW_W);
@@ -3553,17 +3553,17 @@ function render(api) {
     && originalSubtype !== 0x06;
   gameWrap.classList.toggle("original-result-screen", isOriginalResultScreen);
   gameWrap.classList.toggle("original-4x3-screen", isOriginalResultScreen || originalField4x3);
-  const resultBackgroundId = api.original_background_image_id
-    ? api.original_background_image_id() & 0xFF : 0x10;
+  const resultBackgroundId = api.background_image_id
+    ? api.background_image_id() & 0xFF : 0x10;
   const originalResultBackground = isOriginalResultScreen
     ? composeOriginalResultBackground(api, resultBackgroundId)
     : null;
   const committedCopyCamera = originalScreen === 0x00 ? originalCommittedCamera(api, true) : null;
-  const copyCameraX = committedCopyCamera?.x ?? (api.original_copy_camera_x_lo && api.original_copy_camera_x_hi
-    ? (api.original_copy_camera_x_hi() << 8) | api.original_copy_camera_x_lo()
+  const copyCameraX = committedCopyCamera?.x ?? (api.camera_copy_x_low && api.camera_copy_x_high
+    ? (api.camera_copy_x_high() << 8) | api.camera_copy_x_low()
     : cameraX);
-  const copyCameraY = committedCopyCamera?.y ?? (api.original_copy_camera_y_lo && api.original_copy_camera_y_hi
-    ? (api.original_copy_camera_y_hi() << 8) | api.original_copy_camera_y_lo()
+  const copyCameraY = committedCopyCamera?.y ?? (api.camera_copy_y_low && api.camera_copy_y_high
+    ? (api.camera_copy_y_high() << 8) | api.camera_copy_y_low()
     : cameraY);
   let view;
   let objectView;
@@ -3631,7 +3631,7 @@ function render(api) {
     } : null;
   }
   const count = api.player_count ? api.player_count() : 1;
-  const sourceControlled = api.original_controlled_player ? api.original_controlled_player(0) : 0xFF;
+  const sourceControlled = api.controlled_player_index ? api.controlled_player_index(0) : 0xFF;
   const controlled = sourceControlled < count
     ? sourceControlled
     : (api.controlled_player ? api.controlled_player() : 0);
@@ -3773,7 +3773,7 @@ function render(api) {
     window.__soccerControlledMarker = overhead && position && screen ? {
       object: overhead.object,
       slot: overhead.index - 1,
-      index: api.original_controlled_player ? api.original_controlled_player(overhead.index - 1) & 0xFF : 0xFF,
+      index: api.controlled_player_index ? api.controlled_player_index(overhead.index - 1) & 0xFF : 0xFF,
       worldX: position.x,
       worldY: position.y,
       worldZ: position.z,
@@ -3822,30 +3822,30 @@ function render(api) {
     if (phase === PHASE.PENALTY_KICK) drawOverlay("PENALTY KICK", ["PC：按 J / Z 射门", "手机：点 A射门"]);
     if (phase === PHASE.PAUSE) drawOverlay("PAUSE", ["START 继续", "原作暂停：A / B 不会解除暂停"]);
   }
-  const action = api.original_player_action ? api.original_player_action(controlled) : 0;
+  const action = api.player_action_id ? api.player_action_id(controlled) : 0;
   const period = api.current_period ? api.current_period() : 1;
   const swapped = api.side_swapped ? api.side_swapped() : 0;
   const weather = api.field_weather ? api.field_weather() : 0;
   const wind = `${api.field_wind_x ? api.field_wind_x() : 0}/${api.field_wind_y ? api.field_wind_y() : 0}`;
-  const originalOwner = api.original_ball_owner ? api.original_ball_owner() : 0;
+  const originalOwner = api.ball_owner ? api.ball_owner() : 0;
   const roleInfo = api.player_role_speed ? `${api.player_role_speed(controlled)}/${api.player_role_power(controlled)}/${api.player_role_stamina(controlled)}/${api.player_role_tackle(controlled)}/${api.player_role_keeper(controlled)}` : "0";
-  const playerOrig = api.original_player_motion ? `${api.original_player_motion(controlled).toString(16).padStart(2, "0")}/${api.original_player_action(controlled).toString(16).padStart(2, "0")}/${api.original_player_state(controlled).toString(16).padStart(2, "0")}` : "??/??/??";
-  const playerRam = api.original_player_x_lo
-    ? `${api.original_player_x_hi(controlled).toString(16).padStart(2, "0")}${api.original_player_x_lo(controlled).toString(16).padStart(2, "0")}/${api.original_player_y_hi(controlled).toString(16).padStart(2, "0")}${api.original_player_y_lo(controlled).toString(16).padStart(2, "0")}/${api.original_player_z_hi(controlled).toString(16).padStart(2, "0")}${api.original_player_z_lo(controlled).toString(16).padStart(2, "0")}`
+  const playerOrig = api.player_motion ? `${api.player_motion(controlled).toString(16).padStart(2, "0")}/${api.player_action_id(controlled).toString(16).padStart(2, "0")}/${api.player_state_flags(controlled).toString(16).padStart(2, "0")}` : "??/??/??";
+  const playerRam = api.player_position_x_low
+    ? `${api.player_position_x_high(controlled).toString(16).padStart(2, "0")}${api.player_position_x_low(controlled).toString(16).padStart(2, "0")}/${api.player_position_y_high(controlled).toString(16).padStart(2, "0")}${api.player_position_y_low(controlled).toString(16).padStart(2, "0")}/${api.player_position_z_high(controlled).toString(16).padStart(2, "0")}${api.player_position_z_low(controlled).toString(16).padStart(2, "0")}`
     : "????/????/????";
-  const script = api.original_game_script ? api.original_game_script().toString(16).padStart(2, "0") : "??";
-  const ballObj = api.original_ball_object_id ? api.original_ball_object_id().toString(16).padStart(2, "0") : "??";
-  const ballRam = api.original_ball_x_lo
-    ? `${api.original_ball_x_hi().toString(16).padStart(2, "0")}${api.original_ball_x_lo().toString(16).padStart(2, "0")}/${api.original_ball_y_hi().toString(16).padStart(2, "0")}${api.original_ball_y_lo().toString(16).padStart(2, "0")}/${api.original_ball_z_hi().toString(16).padStart(2, "0")}${api.original_ball_z_lo().toString(16).padStart(2, "0")}`
+  const script = api.game_script ? api.game_script().toString(16).padStart(2, "0") : "??";
+  const ballObj = api.ball_object_id ? api.ball_object_id().toString(16).padStart(2, "0") : "??";
+  const ballRam = api.ball_position_x_low
+    ? `${api.ball_position_x_high().toString(16).padStart(2, "0")}${api.ball_position_x_low().toString(16).padStart(2, "0")}/${api.ball_position_y_high().toString(16).padStart(2, "0")}${api.ball_position_y_low().toString(16).padStart(2, "0")}/${api.ball_position_z_high().toString(16).padStart(2, "0")}${api.ball_position_z_low().toString(16).padStart(2, "0")}`
     : "????/????/????";
-  const ballState = api.original_ball_motion
-    ? `${api.original_ball_motion().toString(16).padStart(2, "0")}/${api.original_ball_shot_type().toString(16).padStart(2, "0")}/${api.original_ball_state().toString(16).padStart(2, "0")}/${api.original_ball_action_timer().toString(16).padStart(2, "0")}/${api.original_ball_hp().toString(16).padStart(2, "0")}`
+  const ballState = api.ball_motion
+    ? `${api.ball_motion().toString(16).padStart(2, "0")}/${api.ball_shot_type().toString(16).padStart(2, "0")}/${api.ball_state_flags().toString(16).padStart(2, "0")}/${api.ball_action_timer().toString(16).padStart(2, "0")}/${api.ball_health_points().toString(16).padStart(2, "0")}`
     : "??/??/??/??/??";
-  const ballAnim = api.original_ball_animation
-    ? `${api.original_ball_animation().toString(16).padStart(2, "0")}/${api.original_ball_anim_frame().toString(16).padStart(2, "0")}/${api.original_ball_anim_timer().toString(16).padStart(2, "0")}`
+  const ballAnim = api.ball_animation
+    ? `${api.ball_animation().toString(16).padStart(2, "0")}/${api.ball_animation_frame().toString(16).padStart(2, "0")}/${api.ball_animation_timer().toString(16).padStart(2, "0")}`
     : "??/??/??";
-  const ballSpeedRam = api.original_ball_spd_x_lo
-    ? `${api.original_ball_spd_x_hi().toString(16).padStart(2, "0")}${api.original_ball_spd_x_lo().toString(16).padStart(2, "0")}/${api.original_ball_spd_y_hi().toString(16).padStart(2, "0")}${api.original_ball_spd_y_lo().toString(16).padStart(2, "0")}/${api.original_ball_spd_z_hi().toString(16).padStart(2, "0")}${api.original_ball_spd_z_lo().toString(16).padStart(2, "0")}/g${api.original_ball_gravity_hi().toString(16).padStart(2, "0")}${api.original_ball_gravity_lo().toString(16).padStart(2, "0")}`
+  const ballSpeedRam = api.ball_velocity_x_low
+    ? `${api.ball_velocity_x_high().toString(16).padStart(2, "0")}${api.ball_velocity_x_low().toString(16).padStart(2, "0")}/${api.ball_velocity_y_high().toString(16).padStart(2, "0")}${api.ball_velocity_y_low().toString(16).padStart(2, "0")}/${api.ball_velocity_z_high().toString(16).padStart(2, "0")}${api.ball_velocity_z_low().toString(16).padStart(2, "0")}/g${api.ball_gravity_high().toString(16).padStart(2, "0")}${api.ball_gravity_low().toString(16).padStart(2, "0")}`
     : "????/????/????/g????";
   const btnHold = api.debug_original_button_ram ? api.debug_original_button_ram(0, 0x04).toString(16).padStart(2, "0") : "??";
   const btnPress = api.debug_original_button_ram ? api.debug_original_button_ram(0, 0x08).toString(16).padStart(2, "0") : "??";

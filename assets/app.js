@@ -1191,7 +1191,7 @@ function loadOriginalSpriteRendererFromBin(api) {
 }
 async function loadWasm() {
   const filename = DEBUG ? "soccer_core_cpp.wasm" : "soccer_core_cpp_production.wasm";
-  const relative = DEBUG ? "../strict-tests.7e59299f.wasm" : "../soccer_core_cpp.9eb2e5f3.wasm";
+  const relative = DEBUG ? "../strict-tests.b12cf8cf.wasm" : "../soccer_core_cpp.28d83cdb.wasm";
   const response = await fetchCoreResponse(filename, assetUrl(relative), rootAssetUrl(filename));
   const bytes = await response.arrayBuffer();
   const result = await WebAssembly.instantiate(bytes, {});
@@ -1614,7 +1614,7 @@ function drawOriginalControlNumberMarker(api, view, playerPosition, screenPositi
   );
 }
 function originalStatusbarSplitActive(api) {
-  if ((api.original_screen_number?.() & 0xFF) !== 0x00) return false;
+  if ((api.screen_id?.() & 0xFF) !== 0x00) return false;
   if (api.game_video_split_enabled && api.game_video_split_kind) {
     return api.game_video_split_enabled() !== 0
       && (api.game_video_split_kind() & 0xFF) === 0x02;
@@ -1622,7 +1622,7 @@ function originalStatusbarSplitActive(api) {
   return (api.original_statusbar_view?.() & 0x7F) === 0x06;
 }
 function originalFieldFullScreenActive(api) {
-  return (api.original_screen_number?.() & 0xFF) === 0x00;
+  return (api.screen_id?.() & 0xFF) === 0x00;
 }
 function originalStatusbarTilePalette(nametable, palettePair, row, column) {
   const attributeRow = Math.min(1, Math.floor(row / 4));
@@ -1644,7 +1644,7 @@ function drawOriginalMatchStatusbar(api, view) {
     ? api.original_background_palette_number(1) & 0xFF : 0x29;
   const palettePair = palettes?.background_pairs?.[paletteNumber];
   if (!palettePair?.[0]) return false;
-  const teamByte = api.original_team_number ? api.original_team_number(1) & 0xFF : 0;
+  const teamByte = api.team_number ? api.team_number(1) & 0xFF : 0;
   const bank0 = api.game_video_split_background_bank
     ? api.game_video_split_background_bank(0) & 0xFF
     : (teamByte & 0x40 ? 0x06 : 0x04);
@@ -1672,10 +1672,10 @@ function drawOriginalMatchStatusbar(api, view) {
   if ((api.original_statusbar_view?.() & 0x7F) !== 0x06) return true;
   const markers = [];
   const committedCopyCamera = originalCommittedCamera(api, true);
-  const copyCameraX = committedCopyCamera?.x ?? (api.original_copy_camera_x_lo && api.original_copy_camera_x_hi
-    ? (api.original_copy_camera_x_hi() << 8) | api.original_copy_camera_x_lo() : 0);
-  const copyCameraY = committedCopyCamera?.y ?? (api.original_copy_camera_y_lo && api.original_copy_camera_y_hi
-    ? (api.original_copy_camera_y_hi() << 8) | api.original_copy_camera_y_lo() : 0);
+  const copyCameraX = committedCopyCamera?.x ?? (api.camera_copy_x_low && api.camera_copy_x_high
+    ? (api.camera_copy_x_high() << 8) | api.camera_copy_x_low() : 0);
+  const copyCameraY = committedCopyCamera?.y ?? (api.camera_copy_y_low && api.camera_copy_y_high
+    ? (api.camera_copy_y_high() << 8) | api.camera_copy_y_low() : 0);
   const markerCount = api.original_field_marker_count ? api.original_field_marker_count() : 0;
   for (let slot = 0; slot < markerCount; slot++) {
     const animation = api.original_field_marker_animation(slot) & 0xFF;
@@ -1858,8 +1858,8 @@ function originalCommittedSpriteFrameActive(api) {
     && api.original_committed_sprite_serial() !== 0);
 }
 function originalSpriteBankForObject(api, objectIndex, bankSlot) {
-  const screen = api.original_screen_number ? api.original_screen_number() & 0xFF : 0;
-  const subtype = api.original_screen_subtype ? api.original_screen_subtype() & 0x7F : 0;
+  const screen = api.screen_id ? api.screen_id() & 0xFF : 0;
+  const subtype = api.screen_subtype ? api.screen_subtype() & 0x7F : 0;
   if (screen === 0x02 && subtype === 0x05
       && (bankSlot === 1 || bankSlot === 2) && api.object_graphics_group) {
     return api.object_graphics_group(bankSlot === 1 ? 5 : 6) & 0xFF;
@@ -1871,7 +1871,7 @@ function originalSpriteBankForObject(api, objectIndex, bankSlot) {
   return api.sprite_bank(bankSlot) & 0xFF;
 }
 function originalObjectVisibleForCommittedFrame(api, objectIndex) {
-  const screen = api.original_screen_number ? api.original_screen_number() & 0xFF : 0;
+  const screen = api.screen_id ? api.screen_id() & 0xFF : 0;
   if (screen === 0x02) {
     const animation = originalObjectAnimation(api, objectIndex);
     return Number.isFinite(animation) && (animation & 0x7F) !== 0x7F;
@@ -2064,10 +2064,10 @@ function drawScore(api, w, originalStatusbarDrawn = false) {
   const rightScore = api.score_right();
   const seconds = api.match_seconds_left ? api.match_seconds_left() : 0;
   const period = api.current_period ? api.current_period() : 1;
-  const cpuTeam = api.original_team_number
-    ? (api.original_team_number(1) & 0x0F) : 1;
-  const timeText = api.original_time_minutes
-    ? `${api.original_time_minutes()}:${api.original_time_seconds_tens()}${api.original_time_seconds_ones()}`
+  const cpuTeam = api.team_number
+    ? (api.team_number(1) & 0x0F) : 1;
+  const timeText = api.match_time_minutes
+    ? `${api.match_time_minutes()}:${api.match_time_seconds_tens()}${api.match_time_seconds_ones()}`
     : `${String(Math.floor(seconds / 60)).padStart(1, "0")}:${String(seconds % 60).padStart(2, "0")}`;
   ctx.fillStyle = "rgba(0,0,0,.62)";
   ctx.fillRect(w / 2 - 138, 10, 276, 46);
@@ -2093,10 +2093,10 @@ function drawOverlay(title, lines = []) {
 function drawOriginalSplash(api) {
   ctx.fillStyle = "#000";
   ctx.fillRect(0, 0, canvas.width, canvas.height);
-  const id = api.original_background_image_id ? api.original_background_image_id() : 0;
-  const subtype = api.original_screen_subtype ? api.original_screen_subtype() & 0x7F : 0;
+  const id = api.background_image_id ? api.background_image_id() : 0;
+  const subtype = api.screen_subtype ? api.screen_subtype() & 0x7F : 0;
   const blinkOff = id === 1 && (subtype === 0x07 || subtype === 0x0A)
-    && api.original_frame_counter && (api.original_frame_counter() & 4) !== 0;
+    && api.frame_counter && (api.frame_counter() & 4) !== 0;
   const img = composeOriginalSplashBackground(api, id, blinkOff);
   const brightness = api.original_current_brightness ? api.original_current_brightness() : 0x40;
   const alpha = Math.max(0, Math.min(1, brightness / 0x40));
@@ -2358,8 +2358,8 @@ function drawOriginalMenuObjects(api, layout, subtype) {
 function composeOriginalBracketScreen(api) {
   const bracket = originalAssets.bracket;
   const logicalVideo = originalAssets.logicalVideo;
-  const backgroundId = api.original_background_image_id
-    ? api.original_background_image_id() & 0xff : 0;
+  const backgroundId = api.background_image_id
+    ? api.background_image_id() & 0xff : 0;
   if (backgroundId !== 0x15) return null;
   if (!bracket.background) {
     bracket.background = decodeOriginalBackgroundImageFromCpp(api, backgroundId);
@@ -2391,8 +2391,8 @@ function composeOriginalBracketScreen(api) {
       ? api.tournament_bracket_stage() & 0xff : 0;
     const slots = Array.from({ length: 10 }, (_, index) =>
       api.tournament_bracket_slot ? api.tournament_bracket_slot(index) & 0xff : 0);
-    const teams = [0, 1].map((side) => api.original_team_number
-      ? api.original_team_number(side) & 0xff : 0);
+    const teams = [0, 1].map((side) => api.team_number
+      ? api.team_number(side) & 0xff : 0);
     window.__soccerBracketRenderer = {
       source: "logical-video-cpp",
       backgroundId,
@@ -2450,8 +2450,8 @@ function composeOriginalModeSelectionScreen(api) {
       || background.stream.length !== 0x400) return null;
   const subPalettes = originalBackgroundSubPalettes(background.palette0, background.palette1);
   if (!subPalettes) return null;
-  const state = api.original_option_counter ? api.original_option_counter() & 0xff : 0;
-  const option = api.original_option_number ? api.original_option_number() & 0xff : 0xff;
+  const state = api.option_repeat_counter ? api.option_repeat_counter() & 0xff : 0;
+  const option = api.primary_option_index ? api.primary_option_index() & 0xff : 0xff;
   const videoWrite = latestOriginalLogicalVideoWrite(0);
   const address = videoWrite?.address ?? 0;
   const patch = videoWrite ? Array.from(videoWrite.bytes) : [];
@@ -2502,11 +2502,11 @@ function composeOriginalMatchSettingsScreen(api) {
     background.palette0, background.palette1,
   );
   if (!subPalettes) return null;
-  const continent = api.original_continent_option ? api.original_continent_option() & 0xff : 0;
+  const continent = api.continent_option ? api.continent_option() & 0xff : 0;
   const surfaceWetness = api.original_surface_wetness ? api.original_surface_wetness() & 0xff : 0;
-  const rainWind = api.original_rain_wind_option ? api.original_rain_wind_option() & 0xff : 0;
-  const storm = api.original_lightning_tornado_direction
-    ? api.original_lightning_tornado_direction() & 0xff : 0;
+  const rainWind = api.rain_wind_option ? api.rain_wind_option() & 0xff : 0;
+  const storm = api.lightning_tornado_direction
+    ? api.lightning_tornado_direction() & 0xff : 0;
   const logicalRevision = originalAssets.logicalVideo.revision;
   const key = `${logicalRevision}:${continent}:${surfaceWetness}:${rainWind}:${storm}`;
   if (settings.canvas && settings.key === key) return settings.canvas;
@@ -2558,10 +2558,10 @@ function composeOriginalFormationControlScreen(api) {
   const logicalVideo = originalAssets.logicalVideo;
   const side = api.original_substitution_counter
     ? api.original_substitution_counter() & 1 : 0;
-  const team = api.original_team_number ? api.original_team_number(side) & 0x0F : 0;
-  const state = api.original_option_counter ? api.original_option_counter() & 0xFF : 0;
-  const currentBackgroundId = api.original_background_image_id
-    ? api.original_background_image_id() & 0xFF : 0x05;
+  const team = api.team_number ? api.team_number(side) & 0x0F : 0;
+  const state = api.option_repeat_counter ? api.option_repeat_counter() & 0xFF : 0;
+  const currentBackgroundId = api.background_image_id
+    ? api.background_image_id() & 0xFF : 0x05;
   const teamOverlayId = currentBackgroundId === 0x05
     ? 0xffffffff : currentBackgroundId;
   const key = `${logicalVideo.revision}`;
@@ -2743,10 +2743,10 @@ function composeOriginalSplashBackground(api, imageId, blinkOff = false) {
   const base = originalAssets.staticBackgrounds.get(id);
   if (!base || base.nametables.length !== 1) return base?.canvas || null;
   const background = base.background;
-  const bank0Value = api.original_background_bank
-    ? api.original_background_bank(0) & 0xff : background.chr0;
-  const bank1Value = api.original_background_bank
-    ? api.original_background_bank(1) & 0xff : background.chr1;
+  const bank0Value = api.background_bank
+    ? api.background_bank(0) & 0xff : background.chr0;
+  const bank1Value = api.background_bank
+    ? api.background_bank(1) & 0xff : background.chr1;
   const bank0 = bank0Value || background.chr0;
   const bank1 = bank1Value || background.chr1;
   const palette0 = api.original_background_palette_number
@@ -2812,7 +2812,7 @@ function composeOriginalOpponentSelectionScreen(api) {
       || background.stream.length !== 0x400) return null;
   const subPalettes = originalBackgroundSubPalettes(background.palette0, background.palette1);
   if (!subPalettes) return null;
-  const option = api.original_option_number ? api.original_option_number() & 0xff : 0xff;
+  const option = api.primary_option_index ? api.primary_option_index() & 0xff : 0xff;
   const logicalRevision = originalAssets.logicalVideo.revision;
   const key = `${logicalRevision}:${option}`;
   if (opponent.canvas && opponent.key === key) return opponent.canvas;
@@ -2854,8 +2854,8 @@ function composeOriginalOpponentSelectionScreen(api) {
 }
 function composeOriginalPlayerOrderScreen(api) {
   const order = originalAssets.playerOrder;
-  const backgroundId = api.original_background_image_id
-    ? api.original_background_image_id() & 0xFF : 0;
+  const backgroundId = api.background_image_id
+    ? api.background_image_id() & 0xFF : 0;
   if (backgroundId !== 0x13) return null;
   if (!order.background) {
     order.background = decodeOriginalBackgroundImageFromCpp(api, backgroundId);
@@ -2909,8 +2909,8 @@ function composeOriginalPlayerOrderScreen(api) {
 function composeOriginalTeamPreviewScreen(api) {
   const preview = originalAssets.teamPreview;
   const logicalVideo = originalAssets.logicalVideo;
-  const backgroundId = api.original_background_image_id
-    ? api.original_background_image_id() & 0xFF : 0;
+  const backgroundId = api.background_image_id
+    ? api.background_image_id() & 0xFF : 0;
   if (backgroundId !== 0x0B) return null;
   if (!preview.background) {
     preview.background = decodeOriginalBackgroundImageFromCpp(api, backgroundId);
@@ -2918,14 +2918,14 @@ function composeOriginalTeamPreviewScreen(api) {
   const background = preview.background;
   if (!background || background.destination !== 0x2000
       || background.stream.length !== 0x400) return null;
-  const teams = [0, 1].map((side) => api.original_team_number
-    ? api.original_team_number(side) & 0x0F : 0);
-  const continent = api.original_continent_option
-    ? Math.min(api.original_continent_option() & 0xFF, 4) : 0;
-  const bank0 = api.original_background_bank
-    ? api.original_background_bank(0) & 0xFF : background.chr0;
-  const bank1 = api.original_background_bank
-    ? api.original_background_bank(1) & 0xFF : background.chr1;
+  const teams = [0, 1].map((side) => api.team_number
+    ? api.team_number(side) & 0x0F : 0);
+  const continent = api.continent_option
+    ? Math.min(api.continent_option() & 0xFF, 4) : 0;
+  const bank0 = api.background_bank
+    ? api.background_bank(0) & 0xFF : background.chr0;
+  const bank1 = api.background_bank
+    ? api.background_bank(1) & 0xFF : background.chr1;
   const paletteNumbers = [0, 1].map((slot) => api.original_background_palette_number
     ? api.original_background_palette_number(slot) & 0xFF
     : (slot === 0 ? background.palette0 : background.palette1));
@@ -2981,8 +2981,8 @@ function composeOriginalTeamPreviewScreen(api) {
 function composeOriginalPlayerCountPreviewScreen(api) {
   const preview = originalAssets.playerCountPreview;
   const logicalVideo = originalAssets.logicalVideo;
-  const backgroundId = api.original_background_image_id
-    ? api.original_background_image_id() & 0xFF : 0;
+  const backgroundId = api.background_image_id
+    ? api.background_image_id() & 0xFF : 0;
   if (backgroundId !== 0x06) return null;
   if (!preview.background) {
     preview.background = decodeOriginalBackgroundImageFromCpp(api, backgroundId);
@@ -2990,18 +2990,18 @@ function composeOriginalPlayerCountPreviewScreen(api) {
   const background = preview.background;
   if (!background || background.destination !== 0x2000
       || background.stream.length < 0x400) return null;
-  const bank0 = api.original_background_bank
-    ? api.original_background_bank(0) & 0xFF : background.chr0;
-  const bank1 = api.original_background_bank
-    ? api.original_background_bank(1) & 0xFF : background.chr1;
+  const bank0 = api.background_bank
+    ? api.background_bank(0) & 0xFF : background.chr0;
+  const bank1 = api.background_bank
+    ? api.background_bank(1) & 0xFF : background.chr1;
   const paletteNumbers = [0, 1].map((slot) => api.original_background_palette_number
     ? api.original_background_palette_number(slot) & 0xFF
     : (slot === 0 ? background.palette0 : background.palette1));
   const subPalettes = originalBackgroundSubPalettes(
     paletteNumbers[0], paletteNumbers[1]);
   if (!subPalettes) return null;
-  const playersAmount = api.original_players_amount
-    ? api.original_players_amount() & 0xFF : 0;
+  const playersAmount = api.selected_player_count
+    ? api.selected_player_count() & 0xFF : 0;
   const key = `${playersAmount}:${bank0}:${bank1}:${paletteNumbers.join(",")}:`
     + `${logicalVideo.revision}`;
   if (preview.canvas && preview.key === key) return preview.canvas;
@@ -3044,8 +3044,8 @@ function composeOriginalPlayerCountPreviewScreen(api) {
 }
 function composeOriginalTournamentRecordScreen(api) {
   const record = originalAssets.tournamentRecord;
-  const backgroundId = api.original_background_image_id
-    ? api.original_background_image_id() & 0xff : 0;
+  const backgroundId = api.background_image_id
+    ? api.background_image_id() & 0xff : 0;
   if (backgroundId !== 0x0d) return null;
   if (!record.background) {
     record.background = decodeOriginalBackgroundImageFromCpp(api, backgroundId);
@@ -3093,8 +3093,8 @@ function composeOriginalTournamentRecordScreen(api) {
 }
 function composeOriginalPlayerProfileScreen(api) {
   const profile = originalAssets.playerProfile;
-  const backgroundId = api.original_background_image_id
-    ? api.original_background_image_id() & 0xff : 0;
+  const backgroundId = api.background_image_id
+    ? api.background_image_id() & 0xff : 0;
   if (backgroundId !== 0x0c) return null;
   if (!profile.background) {
     profile.background = decodeOriginalBackgroundImageFromCpp(api, backgroundId);
@@ -3104,8 +3104,8 @@ function composeOriginalPlayerProfileScreen(api) {
       || background.stream.length !== 0x400) return null;
   const subPalettes = originalBackgroundSubPalettes(background.palette0, background.palette1);
   if (!subPalettes) return null;
-  const selected = api.original_selected_player_number
-    ? api.original_selected_player_number() & 0xff : 0;
+  const selected = api.selected_player_index
+    ? api.selected_player_index() & 0xff : 0;
   const effectState = api.original_text_effect_state ? api.original_text_effect_state() & 0xff : 0x80;
   const effectStatus = api.original_text_effect_status ? api.original_text_effect_status() & 0xff : 0;
   const effectScriptId = api.original_text_effect_script_id
@@ -3176,9 +3176,9 @@ function composeOriginalMusicSelectionScreen(api) {
     background.palette1,
   );
   if (!subPalettes) return null;
-  const option = api.original_option_number ? api.original_option_number() & 0xff : 0xff;
-  const hiddenNumber = api.original_secondary_option_number
-    ? api.original_secondary_option_number() & 0xff : 0;
+  const option = api.primary_option_index ? api.primary_option_index() & 0xff : 0xff;
+  const hiddenNumber = api.secondary_option_index
+    ? api.secondary_option_index() & 0xff : 0;
   const graphicsWrite = latestOriginalLogicalVideoWrite(1);
   const bufferAddress = graphicsWrite?.address ?? 0;
   const buffer = graphicsWrite ? Array.from(graphicsWrite.bytes) : [];
@@ -3255,7 +3255,7 @@ function composeOriginalMeetingSecretScreen(api, backgroundId) {
   meeting.key = key;
   if (DEBUG) {
     window.__soccerMeetingSecretRenderer = {
-      subtype: api.original_screen_subtype ? api.original_screen_subtype() & 0x7f : 0,
+      subtype: api.screen_subtype ? api.screen_subtype() & 0x7f : 0,
       source: "classified-bin-cpp",
       backgroundId,
       destination: background.destination,
@@ -3277,8 +3277,8 @@ function composeOriginalMeetingSecretScreen(api, backgroundId) {
 function drawOriginalMenuScreen(api) {
   ctx.fillStyle = "#000";
   ctx.fillRect(0, 0, canvas.width, canvas.height);
-  const id = api.original_background_image_id ? api.original_background_image_id() : 0x02;
-  const subtype = api.original_screen_subtype ? api.original_screen_subtype() & 0x7f : 0;
+  const id = api.background_image_id ? api.background_image_id() : 0x02;
+  const subtype = api.screen_subtype ? api.screen_subtype() & 0x7f : 0;
   const staticBackground = composeOriginalStaticBackground(api, id);
   const img = subtype === 0x0f
     ? (composeOriginalBracketScreen(api) || staticBackground)
@@ -3314,8 +3314,8 @@ function drawOriginalMenuScreen(api) {
     ctx.imageSmoothingEnabled = false;
     ctx.globalAlpha = Math.max(0, Math.min(1, brightness / 0x40));
     if ((subtype === 0x06 || subtype === 0x07) && (img.height || img.naturalHeight) >= 480) {
-      const cameraY = api.original_camera_y_lo && api.original_camera_y_hi
-        ? ((api.original_camera_y_hi() << 8) | api.original_camera_y_lo())
+      const cameraY = api.camera_y_low && api.camera_y_high
+        ? ((api.camera_y_high() << 8) | api.camera_y_low())
         : 0;
       const sourceY = cameraY >= 0x0100 ? 240 : Math.min(cameraY, 240);
       ctx.drawImage(img, 0, sourceY, 256, 240, layout.x, layout.y, layout.w, layout.h);
@@ -3323,8 +3323,8 @@ function drawOriginalMenuScreen(api) {
         const rendererState = {
           subtype,
           backgroundId: id,
-          state: api.original_option_counter ? api.original_option_counter() & 0xff : 0,
-          option: api.original_option_number ? api.original_option_number() & 0xff : 0,
+          state: api.option_repeat_counter ? api.option_repeat_counter() & 0xff : 0,
+          option: api.primary_option_index ? api.primary_option_index() & 0xff : 0,
           cameraY,
           sourceY,
           key: subtype === 0x06
@@ -3428,17 +3428,17 @@ function composeOriginalCreditsBackground(api, backgroundId) {
 function drawOriginalCreditsScreen(api) {
   ctx.fillStyle = "#000";
   ctx.fillRect(0, 0, canvas.width, canvas.height);
-  const subtype = api.original_screen_subtype ? api.original_screen_subtype() & 0x7f : 0;
-  const backgroundId = api.original_background_image_id
-    ? api.original_background_image_id() & 0xff : 0x1c;
+  const subtype = api.screen_subtype ? api.screen_subtype() & 0x7f : 0;
+  const backgroundId = api.background_image_id
+    ? api.background_image_id() & 0xff : 0x1c;
   const background = backgroundId === 0
     ? composeOriginalSplashBackground(api, 0, false)
     : composeOriginalCreditsBackground(api, backgroundId);
   const layout = originalFullScreenLayout();
   const cameraX = api.original_camera_x_lo && api.original_camera_x_hi
     ? (api.original_camera_x_hi() << 8) | api.original_camera_x_lo() : 0;
-  const cameraY = api.original_camera_y_lo && api.original_camera_y_hi
-    ? (api.original_camera_y_hi() << 8) | api.original_camera_y_lo() : 0;
+  const cameraY = api.camera_y_low && api.camera_y_high
+    ? (api.camera_y_high() << 8) | api.camera_y_low() : 0;
   const brightness = api.original_current_brightness ? api.original_current_brightness() : 0x40;
   if (background) {
     ctx.imageSmoothingEnabled = false;
@@ -3504,7 +3504,7 @@ function render(api) {
   const screenW = canvas.width;
   const screenH = canvas.height;
   const phase = api.game_phase ? api.game_phase() : PHASE.PLAYING;
-  const originalScreen = api.original_screen_number ? api.original_screen_number() : 0;
+  const originalScreen = api.screen_id ? api.screen_id() : 0;
   synchronizeOriginalFieldFootprints(api, originalScreen);
   const originalField4x3 = originalFieldFullScreenActive(api);
   gameWrap.classList.toggle(
@@ -3524,24 +3524,24 @@ function render(api) {
     drawOriginalCreditsScreen(api);
     return;
   }
-  const originalSubtype = api.original_screen_subtype ? api.original_screen_subtype() : 0;
-  const cpuTeam = api.original_team_number
-    ? (api.original_team_number(1) & 0x0F) : 1;
-  const menuTeam = api.original_option_number
-    ? (api.original_option_number() & 0xFF) : 0;
+  const originalSubtype = api.screen_subtype ? api.screen_subtype() : 0;
+  const cpuTeam = api.team_number
+    ? (api.team_number(1) & 0x0F) : 1;
+  const menuTeam = api.primary_option_index
+    ? (api.primary_option_index() & 0xFF) : 0;
   const wins = api.tournament_win_count ? api.tournament_win_count() : 0;
   const ballPosition = originalBallPosition(api);
   const bx = ballPosition.x;
   const by = ballPosition.y;
   const bz = normalizeOriginalHeight(ballPosition.z);
   const exposesOriginalCamera = api.original_camera_x_lo && api.original_camera_x_hi
-    && api.original_camera_y_lo && api.original_camera_y_hi;
+    && api.camera_y_low && api.camera_y_high;
   const committedVideoView = originalCommittedVideoView(api);
   const committedCamera = originalScreen === 0x00 ? originalCommittedCamera(api, false) : null;
   const rawCameraX = committedVideoView?.x ?? committedCamera?.x ?? (exposesOriginalCamera
     ? ((api.original_camera_x_hi() << 8) | api.original_camera_x_lo()) : 0);
   const rawCameraY = committedVideoView?.y ?? committedCamera?.y ?? (exposesOriginalCamera
-    ? ((api.original_camera_y_hi() << 8) | api.original_camera_y_lo()) : 0);
+    ? ((api.camera_y_high() << 8) | api.camera_y_low()) : 0);
   const cameraX = exposesOriginalCamera
     ? rawCameraX
     : clamp(bx - ORIGINAL_CAMERA_VIEW_W / 2, 0, 1024 - ORIGINAL_CAMERA_VIEW_W);
@@ -3553,17 +3553,17 @@ function render(api) {
     && originalSubtype !== 0x06;
   gameWrap.classList.toggle("original-result-screen", isOriginalResultScreen);
   gameWrap.classList.toggle("original-4x3-screen", isOriginalResultScreen || originalField4x3);
-  const resultBackgroundId = api.original_background_image_id
-    ? api.original_background_image_id() & 0xFF : 0x10;
+  const resultBackgroundId = api.background_image_id
+    ? api.background_image_id() & 0xFF : 0x10;
   const originalResultBackground = isOriginalResultScreen
     ? composeOriginalResultBackground(api, resultBackgroundId)
     : null;
   const committedCopyCamera = originalScreen === 0x00 ? originalCommittedCamera(api, true) : null;
-  const copyCameraX = committedCopyCamera?.x ?? (api.original_copy_camera_x_lo && api.original_copy_camera_x_hi
-    ? (api.original_copy_camera_x_hi() << 8) | api.original_copy_camera_x_lo()
+  const copyCameraX = committedCopyCamera?.x ?? (api.camera_copy_x_low && api.camera_copy_x_high
+    ? (api.camera_copy_x_high() << 8) | api.camera_copy_x_low()
     : cameraX);
-  const copyCameraY = committedCopyCamera?.y ?? (api.original_copy_camera_y_lo && api.original_copy_camera_y_hi
-    ? (api.original_copy_camera_y_hi() << 8) | api.original_copy_camera_y_lo()
+  const copyCameraY = committedCopyCamera?.y ?? (api.camera_copy_y_low && api.camera_copy_y_high
+    ? (api.camera_copy_y_high() << 8) | api.camera_copy_y_low()
     : cameraY);
   let view;
   let objectView;
@@ -3833,7 +3833,7 @@ function render(api) {
   const playerRam = api.player_position_x_low
     ? `${api.player_position_x_high(controlled).toString(16).padStart(2, "0")}${api.player_position_x_low(controlled).toString(16).padStart(2, "0")}/${api.player_position_y_high(controlled).toString(16).padStart(2, "0")}${api.player_position_y_low(controlled).toString(16).padStart(2, "0")}/${api.player_position_z_high(controlled).toString(16).padStart(2, "0")}${api.player_position_z_low(controlled).toString(16).padStart(2, "0")}`
     : "????/????/????";
-  const script = api.original_game_script ? api.original_game_script().toString(16).padStart(2, "0") : "??";
+  const script = api.game_script ? api.game_script().toString(16).padStart(2, "0") : "??";
   const ballObj = api.ball_object_id ? api.ball_object_id().toString(16).padStart(2, "0") : "??";
   const ballRam = api.ball_position_x_low
     ? `${api.ball_position_x_high().toString(16).padStart(2, "0")}${api.ball_position_x_low().toString(16).padStart(2, "0")}/${api.ball_position_y_high().toString(16).padStart(2, "0")}${api.ball_position_y_low().toString(16).padStart(2, "0")}/${api.ball_position_z_high().toString(16).padStart(2, "0")}${api.ball_position_z_low().toString(16).padStart(2, "0")}`
