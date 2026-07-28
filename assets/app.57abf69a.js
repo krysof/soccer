@@ -1191,7 +1191,7 @@ function loadOriginalSpriteRendererFromBin(api) {
 }
 async function loadWasm() {
   const filename = DEBUG ? "soccer_core_cpp.wasm" : "soccer_core_cpp_production.wasm";
-  const relative = DEBUG ? "../strict-tests.934045ea.wasm" : "../soccer_core_cpp.84e6e30e.wasm";
+  const relative = DEBUG ? "../strict-tests.b1f2a9c7.wasm" : "../soccer_core_cpp.f0068470.wasm";
   const response = await fetchCoreResponse(filename, assetUrl(relative), rootAssetUrl(filename));
   const bytes = await response.arrayBuffer();
   const result = await WebAssembly.instantiate(bytes, {});
@@ -1210,7 +1210,7 @@ const ORIGINAL_CAMERA_BASE_Y = 0x48;
 const ORIGINAL_STATUSBAR_SPLIT_Y = 0xB9;
 function synchronizeOriginalFieldFootprints(api, originalScreen) {
   const field = originalAssets.field;
-  if (!field?.geometry || !api.original_footprint_commit_serial) return;
+  if (!field?.geometry || !api.footprint_commit_serial) return;
   if (originalScreen !== 0) {
     if (field.footprintActive) {
       field.footprintActive = false;
@@ -1226,13 +1226,13 @@ function synchronizeOriginalFieldFootprints(api, originalScreen) {
     field.compositeKey = "";
     field.footprintBaseKey = "";
   }
-  const serial = api.original_footprint_commit_serial() >>> 0;
+  const serial = api.footprint_commit_serial() >>> 0;
   if (field.footprintSerial === serial) return;
   field.footprintSerial = serial;
-  const count = Math.min(api.original_committed_footprint_count?.() || 0, 4);
+  const count = Math.min(api.committed_footprint_count?.() || 0, 4);
   for (let index = 0; index < count; index++) {
-    const x = api.original_committed_footprint_world_x(index) & 0xFFFF;
-    const y = api.original_committed_footprint_world_y(index) & 0xFFFF;
+    const x = api.committed_footprint_world_x(index) & 0xFFFF;
+    const y = api.committed_footprint_world_y(index) & 0xFFFF;
     field.footprints.set(`${x >> 3}/${y >> 3}`, { x, y });
   }
   if (count) field.compositeKey = "";
@@ -1493,13 +1493,13 @@ function worldToScreen(view, x, y) {
 }
 function originalCommittedObjectScreenBytes(api, objectIndex) {
   if (!originalCommittedSpriteFrameActive(api)
-      || !api.original_committed_sprite_screen_x
-      || !api.original_committed_sprite_screen_y
-      || !api.original_committed_sprite_ground_y) return null;
+      || !api.committed_sprite_screen_x
+      || !api.committed_sprite_screen_y
+      || !api.committed_sprite_ground_y) return null;
   return {
-    x: api.original_committed_sprite_screen_x(objectIndex) & 0xFF,
-    y: api.original_committed_sprite_screen_y(objectIndex) & 0xFF,
-    groundY: api.original_committed_sprite_ground_y(objectIndex) & 0xFF,
+    x: api.committed_sprite_screen_x(objectIndex) & 0xFF,
+    y: api.committed_sprite_screen_y(objectIndex) & 0xFF,
+    groundY: api.committed_sprite_ground_y(objectIndex) & 0xFF,
   };
 }
 function originalCommittedObjectCanvasPosition(api, objectIndex, view, ground = false) {
@@ -1573,15 +1573,15 @@ function originalBallPosition(api) {
   return { x: api.ball_x(), y: api.ball_y(), z: api.ball_z ? api.ball_z() : 0 };
 }
 function originalFieldMarkerPosition(api, slot) {
-  if (!api.original_field_marker_x_lo || !api.original_field_marker_x_hi
-      || !api.original_field_marker_y_lo || !api.original_field_marker_y_hi) {
+  if (!api.field_marker_x_low || !api.field_marker_x_high
+      || !api.field_marker_y_low || !api.field_marker_y_high) {
     return null;
   }
   return {
-    x: (api.original_field_marker_x_hi(slot) << 8) | api.original_field_marker_x_lo(slot),
-    y: (api.original_field_marker_y_hi(slot) << 8) | api.original_field_marker_y_lo(slot),
-    z: api.original_field_marker_z_lo && api.original_field_marker_z_hi
-      ? ((api.original_field_marker_z_hi(slot) << 8) | api.original_field_marker_z_lo(slot))
+    x: (api.field_marker_x_high(slot) << 8) | api.field_marker_x_low(slot),
+    y: (api.field_marker_y_high(slot) << 8) | api.field_marker_y_low(slot),
+    z: api.field_marker_z_low && api.field_marker_z_high
+      ? ((api.field_marker_z_high(slot) << 8) | api.field_marker_z_low(slot))
       : 0,
   };
 }
@@ -1619,7 +1619,7 @@ function originalStatusbarSplitActive(api) {
     return api.game_video_split_enabled() !== 0
       && (api.game_video_split_kind() & 0xFF) === 0x02;
   }
-  return (api.original_statusbar_view?.() & 0x7F) === 0x06;
+  return (api.statusbar_view?.() & 0x7F) === 0x06;
 }
 function originalFieldFullScreenActive(api) {
   return (api.screen_id?.() & 0xFF) === 0x00;
@@ -1669,19 +1669,19 @@ function drawOriginalMatchStatusbar(api, view) {
       );
     }
   }
-  if ((api.original_statusbar_view?.() & 0x7F) !== 0x06) return true;
+  if ((api.statusbar_view?.() & 0x7F) !== 0x06) return true;
   const markers = [];
   const committedCopyCamera = originalCommittedCamera(api, true);
   const copyCameraX = committedCopyCamera?.x ?? (api.camera_copy_x_low && api.camera_copy_x_high
     ? (api.camera_copy_x_high() << 8) | api.camera_copy_x_low() : 0);
   const copyCameraY = committedCopyCamera?.y ?? (api.camera_copy_y_low && api.camera_copy_y_high
     ? (api.camera_copy_y_high() << 8) | api.camera_copy_y_low() : 0);
-  const markerCount = api.original_field_marker_count ? api.original_field_marker_count() : 0;
+  const markerCount = api.field_marker_count ? api.field_marker_count() : 0;
   for (let slot = 0; slot < markerCount; slot++) {
-    const animation = api.original_field_marker_animation(slot) & 0xFF;
+    const animation = api.field_marker_animation_id(slot) & 0xFF;
     const position = originalFieldMarkerPosition(api, slot);
-    const visible = !api.original_field_marker_visibility
-      || api.original_field_marker_visibility(slot) !== 0;
+    const visible = !api.field_marker_visibility
+      || api.field_marker_visibility(slot) !== 0;
     if (!position || !visible || (animation & 0x7F) === 0x7F) continue;
     const committedPosition = originalCommittedObjectScreenBytes(api, 0x0E + slot);
     const logicalX = committedPosition ? committedPosition.x : position.x - copyCameraX;
@@ -1690,7 +1690,7 @@ function drawOriginalMatchStatusbar(api, view) {
     markers.push({
       object: 0x0E + slot,
       animation,
-      motion: api.original_field_marker_motion ? api.original_field_marker_motion(slot) & 0xFF : 0,
+      motion: api.field_marker_motion ? api.field_marker_motion(slot) & 0xFF : 0,
       logicalX,
       logicalY,
       z: position.z,
@@ -1708,8 +1708,8 @@ function drawOriginalMatchStatusbar(api, view) {
     logicalScale: scale,
   }, {
     filter: ({ object }) => object >= 0x0E && object <= 0x12
-      && (api.original_committed_sprite_screen_y(object) & 0xFF)
-        === (api.original_committed_sprite_ground_y(object) & 0xFF),
+      && (api.committed_sprite_screen_y(object) & 0xFF)
+        === (api.committed_sprite_ground_y(object) & 0xFF),
     debugTarget: "__soccerStatusbarLogicalOam",
   });
   if (DEBUG) {
@@ -1717,7 +1717,7 @@ function drawOriginalMatchStatusbar(api, view) {
       .filter((write) => write.source === 4);
     window.__soccerMinimap = {
       visible: true,
-      view: api.original_statusbar_view() & 0xFF,
+      view: api.statusbar_view() & 0xFF,
       bank0,
       bank1,
       paletteNumber,
@@ -1854,8 +1854,8 @@ function renderOriginalDynamicBackgroundNametable(context, nametable, bank0, ban
   return true;
 }
 function originalCommittedSpriteFrameActive(api) {
-  return Boolean(api.original_committed_sprite_serial
-    && api.original_committed_sprite_serial() !== 0);
+  return Boolean(api.committed_sprite_serial
+    && api.committed_sprite_serial() !== 0);
 }
 function originalSpriteBankForObject(api, objectIndex, bankSlot) {
   const screen = api.screen_id ? api.screen_id() & 0xFF : 0;
@@ -1865,8 +1865,8 @@ function originalSpriteBankForObject(api, objectIndex, bankSlot) {
     return api.object_graphics_group(bankSlot === 1 ? 5 : 6) & 0xFF;
   }
   if (objectIndex <= 0x0C && originalCommittedSpriteFrameActive(api)
-      && api.original_committed_sprite_bank) {
-    return api.original_committed_sprite_bank(bankSlot) & 0xFF;
+      && api.committed_sprite_bank_id) {
+    return api.committed_sprite_bank_id(bankSlot) & 0xFF;
   }
   return api.sprite_bank(bankSlot) & 0xFF;
 }
@@ -1877,8 +1877,8 @@ function originalObjectVisibleForCommittedFrame(api, objectIndex) {
     return Number.isFinite(animation) && (animation & 0x7F) !== 0x7F;
   }
   if (objectIndex <= 0x0C && originalCommittedSpriteFrameActive(api)
-      && api.original_committed_sprite_visibility) {
-    return (api.original_committed_sprite_visibility(objectIndex) & 0xFF) !== 0;
+      && api.committed_sprite_visibility) {
+    return (api.committed_sprite_visibility(objectIndex) & 0xFF) !== 0;
   }
   if (objectIndex === 0x0C) {
     return !api.ball_visibility_flag || api.ball_visibility_flag() !== 0;
@@ -1886,17 +1886,17 @@ function originalObjectVisibleForCommittedFrame(api, objectIndex) {
   return !api.player_visibility || api.player_visibility(objectIndex) !== 0;
 }
 function originalObjectAnimation(api, objectIndex) {
-  if (objectIndex <= 0x0C && api.original_committed_sprite_animation
-      && api.original_committed_sprite_serial
-      && api.original_committed_sprite_serial() !== 0) {
-    return api.original_committed_sprite_animation(objectIndex) & 0xFF;
+  if (objectIndex <= 0x0C && api.committed_sprite_animation_id
+      && api.committed_sprite_serial
+      && api.committed_sprite_serial() !== 0) {
+    return api.committed_sprite_animation_id(objectIndex) & 0xFF;
   }
   if (objectIndex === 0x0C) {
     return api.ball_animation ? api.ball_animation() & 0xFF : null;
   }
   if (objectIndex >= 0x0E && objectIndex <= 0x12) {
-    return api.original_field_marker_animation
-      ? api.original_field_marker_animation(objectIndex - 0x0E) & 0xFF : null;
+    return api.field_marker_animation_id
+      ? api.field_marker_animation_id(objectIndex - 0x0E) & 0xFF : null;
   }
   return api.player_animation ? api.player_animation(objectIndex) & 0xFF : null;
 }
@@ -1905,10 +1905,10 @@ function resolveOriginalObjectFrame(api, objectIndex) {
   if (!manifest || !api.object_graphics_group) return null;
   const animation = originalObjectAnimation(api, objectIndex);
   if (!Number.isFinite(animation)) return null;
-  const groupNumber = objectIndex <= 0x0C && api.original_committed_sprite_group
-      && api.original_committed_sprite_serial
-      && api.original_committed_sprite_serial() !== 0
-    ? api.original_committed_sprite_group(objectIndex) & 0xFF
+  const groupNumber = objectIndex <= 0x0C && api.committed_sprite_group
+      && api.committed_sprite_serial
+      && api.committed_sprite_serial() !== 0
+    ? api.committed_sprite_group(objectIndex) & 0xFF
     : api.object_graphics_group(objectIndex) & 0xFF;
   if (groupNumber === 3) {
     const index = animation & 0x7F;
@@ -2017,26 +2017,26 @@ function drawWeather(api, view, screenW, screenH) {
 }
 function drawOriginalWeatherSprites(api, view) {
   if (!view?.original || !api.original_weather_effect
-      || !api.original_weather_sprite_count) {
+      || !api.weather_sprite_count) {
     if (DEBUG) window.__soccerWeatherSprites = [];
     return [];
   }
-  const effect = api.original_weather_sprite_effect
-    ? api.original_weather_sprite_effect() & 0x7F
+  const effect = api.weather_sprite_effect
+    ? api.weather_sprite_effect() & 0x7F
     : api.original_weather_effect() & 0x7F;
   if (![0x01, 0x02, 0x03, 0x04, 0x05, 0x06].includes(effect)) {
     if (DEBUG) window.__soccerWeatherSprites = [];
     return [];
   }
   const scale = view.logicalScale || 2;
-  const count = Math.min(12, api.original_weather_sprite_count() & 0xFF);
+  const count = Math.min(12, api.weather_sprite_count() & 0xFF);
   const rendered = [];
   for (let index = count - 1; index >= 0; index--) {
-    const y = api.original_weather_sprite_y(index) & 0xFF;
+    const y = api.weather_sprite_y(index) & 0xFF;
     if (y >= 0xF0) continue;
-    const x = api.original_weather_sprite_x(index) & 0xFF;
-    const tileNumber = api.original_weather_sprite_tile(index) & 0xFF;
-    const attribute = api.original_weather_sprite_attribute(index) & 0xFF;
+    const x = api.weather_sprite_x(index) & 0xFF;
+    const tileNumber = api.weather_sprite_tile(index) & 0xFF;
+    const attribute = api.weather_sprite_attribute(index) & 0xFF;
     const bankSlot = tileNumber >> 6;
     const bankNumber = api.sprite_bank(bankSlot) & 0xFF;
     const paletteSlot = attribute & 0x03;
@@ -2123,12 +2123,12 @@ function drawOriginalSplashObjects(api, layout, backgroundId, subtype, alpha) {
     };
     return;
   }
-  const priorityCount = api.original_committed_animation_priority_count
-    ? Math.min(api.original_committed_animation_priority_count() & 0xFF, 0x20)
+  const priorityCount = api.committed_animation_priority_count
+    ? Math.min(api.committed_animation_priority_count() & 0xFF, 0x20)
     : 0;
   const drawnObjectIds = [];
   for (let slot = 0; slot < priorityCount; slot++) {
-    const objectId = api.original_committed_animation_priority(slot) & 0x1F;
+    const objectId = api.committed_animation_priority_object(slot) & 0x1F;
     if (objectId < 19 && !drawnObjectIds.includes(objectId)) drawnObjectIds.push(objectId);
   }
   let playerPosition = null;
@@ -2322,12 +2322,12 @@ function composeOriginalResultBackground(api, backgroundId) {
   return result.canvas;
 }
 function drawOriginalMenuObjects(api, layout, subtype) {
-  const priorityCount = api.original_committed_animation_priority_count
-    ? Math.min(api.original_committed_animation_priority_count() & 0xFF, 0x20)
+  const priorityCount = api.committed_animation_priority_count
+    ? Math.min(api.committed_animation_priority_count() & 0xFF, 0x20)
     : 0;
   const drawnObjectIds = [];
   for (let slot = 0; slot < priorityCount; slot++) {
-    const objectId = api.original_committed_animation_priority(slot) & 0x1F;
+    const objectId = api.committed_animation_priority_object(slot) & 0x1F;
     if (objectId < 19 && !drawnObjectIds.includes(objectId)) drawnObjectIds.push(objectId);
   }
   ctx.save();
@@ -3470,12 +3470,12 @@ function drawOriginalCreditsScreen(api) {
     logicalScale: layout.scale,
   });
   ctx.restore();
-  const priorityCount = api.original_committed_animation_priority_count
-    ? Math.min(api.original_committed_animation_priority_count() & 0xFF, 0x20)
+  const priorityCount = api.committed_animation_priority_count
+    ? Math.min(api.committed_animation_priority_count() & 0xFF, 0x20)
     : 0;
   const drawnObjects = [];
   for (let slot = 0; slot < priorityCount; slot++) {
-    const object = api.original_committed_animation_priority(slot) & 0x1F;
+    const object = api.committed_animation_priority_object(slot) & 0x1F;
     if (object <= 0x0C && !drawnObjects.includes(object)) drawnObjects.push(object);
   }
   if (DEBUG) {
@@ -3650,8 +3650,8 @@ function render(api) {
     && drawCppLogicalOam(api, objectView, {
       filter: ({ object }) => {
         if (object < 0x0E || object > 0x12) return true;
-        return (api.original_committed_sprite_screen_y(object) & 0xFF)
-          !== (api.original_committed_sprite_ground_y(object) & 0xFF);
+        return (api.committed_sprite_screen_y(object) & 0xFF)
+          !== (api.committed_sprite_ground_y(object) & 0xFF);
       },
     });
   if (originalScreen === 0x00 && !usesCppLogicalOam) {
@@ -3659,18 +3659,18 @@ function render(api) {
   }
   let entities = [];
   if (DEBUG) {
-  if (api.original_animation_priority_count && api.original_animation_priority) {
+  if (api.animation_priority_count && api.animation_priority_object) {
     const useCommittedPriority = originalCommittedSpriteFrameActive(api)
-      && api.original_committed_animation_priority_count
-      && api.original_committed_animation_priority;
+      && api.committed_animation_priority_count
+      && api.committed_animation_priority_object;
     const priorityCount = Math.min(useCommittedPriority
-      ? api.original_committed_animation_priority_count()
-      : api.original_animation_priority_count(), 0x20);
+      ? api.committed_animation_priority_count()
+      : api.animation_priority_count(), 0x20);
     const seen = new Set();
     for (let slot = priorityCount - 1; slot >= 0; slot--) {
       const entry = useCommittedPriority
-        ? api.original_committed_animation_priority(slot)
-        : api.original_animation_priority(slot);
+        ? api.committed_animation_priority_object(slot)
+        : api.animation_priority_object(slot);
       const object = entry & 0x1F;
       const variant = entry & 0xE0;
       if (variant === 0x20 || variant === 0x40) {
@@ -3691,11 +3691,11 @@ function render(api) {
           entities.push({ type: "ball", groundY: by });
           seen.add(object);
         }
-      } else if (object >= 0x0E && object <= 0x12 && api.original_field_marker_animation) {
+      } else if (object >= 0x0E && object <= 0x12 && api.field_marker_animation_id) {
         const markerSlot = object - 0x0E;
         const originalPosition = originalFieldMarkerPosition(api, markerSlot);
-        const visible = !api.original_field_marker_visibility
-          || api.original_field_marker_visibility(markerSlot) !== 0;
+        const visible = !api.field_marker_visibility
+          || api.field_marker_visibility(markerSlot) !== 0;
         markerPositions[markerSlot] = originalPosition;
         if (originalPosition && visible && normalizeOriginalHeight(originalPosition.z) !== 0) {
           entities.push({ type: "marker", index: markerSlot, object, groundY: originalPosition.y });
