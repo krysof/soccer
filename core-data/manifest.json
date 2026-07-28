@@ -1,6 +1,6 @@
 {
   "schema": 1,
-  "generator": "tools-local/extract_original_core_data.py",
+  "generator": "tools-local/extract_classified_core_data.py",
   "description": "Source-backed language-neutral gameplay and audio data",
   "records": [
     {
