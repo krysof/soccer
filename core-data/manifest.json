@@ -1769,6 +1769,27 @@
       ]
     },
     {
+      "path": "dispatch/fixed-bank-call-targets-c370-c3d4.bin",
+      "category": "dispatch",
+      "source": "src/bank_FF.asm:C370",
+      "bank": "07",
+      "address": "0xC370",
+      "symbol": "tbl_C370",
+      "layout": "50 pairs of MMC3 PRG-bank id and low-byte target; the source trampoline fixes every target high byte to $80",
+      "length": 100,
+      "sha256": "daf7c18c992493e4825f45d6fb3d8b3dc25fb686b8b37c29a40de7b0036e0aac",
+      "source_ranges": [
+        {
+          "bank": "07",
+          "start": "0xC370",
+          "length": 100
+        }
+      ],
+      "consumers": [
+        "wasm-game/cpp-core/src/test/bank_dispatch_fixtures.cpp"
+      ]
+    },
+    {
       "path": "dispatch/player-main-motion-803f.bin",
       "category": "dispatch",
       "source": "src/bank_06.asm:803F",
