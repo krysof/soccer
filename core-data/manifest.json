@@ -21,7 +21,8 @@
         }
       ],
       "consumers": [
-        "wasm-game/cpp-core/src/collision/ball_contact.cpp"
+        "wasm-game/cpp-core/src/collision/ball_contact.cpp",
+        "wasm-game/cpp-core/src/core/source_timing.cpp"
       ]
     },
     {
@@ -43,7 +44,8 @@
       ],
       "consumers": [
         "wasm-game/cpp-core/src/ball/state_pipeline.cpp",
-        "wasm-game/cpp-core/src/collision/ball_contact.cpp"
+        "wasm-game/cpp-core/src/collision/ball_contact.cpp",
+        "wasm-game/cpp-core/src/core/source_timing.cpp"
       ]
     },
     {
@@ -64,6 +66,7 @@
         }
       ],
       "consumers": [
+        "wasm-game/cpp-core/src/core/source_timing.cpp",
         "wasm-game/cpp-core/src/player/action_pipeline.cpp"
       ]
     },
@@ -85,7 +88,8 @@
         }
       ],
       "consumers": [
-        "wasm-game/cpp-core/src/ai/ai.cpp"
+        "wasm-game/cpp-core/src/ai/ai.cpp",
+        "wasm-game/cpp-core/src/core/source_timing.cpp"
       ]
     },
     {
@@ -106,7 +110,8 @@
         }
       ],
       "consumers": [
-        "wasm-game/cpp-core/src/ai/ai.cpp"
+        "wasm-game/cpp-core/src/ai/ai.cpp",
+        "wasm-game/cpp-core/src/core/source_timing.cpp"
       ]
     },
     {
@@ -148,7 +153,8 @@
         }
       ],
       "consumers": [
-        "wasm-game/cpp-core/src/ai/ai.cpp"
+        "wasm-game/cpp-core/src/ai/ai.cpp",
+        "wasm-game/cpp-core/src/core/source_timing.cpp"
       ]
     },
     {
@@ -169,7 +175,8 @@
         }
       ],
       "consumers": [
-        "wasm-game/cpp-core/src/ai/ai.cpp"
+        "wasm-game/cpp-core/src/ai/ai.cpp",
+        "wasm-game/cpp-core/src/core/source_timing.cpp"
       ]
     },
     {
@@ -190,7 +197,8 @@
         }
       ],
       "consumers": [
-        "wasm-game/cpp-core/src/ai/ai.cpp"
+        "wasm-game/cpp-core/src/ai/ai.cpp",
+        "wasm-game/cpp-core/src/core/source_timing.cpp"
       ]
     },
     {
@@ -232,7 +240,8 @@
         }
       ],
       "consumers": [
-        "wasm-game/cpp-core/src/ai/ai.cpp"
+        "wasm-game/cpp-core/src/ai/ai.cpp",
+        "wasm-game/cpp-core/src/core/source_timing.cpp"
       ]
     },
     {
@@ -253,7 +262,8 @@
         }
       ],
       "consumers": [
-        "wasm-game/cpp-core/src/ai/ai.cpp"
+        "wasm-game/cpp-core/src/ai/ai.cpp",
+        "wasm-game/cpp-core/src/core/source_timing.cpp"
       ]
     },
     {
@@ -274,7 +284,8 @@
         }
       ],
       "consumers": [
-        "wasm-game/cpp-core/src/ai/ai.cpp"
+        "wasm-game/cpp-core/src/ai/ai.cpp",
+        "wasm-game/cpp-core/src/core/source_timing.cpp"
       ]
     },
     {
@@ -295,7 +306,8 @@
         }
       ],
       "consumers": [
-        "wasm-game/cpp-core/src/ai/ai.cpp"
+        "wasm-game/cpp-core/src/ai/ai.cpp",
+        "wasm-game/cpp-core/src/core/source_timing.cpp"
       ]
     },
     {
@@ -316,7 +328,8 @@
         }
       ],
       "consumers": [
-        "wasm-game/cpp-core/src/ai/ai.cpp"
+        "wasm-game/cpp-core/src/ai/ai.cpp",
+        "wasm-game/cpp-core/src/core/source_timing.cpp"
       ]
     },
     {
@@ -337,7 +350,8 @@
         }
       ],
       "consumers": [
-        "wasm-game/cpp-core/src/ai/ai.cpp"
+        "wasm-game/cpp-core/src/ai/ai.cpp",
+        "wasm-game/cpp-core/src/core/source_timing.cpp"
       ]
     },
     {
@@ -358,7 +372,8 @@
         }
       ],
       "consumers": [
-        "wasm-game/cpp-core/src/ai/ai.cpp"
+        "wasm-game/cpp-core/src/ai/ai.cpp",
+        "wasm-game/cpp-core/src/core/source_timing.cpp"
       ]
     },
     {
@@ -379,7 +394,8 @@
         }
       ],
       "consumers": [
-        "wasm-game/cpp-core/src/ai/ai.cpp"
+        "wasm-game/cpp-core/src/ai/ai.cpp",
+        "wasm-game/cpp-core/src/core/source_timing.cpp"
       ]
     },
     {
@@ -400,7 +416,8 @@
         }
       ],
       "consumers": [
-        "wasm-game/cpp-core/src/ai/ai.cpp"
+        "wasm-game/cpp-core/src/ai/ai.cpp",
+        "wasm-game/cpp-core/src/core/source_timing.cpp"
       ]
     },
     {
@@ -421,7 +438,8 @@
         }
       ],
       "consumers": [
-        "wasm-game/cpp-core/src/ai/ai.cpp"
+        "wasm-game/cpp-core/src/ai/ai.cpp",
+        "wasm-game/cpp-core/src/core/source_timing.cpp"
       ]
     },
     {
@@ -442,7 +460,8 @@
         }
       ],
       "consumers": [
-        "wasm-game/cpp-core/src/ai/ai.cpp"
+        "wasm-game/cpp-core/src/ai/ai.cpp",
+        "wasm-game/cpp-core/src/core/source_timing.cpp"
       ]
     },
     {
@@ -463,7 +482,8 @@
         }
       ],
       "consumers": [
-        "wasm-game/cpp-core/src/ai/ai.cpp"
+        "wasm-game/cpp-core/src/ai/ai.cpp",
+        "wasm-game/cpp-core/src/core/source_timing.cpp"
       ]
     },
     {
@@ -484,7 +504,8 @@
         }
       ],
       "consumers": [
-        "wasm-game/cpp-core/src/ai/ai.cpp"
+        "wasm-game/cpp-core/src/ai/ai.cpp",
+        "wasm-game/cpp-core/src/core/source_timing.cpp"
       ]
     },
     {
@@ -505,7 +526,8 @@
         }
       ],
       "consumers": [
-        "wasm-game/cpp-core/src/ai/ai.cpp"
+        "wasm-game/cpp-core/src/ai/ai.cpp",
+        "wasm-game/cpp-core/src/core/source_timing.cpp"
       ]
     },
     {
@@ -526,7 +548,8 @@
         }
       ],
       "consumers": [
-        "wasm-game/cpp-core/src/ai/ai.cpp"
+        "wasm-game/cpp-core/src/ai/ai.cpp",
+        "wasm-game/cpp-core/src/core/source_timing.cpp"
       ]
     },
     {
@@ -547,7 +570,8 @@
         }
       ],
       "consumers": [
-        "wasm-game/cpp-core/src/ai/ai.cpp"
+        "wasm-game/cpp-core/src/ai/ai.cpp",
+        "wasm-game/cpp-core/src/core/source_timing.cpp"
       ]
     },
     {
@@ -568,7 +592,8 @@
         }
       ],
       "consumers": [
-        "wasm-game/cpp-core/src/ai/ai.cpp"
+        "wasm-game/cpp-core/src/ai/ai.cpp",
+        "wasm-game/cpp-core/src/core/source_timing.cpp"
       ]
     },
     {
@@ -610,7 +635,8 @@
         }
       ],
       "consumers": [
-        "wasm-game/cpp-core/src/ai/ai.cpp"
+        "wasm-game/cpp-core/src/ai/ai.cpp",
+        "wasm-game/cpp-core/src/core/source_timing.cpp"
       ]
     },
     {
@@ -631,7 +657,8 @@
         }
       ],
       "consumers": [
-        "wasm-game/cpp-core/src/ball/object_motion.cpp"
+        "wasm-game/cpp-core/src/ball/object_motion.cpp",
+        "wasm-game/cpp-core/src/core/source_timing.cpp"
       ]
     },
     {
@@ -694,6 +721,7 @@
         }
       ],
       "consumers": [
+        "wasm-game/cpp-core/src/core/source_timing.cpp",
         "wasm-game/cpp-core/src/screens/sprite_bank.cpp"
       ]
     },
@@ -736,6 +764,7 @@
         }
       ],
       "consumers": [
+        "wasm-game/cpp-core/src/core/source_timing.cpp",
         "wasm-game/cpp-core/src/screens/field_markers.cpp"
       ]
     },
@@ -757,6 +786,7 @@
         }
       ],
       "consumers": [
+        "wasm-game/cpp-core/src/core/source_timing.cpp",
         "wasm-game/cpp-core/src/player/animation.cpp"
       ]
     },
@@ -778,6 +808,7 @@
         }
       ],
       "consumers": [
+        "wasm-game/cpp-core/src/core/source_timing.cpp",
         "wasm-game/cpp-core/src/player/motion21.cpp"
       ]
     },
@@ -799,6 +830,7 @@
         }
       ],
       "consumers": [
+        "wasm-game/cpp-core/src/core/source_timing.cpp",
         "wasm-game/cpp-core/src/player/motion21.cpp"
       ]
     },
@@ -820,6 +852,7 @@
         }
       ],
       "consumers": [
+        "wasm-game/cpp-core/src/core/source_timing.cpp",
         "wasm-game/cpp-core/src/player/animation.cpp"
       ]
     },
@@ -841,6 +874,7 @@
         }
       ],
       "consumers": [
+        "wasm-game/cpp-core/src/core/source_timing.cpp",
         "wasm-game/cpp-core/src/player/animation.cpp"
       ]
     },
@@ -925,6 +959,7 @@
         }
       ],
       "consumers": [
+        "wasm-game/cpp-core/src/core/source_timing.cpp",
         "wasm-game/cpp-core/src/player/motion21.cpp"
       ]
     },
@@ -1094,7 +1129,9 @@
         }
       ],
       "consumers": [
-        "wasm-game/cpp-core/src/ball/object_motion.cpp"
+        "wasm-game/cpp-core/src/ball/object_motion.cpp",
+        "wasm-game/cpp-core/src/core/source_timing.cpp",
+        "wasm-game/cpp-core/src/test/source_dispatch_test_support.hpp"
       ]
     },
     {
@@ -1530,7 +1567,8 @@
       ],
       "consumers": [
         "wasm-game/cpp-core/src/collision/ball_contact.cpp",
-        "wasm-game/cpp-core/src/collision/player_contact.cpp"
+        "wasm-game/cpp-core/src/collision/player_contact.cpp",
+        "wasm-game/cpp-core/src/core/source_timing.cpp"
       ]
     },
     {
@@ -1572,7 +1610,8 @@
         }
       ],
       "consumers": [
-        "wasm-game/cpp-core/src/collision/player_contact.cpp"
+        "wasm-game/cpp-core/src/collision/player_contact.cpp",
+        "wasm-game/cpp-core/src/core/source_timing.cpp"
       ]
     },
     {
@@ -1593,7 +1632,8 @@
         }
       ],
       "consumers": [
-        "wasm-game/cpp-core/src/collision/player_contact.cpp"
+        "wasm-game/cpp-core/src/collision/player_contact.cpp",
+        "wasm-game/cpp-core/src/core/source_timing.cpp"
       ]
     },
     {
@@ -1615,7 +1655,8 @@
       ],
       "consumers": [
         "wasm-game/cpp-core/src/collision/ball_contact.cpp",
-        "wasm-game/cpp-core/src/collision/player_contact.cpp"
+        "wasm-game/cpp-core/src/collision/player_contact.cpp",
+        "wasm-game/cpp-core/src/core/source_timing.cpp"
       ]
     },
     {
@@ -1637,7 +1678,8 @@
       ],
       "consumers": [
         "wasm-game/cpp-core/src/collision/ball_contact.cpp",
-        "wasm-game/cpp-core/src/collision/player_contact.cpp"
+        "wasm-game/cpp-core/src/collision/player_contact.cpp",
+        "wasm-game/cpp-core/src/core/source_timing.cpp"
       ]
     },
     {
@@ -1658,7 +1700,8 @@
         }
       ],
       "consumers": [
-        "wasm-game/cpp-core/src/collision/ball_contact.cpp"
+        "wasm-game/cpp-core/src/collision/ball_contact.cpp",
+        "wasm-game/cpp-core/src/core/source_timing.cpp"
       ]
     },
     {
@@ -1679,7 +1722,7 @@
         }
       ],
       "consumers": [
-        "wasm-game/cpp-core/src/ball/motion.cpp"
+        "wasm-game/cpp-core/src/test/source_dispatch_test_support.hpp"
       ]
     },
     {
@@ -1722,7 +1765,7 @@
         }
       ],
       "consumers": [
-        "wasm-game/cpp-core/src/ball/object_motion.cpp"
+        "wasm-game/cpp-core/src/test/source_dispatch_test_support.hpp"
       ]
     },
     {
@@ -1807,7 +1850,7 @@
         }
       ],
       "consumers": [
-        "wasm-game/cpp-core/src/player/motion.cpp"
+        "wasm-game/cpp-core/src/test/source_dispatch_test_support.hpp"
       ]
     },
     {
@@ -2000,6 +2043,7 @@
       "consumers": [
         "soccer::build_statusbar_and_scrolling_field_column",
         "soccer::prepare_field_renderer",
+        "wasm-game/cpp-core/src/core/source_timing.cpp",
         "wasm-game/cpp-core/src/screens/field_renderer.cpp",
         "wasm-game/cpp-core/src/screens/field_scroll.cpp"
       ]
@@ -2104,6 +2148,7 @@
       "consumers": [
         "soccer::build_statusbar_and_scrolling_field_column",
         "soccer::prepare_field_renderer",
+        "wasm-game/cpp-core/src/core/source_timing.cpp",
         "wasm-game/cpp-core/src/screens/field_renderer.cpp",
         "wasm-game/cpp-core/src/screens/field_scroll.cpp"
       ]
@@ -2351,6 +2396,7 @@
         "soccer::build_statusbar_and_scrolling_field_column",
         "soccer::prepare_field_renderer",
         "wasm-game/cpp-core/src/collision/collision.cpp",
+        "wasm-game/cpp-core/src/core/source_timing.cpp",
         "wasm-game/cpp-core/src/screens/field_renderer.cpp",
         "wasm-game/cpp-core/src/screens/field_scroll.cpp"
       ]
@@ -2452,6 +2498,7 @@
         "soccer::build_statusbar_and_scrolling_field_column",
         "soccer::prepare_field_renderer",
         "wasm-game/cpp-core/src/collision/collision.cpp",
+        "wasm-game/cpp-core/src/core/source_timing.cpp",
         "wasm-game/cpp-core/src/screens/field_renderer.cpp",
         "wasm-game/cpp-core/src/screens/field_scroll.cpp"
       ]
@@ -2537,6 +2584,7 @@
         }
       ],
       "consumers": [
+        "wasm-game/cpp-core/src/core/source_timing.cpp",
         "wasm-game/cpp-core/src/rules/match_time_weather.cpp"
       ]
     },
@@ -2600,6 +2648,7 @@
         }
       ],
       "consumers": [
+        "wasm-game/cpp-core/src/core/source_timing.cpp",
         "wasm-game/cpp-core/src/screens/weather_nmi.cpp"
       ]
     },
@@ -2663,6 +2712,7 @@
         }
       ],
       "consumers": [
+        "wasm-game/cpp-core/src/core/source_timing.cpp",
         "wasm-game/cpp-core/src/rules/match_time_weather.cpp"
       ]
     },
@@ -2791,6 +2841,7 @@
         }
       ],
       "consumers": [
+        "wasm-game/cpp-core/src/core/source_timing.cpp",
         "wasm-game/cpp-core/src/player/action_pipeline.cpp"
       ]
     },
@@ -2942,7 +2993,8 @@
         }
       ],
       "consumers": [
-        "wasm-game/cpp-core/src/ai/ai.cpp"
+        "wasm-game/cpp-core/src/ai/ai.cpp",
+        "wasm-game/cpp-core/src/core/source_timing.cpp"
       ]
     },
     {
@@ -2963,7 +3015,8 @@
         }
       ],
       "consumers": [
-        "wasm-game/cpp-core/src/ai/ai.cpp"
+        "wasm-game/cpp-core/src/ai/ai.cpp",
+        "wasm-game/cpp-core/src/core/source_timing.cpp"
       ]
     },
     {
@@ -3005,6 +3058,7 @@
         }
       ],
       "consumers": [
+        "wasm-game/cpp-core/src/core/source_timing.cpp",
         "wasm-game/cpp-core/src/player/field_frame.cpp"
       ]
     },
@@ -4475,7 +4529,8 @@
         }
       ],
       "consumers": [
-        "wasm-game/cpp-core/src/ai/ai.cpp"
+        "wasm-game/cpp-core/src/ai/ai.cpp",
+        "wasm-game/cpp-core/src/core/source_timing.cpp"
       ]
     },
     {
@@ -4497,6 +4552,7 @@
       ],
       "consumers": [
         "wasm-game/cpp-core/src/ai/ai.cpp",
+        "wasm-game/cpp-core/src/core/source_timing.cpp",
         "wasm-game/cpp-core/src/screens/statusbar_renderer.cpp"
       ]
     },
@@ -4519,6 +4575,7 @@
       ],
       "consumers": [
         "wasm-game/cpp-core/src/ai/ai.cpp",
+        "wasm-game/cpp-core/src/core/source_timing.cpp",
         "wasm-game/cpp-core/src/screens/statusbar_renderer.cpp"
       ]
     },
@@ -4541,6 +4598,7 @@
       ],
       "consumers": [
         "wasm-game/cpp-core/src/ai/ai.cpp",
+        "wasm-game/cpp-core/src/core/source_timing.cpp",
         "wasm-game/cpp-core/src/screens/statusbar_renderer.cpp"
       ]
     },
@@ -4962,7 +5020,29 @@
         }
       ],
       "consumers": [
+        "wasm-game/cpp-core/src/core/source_timing.cpp",
         "wasm-game/cpp-core/src/screens/palette.cpp"
+      ]
+    },
+    {
+      "path": "palette/background-source-addresses-d2fb.bin",
+      "category": "palette",
+      "source": "src/bank_FF.asm:D2FB",
+      "bank": "07",
+      "address": "0xD2FB",
+      "symbol": "tbl_D2FB",
+      "layout": "74 records x (record, variant0, variant1) little-endian source addresses",
+      "length": 444,
+      "sha256": "d3aa4542d912264670574210a83561eb11fbbc69ecffc250d46c04142d0b134c",
+      "source_ranges": [
+        {
+          "bank": "07",
+          "start": "0xD2FB",
+          "length": 756
+        }
+      ],
+      "consumers": [
+        "wasm-game/cpp-core/src/core/source_timing.cpp"
       ]
     },
     {
@@ -5067,7 +5147,29 @@
         }
       ],
       "consumers": [
+        "wasm-game/cpp-core/src/core/source_timing.cpp",
         "wasm-game/cpp-core/src/screens/palette.cpp"
+      ]
+    },
+    {
+      "path": "palette/sprite-source-addresses-d1b7.bin",
+      "category": "palette",
+      "source": "src/bank_FF.asm:D1B7",
+      "bank": "07",
+      "address": "0xD1B7",
+      "symbol": "tbl_D1B7",
+      "layout": "54 little-endian source addresses for the flattened sprite palettes",
+      "length": 108,
+      "sha256": "b02e58efa3b0402f2e5ce204c21e077c84d7ecc99dfde717198df5e6cd82ab06",
+      "source_ranges": [
+        {
+          "bank": "07",
+          "start": "0xD1B7",
+          "length": 324
+        }
+      ],
+      "consumers": [
+        "wasm-game/cpp-core/src/core/source_timing.cpp"
       ]
     },
     {
@@ -5109,7 +5211,8 @@
         }
       ],
       "consumers": [
-        "wasm-game/cpp-core/src/ball/object_motion.cpp"
+        "wasm-game/cpp-core/src/ball/object_motion.cpp",
+        "wasm-game/cpp-core/src/core/source_timing.cpp"
       ]
     },
     {
@@ -5257,7 +5360,8 @@
         }
       ],
       "consumers": [
-        "wasm-game/cpp-core/src/ball/object_motion.cpp"
+        "wasm-game/cpp-core/src/ball/object_motion.cpp",
+        "wasm-game/cpp-core/src/core/source_timing.cpp"
       ]
     },
     {
@@ -5278,7 +5382,8 @@
         }
       ],
       "consumers": [
-        "wasm-game/cpp-core/src/ball/object_motion.cpp"
+        "wasm-game/cpp-core/src/ball/object_motion.cpp",
+        "wasm-game/cpp-core/src/core/source_timing.cpp"
       ]
     },
     {
@@ -5320,7 +5425,8 @@
         }
       ],
       "consumers": [
-        "wasm-game/cpp-core/src/ball/object_motion.cpp"
+        "wasm-game/cpp-core/src/ball/object_motion.cpp",
+        "wasm-game/cpp-core/src/core/source_timing.cpp"
       ]
     },
     {
@@ -5341,7 +5447,8 @@
         }
       ],
       "consumers": [
-        "wasm-game/cpp-core/src/ball/object_motion.cpp"
+        "wasm-game/cpp-core/src/ball/object_motion.cpp",
+        "wasm-game/cpp-core/src/core/source_timing.cpp"
       ]
     },
     {
@@ -5362,7 +5469,8 @@
         }
       ],
       "consumers": [
-        "wasm-game/cpp-core/src/ball/object_motion.cpp"
+        "wasm-game/cpp-core/src/ball/object_motion.cpp",
+        "wasm-game/cpp-core/src/core/source_timing.cpp"
       ]
     },
     {
@@ -5383,7 +5491,8 @@
         }
       ],
       "consumers": [
-        "wasm-game/cpp-core/src/ball/object_motion.cpp"
+        "wasm-game/cpp-core/src/ball/object_motion.cpp",
+        "wasm-game/cpp-core/src/core/source_timing.cpp"
       ]
     },
     {
@@ -5404,7 +5513,8 @@
         }
       ],
       "consumers": [
-        "wasm-game/cpp-core/src/ball/object_motion.cpp"
+        "wasm-game/cpp-core/src/ball/object_motion.cpp",
+        "wasm-game/cpp-core/src/core/source_timing.cpp"
       ]
     },
     {
@@ -5426,7 +5536,8 @@
       ],
       "consumers": [
         "wasm-game/cpp-core/src/ai/ai.cpp",
-        "wasm-game/cpp-core/src/ball/object_motion.cpp"
+        "wasm-game/cpp-core/src/ball/object_motion.cpp",
+        "wasm-game/cpp-core/src/core/source_timing.cpp"
       ]
     },
     {
@@ -5447,7 +5558,8 @@
         }
       ],
       "consumers": [
-        "wasm-game/cpp-core/src/ball/object_motion.cpp"
+        "wasm-game/cpp-core/src/ball/object_motion.cpp",
+        "wasm-game/cpp-core/src/core/source_timing.cpp"
       ]
     },
     {
@@ -5468,7 +5580,8 @@
         }
       ],
       "consumers": [
-        "wasm-game/cpp-core/src/ball/object_motion.cpp"
+        "wasm-game/cpp-core/src/ball/object_motion.cpp",
+        "wasm-game/cpp-core/src/core/source_timing.cpp"
       ]
     },
     {
@@ -5490,6 +5603,7 @@
       ],
       "consumers": [
         "wasm-game/cpp-core/src/ball/speed.cpp",
+        "wasm-game/cpp-core/src/core/source_timing.cpp",
         "wasm-game/cpp-core/src/player/motion.cpp"
       ]
     },
@@ -5511,7 +5625,8 @@
         }
       ],
       "consumers": [
-        "wasm-game/cpp-core/src/ball/object_motion.cpp"
+        "wasm-game/cpp-core/src/ball/object_motion.cpp",
+        "wasm-game/cpp-core/src/core/source_timing.cpp"
       ]
     },
     {
@@ -5532,7 +5647,8 @@
         }
       ],
       "consumers": [
-        "wasm-game/cpp-core/src/ball/object_motion.cpp"
+        "wasm-game/cpp-core/src/ball/object_motion.cpp",
+        "wasm-game/cpp-core/src/core/source_timing.cpp"
       ]
     },
     {
@@ -5617,7 +5733,8 @@
         }
       ],
       "consumers": [
-        "wasm-game/cpp-core/src/ball/object_motion.cpp"
+        "wasm-game/cpp-core/src/ball/object_motion.cpp",
+        "wasm-game/cpp-core/src/core/source_timing.cpp"
       ]
     },
     {
@@ -5660,6 +5777,7 @@
       ],
       "consumers": [
         "wasm-game/cpp-core/src/ball/speed.cpp",
+        "wasm-game/cpp-core/src/core/source_timing.cpp",
         "wasm-game/cpp-core/src/player/motion21.cpp"
       ]
     },
@@ -5681,7 +5799,8 @@
         }
       ],
       "consumers": [
-        "wasm-game/cpp-core/src/ball/object_motion.cpp"
+        "wasm-game/cpp-core/src/ball/object_motion.cpp",
+        "wasm-game/cpp-core/src/core/source_timing.cpp"
       ]
     },
     {
@@ -5703,6 +5822,7 @@
       ],
       "consumers": [
         "wasm-game/cpp-core/src/ball/object_motion.cpp",
+        "wasm-game/cpp-core/src/core/source_timing.cpp",
         "wasm-game/cpp-core/src/player/motion.cpp",
         "wasm-game/cpp-core/src/rules/rules.cpp"
       ]
@@ -5746,6 +5866,7 @@
         }
       ],
       "consumers": [
+        "wasm-game/cpp-core/src/core/source_timing.cpp",
         "wasm-game/cpp-core/src/player/motion.cpp"
       ]
     },
@@ -5788,6 +5909,7 @@
         }
       ],
       "consumers": [
+        "wasm-game/cpp-core/src/core/source_timing.cpp",
         "wasm-game/cpp-core/src/player/motion21.cpp"
       ]
     },
@@ -5809,6 +5931,7 @@
         }
       ],
       "consumers": [
+        "wasm-game/cpp-core/src/core/source_timing.cpp",
         "wasm-game/cpp-core/src/player/vertical.cpp"
       ]
     },
@@ -5830,6 +5953,7 @@
         }
       ],
       "consumers": [
+        "wasm-game/cpp-core/src/core/source_timing.cpp",
         "wasm-game/cpp-core/src/player/motion21.cpp"
       ]
     },
@@ -5872,6 +5996,7 @@
         }
       ],
       "consumers": [
+        "wasm-game/cpp-core/src/core/source_timing.cpp",
         "wasm-game/cpp-core/src/player/motion.cpp"
       ]
     },
@@ -5893,6 +6018,7 @@
         }
       ],
       "consumers": [
+        "wasm-game/cpp-core/src/core/source_timing.cpp",
         "wasm-game/cpp-core/src/player/vertical.cpp"
       ]
     },
@@ -5914,6 +6040,7 @@
         }
       ],
       "consumers": [
+        "wasm-game/cpp-core/src/core/source_timing.cpp",
         "wasm-game/cpp-core/src/player/vertical.cpp"
       ]
     },
@@ -5956,7 +6083,8 @@
         }
       ],
       "consumers": [
-        "wasm-game/cpp-core/src/ball/object_motion.cpp"
+        "wasm-game/cpp-core/src/ball/object_motion.cpp",
+        "wasm-game/cpp-core/src/core/source_timing.cpp"
       ]
     },
     {
@@ -5978,6 +6106,7 @@
       ],
       "consumers": [
         "wasm-game/cpp-core/src/ball/speed.cpp",
+        "wasm-game/cpp-core/src/core/source_timing.cpp",
         "wasm-game/cpp-core/src/player/motion.cpp"
       ]
     },
