@@ -553,20 +553,20 @@
       ]
     },
     {
-      "path": "ai/owner-offset-9841-985f.bin",
+      "path": "ai/owner-offset-alias-9841-9877.bin",
       "category": "ai",
       "source": "src/bank_03.asm:9841",
       "bank": "03",
       "address": "0x9841",
-      "symbol": "tbl_9841/off_9847",
-      "layout": "three shared owner-offset pointers and six signed XY offset records",
-      "length": 30,
-      "sha256": "e93170f865974b83398dafd8250a14c447da9415f0fe68c0abd34f494957d1e5",
+      "symbol": "tbl_9841/off_9847 and aliased bytes through $9876",
+      "layout": "three shared owner-offset pointers followed by the complete twelve-object indexed byte window; objects 6-11 intentionally read bytes shared with the executable $985F handler, exactly as (ram_002C),Y does in the source",
+      "length": 54,
+      "sha256": "989ebc247e0b91082e8d0b6028a3be46167bf4fd77707a3ddbe578a319d615b6",
       "source_ranges": [
         {
           "bank": "03",
           "start": "0x9841",
-          "length": 30
+          "length": 54
         }
       ],
       "consumers": [
@@ -614,7 +614,8 @@
         }
       ],
       "consumers": [
-        "wasm-game/cpp-core/src/ai/ai.cpp"
+        "wasm-game/cpp-core/src/ai/ai.cpp",
+        "wasm-game/cpp-core/src/core/source_timing.cpp"
       ]
     },
     {
@@ -896,6 +897,7 @@
         }
       ],
       "consumers": [
+        "wasm-game/cpp-core/src/core/source_timing.cpp",
         "wasm-game/cpp-core/src/player/motion.cpp"
       ]
     },
@@ -917,6 +919,7 @@
         }
       ],
       "consumers": [
+        "wasm-game/cpp-core/src/core/source_timing.cpp",
         "wasm-game/cpp-core/src/player/motion.cpp"
       ]
     },
@@ -939,6 +942,28 @@
       ],
       "consumers": [
         "wasm-game/cpp-core/src/screens/menu_actor.cpp"
+      ]
+    },
+    {
+      "path": "animation/player-parity-direction-a01f.bin",
+      "category": "animation",
+      "source": "src/bank_06.asm:A01F",
+      "bank": "06",
+      "address": "0xA01F",
+      "symbol": "tbl_A01F",
+      "layout": "two player-object parity to facing bytes",
+      "length": 2,
+      "sha256": "085edad400785fca7e7e90b1fac4beb776fc2beee5aa24352d5f39b5d57efcad",
+      "source_ranges": [
+        {
+          "bank": "06",
+          "start": "0xA01F",
+          "length": 2
+        }
+      ],
+      "consumers": [
+        "wasm-game/cpp-core/src/core/source_timing.cpp",
+        "wasm-game/cpp-core/src/player/motion.cpp"
       ]
     },
     {
@@ -1545,6 +1570,7 @@
         }
       ],
       "consumers": [
+        "wasm-game/cpp-core/src/core/source_timing.cpp",
         "wasm-game/cpp-core/src/screens/camera.cpp"
       ]
     },
@@ -1589,6 +1615,7 @@
         }
       ],
       "consumers": [
+        "wasm-game/cpp-core/src/core/source_timing.cpp",
         "wasm-game/cpp-core/src/rules/rules.cpp"
       ]
     },
@@ -1893,6 +1920,7 @@
         }
       ],
       "consumers": [
+        "wasm-game/cpp-core/src/core/source_timing.cpp",
         "wasm-game/cpp-core/src/player/motion.cpp"
       ]
     },
@@ -1914,7 +1942,8 @@
         }
       ],
       "consumers": [
-        "wasm-game/cpp-core/src/ai/ai.cpp"
+        "wasm-game/cpp-core/src/ai/ai.cpp",
+        "wasm-game/cpp-core/src/core/source_timing.cpp"
       ]
     },
     {
@@ -2276,7 +2305,8 @@
         }
       ],
       "consumers": [
-        "wasm-game/cpp-core/src/rules/field_setup.cpp"
+        "wasm-game/cpp-core/src/rules/field_setup.cpp",
+        "wasm-game/cpp-core/src/screens/menu_order.cpp"
       ]
     },
     {
@@ -2521,6 +2551,7 @@
         }
       ],
       "consumers": [
+        "wasm-game/cpp-core/src/core/source_timing.cpp",
         "wasm-game/cpp-core/src/rules/weather_effect.cpp"
       ]
     },
@@ -2542,6 +2573,7 @@
         }
       ],
       "consumers": [
+        "wasm-game/cpp-core/src/core/source_timing.cpp",
         "wasm-game/cpp-core/src/rules/weather_effect.cpp"
       ]
     },
@@ -4276,6 +4308,7 @@
         }
       ],
       "consumers": [
+        "wasm-game/cpp-core/src/core/source_timing.cpp",
         "wasm-game/cpp-core/src/screens/result_renderer.cpp"
       ]
     },
@@ -4297,6 +4330,7 @@
         }
       ],
       "consumers": [
+        "wasm-game/cpp-core/src/core/source_timing.cpp",
         "wasm-game/cpp-core/src/screens/result_renderer.cpp"
       ]
     },
@@ -4339,6 +4373,7 @@
         }
       ],
       "consumers": [
+        "wasm-game/cpp-core/src/core/source_timing.cpp",
         "wasm-game/cpp-core/src/screens/result_supporters.cpp"
       ]
     },
@@ -5025,6 +5060,27 @@
       ]
     },
     {
+      "path": "palette/background-record-alias-window-d38f-d5b3.bin",
+      "category": "palette",
+      "source": "src/bank_FF.asm:D38F",
+      "bank": "07",
+      "address": "0xD38F",
+      "symbol": "off_D38F_00 through background-palette record alias tail",
+      "layout": "fixed-bank byte window reached when sub_D0D5 leaves zero-page 002C/002D on a background-palette record and bank05 sub_822A performs its unchecked cursor read",
+      "length": 548,
+      "sha256": "60966fdf9f89396f098aa93dc2ca8135a4dd40627dd590984c9c3f55ea7dce36",
+      "source_ranges": [
+        {
+          "bank": "07",
+          "start": "0xD38F",
+          "length": 548
+        }
+      ],
+      "consumers": [
+        "wasm-game/cpp-core/src/screens/menu_order.cpp"
+      ]
+    },
+    {
       "path": "palette/background-source-addresses-d2fb.bin",
       "category": "palette",
       "source": "src/bank_FF.asm:D2FB",
@@ -5042,7 +5098,8 @@
         }
       ],
       "consumers": [
-        "wasm-game/cpp-core/src/core/source_timing.cpp"
+        "wasm-game/cpp-core/src/core/source_timing.cpp",
+        "wasm-game/cpp-core/src/screens/menu_order.cpp"
       ]
     },
     {
@@ -5712,7 +5769,8 @@
         }
       ],
       "consumers": [
-        "wasm-game/cpp-core/src/ball/object_motion.cpp"
+        "wasm-game/cpp-core/src/ball/object_motion.cpp",
+        "wasm-game/cpp-core/src/core/source_timing.cpp"
       ]
     },
     {
@@ -5777,7 +5835,6 @@
       ],
       "consumers": [
         "wasm-game/cpp-core/src/ball/speed.cpp",
-        "wasm-game/cpp-core/src/core/source_timing.cpp",
         "wasm-game/cpp-core/src/player/motion21.cpp"
       ]
     },
@@ -5866,7 +5923,6 @@
         }
       ],
       "consumers": [
-        "wasm-game/cpp-core/src/core/source_timing.cpp",
         "wasm-game/cpp-core/src/player/motion.cpp"
       ]
     },
@@ -5888,6 +5944,7 @@
         }
       ],
       "consumers": [
+        "wasm-game/cpp-core/src/core/source_timing.cpp",
         "wasm-game/cpp-core/src/player/motion.cpp"
       ]
     },
@@ -5919,15 +5976,15 @@
       "source": "src/bank_FF.asm:CE40",
       "bank": "07",
       "address": "0xCE40",
-      "symbol": "tbl_CE40",
+      "symbol": "tbl_CE40 + entered-motion adjacent-code alias window",
       "layout": "motion and raised-surface selector for player Z bounce speed",
-      "length": 96,
-      "sha256": "ff30d7b833feb1d1ad261ef2f19defd26d5065d0a9206a833f3edfc2652fa356",
+      "length": 186,
+      "sha256": "00df1ae5a9a4f709c0a67d3ca5c2854834502770f9e36dccf1c463c0f971d321",
       "source_ranges": [
         {
           "bank": "07",
           "start": "0xCE40",
-          "length": 96
+          "length": 186
         }
       ],
       "consumers": [
@@ -5975,6 +6032,7 @@
         }
       ],
       "consumers": [
+        "wasm-game/cpp-core/src/core/source_timing.cpp",
         "wasm-game/cpp-core/src/player/motion.cpp"
       ]
     },
@@ -6028,15 +6086,15 @@
       "source": "src/bank_FF.asm:CE30",
       "bank": "07",
       "address": "0xCE30",
-      "symbol": "tbl_CE30",
-      "layout": "8 little-endian player surface bounce speeds",
-      "length": 16,
-      "sha256": "b0f65444d3a45b3dcb6a4689e062ecb1b1ad8fa063b4437a8eac1cc30e41dfa7",
+      "symbol": "tbl_CE30 + motion-selected adjacent-code alias window",
+      "layout": "little-endian player surface bounce speeds and reachable aliases",
+      "length": 218,
+      "sha256": "68a502ac6e465e4f6dfd91db0f70d5917700150f156c5152728bc89e07835ff4",
       "source_ranges": [
         {
           "bank": "07",
           "start": "0xCE30",
-          "length": 16
+          "length": 218
         }
       ],
       "consumers": [
@@ -6106,7 +6164,6 @@
       ],
       "consumers": [
         "wasm-game/cpp-core/src/ball/speed.cpp",
-        "wasm-game/cpp-core/src/core/source_timing.cpp",
         "wasm-game/cpp-core/src/player/motion.cpp"
       ]
     },
@@ -6216,7 +6273,8 @@
         }
       ],
       "consumers": [
-        "wasm-game/cpp-core/src/rules/field_setup.cpp"
+        "wasm-game/cpp-core/src/rules/field_setup.cpp",
+        "wasm-game/cpp-core/src/screens/menu_order.cpp"
       ]
     },
     {
