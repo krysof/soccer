@@ -4636,6 +4636,50 @@
       ]
     },
     {
+      "path": "menu/statusbar-player-alias-ae17-af0b.bin",
+      "category": "menu",
+      "source": "src/bank_03.asm:AE17",
+      "bank": "03",
+      "address": "0xAE17",
+      "symbol": "loc_AE17 through loc_AF0A window",
+      "layout": "statusbar player-record alias window selected by wrapped ASL",
+      "length": 244,
+      "sha256": "d022f7c06ae0cfe38486450d561cb2df5b39409d393a5975f9d749d1e883dc56",
+      "source_ranges": [
+        {
+          "bank": "03",
+          "start": "0xAE17",
+          "length": 244
+        }
+      ],
+      "consumers": [
+        "wasm-game/cpp-core/src/ai/ai.cpp",
+        "wasm-game/cpp-core/src/core/source_timing.cpp"
+      ]
+    },
+    {
+      "path": "menu/statusbar-roster-alias-c244-c32a.bin",
+      "category": "menu",
+      "source": "src/bank_FF.asm:C244",
+      "bank": "07",
+      "address": "0xC244",
+      "symbol": "fixed-bank bytes following off_C226",
+      "layout": "statusbar roster alias window selected by unchecked player-number name offsets",
+      "length": 230,
+      "sha256": "aacdc212bf58b5a9cfbfb4c658419915bfd8d669644f7c2ad67e84fc8f211d3c",
+      "source_ranges": [
+        {
+          "bank": "07",
+          "start": "0xC244",
+          "length": 230
+        }
+      ],
+      "consumers": [
+        "wasm-game/cpp-core/src/ai/ai.cpp",
+        "wasm-game/cpp-core/src/core/source_timing.cpp"
+      ]
+    },
+    {
       "path": "menu/statusbar-rosters-c080-c244.bin",
       "category": "menu",
       "source": "src/bank_FF.asm:C080",
