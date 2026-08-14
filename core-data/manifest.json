@@ -158,6 +158,28 @@
       ]
     },
     {
+      "path": "ai/direct-formation-alias-d000-d018.bin",
+      "category": "ai",
+      "source": "src/bank_FF.asm:D000",
+      "bank": "07",
+      "address": "0xD000",
+      "symbol": "bra_D000 through sub_EE65 call operand",
+      "layout": "formation selector 3 fixed-bank code/data alias window",
+      "length": 24,
+      "sha256": "9d56808c495814b184edeae3d10fe79d75b265bf8bcbf64ea39f119bf7df0ae4",
+      "source_ranges": [
+        {
+          "bank": "07",
+          "start": "0xD000",
+          "length": 24
+        }
+      ],
+      "consumers": [
+        "wasm-game/cpp-core/src/ai/ai.cpp",
+        "wasm-game/cpp-core/src/core/source_timing.cpp"
+      ]
+    },
+    {
       "path": "ai/direction-mask-thresholds-9aae.bin",
       "category": "ai",
       "source": "src/bank_03.asm:9AAE",
