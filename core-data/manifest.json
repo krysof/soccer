@@ -4586,7 +4586,8 @@
       ],
       "consumers": [
         "wasm-game/cpp-core/src/ai/ai.cpp",
-        "wasm-game/cpp-core/src/core/source_timing.cpp"
+        "wasm-game/cpp-core/src/core/source_timing.cpp",
+        "wasm-game/cpp-core/src/screens/statusbar_renderer.cpp"
       ]
     },
     {
@@ -4654,7 +4655,8 @@
       ],
       "consumers": [
         "wasm-game/cpp-core/src/ai/ai.cpp",
-        "wasm-game/cpp-core/src/core/source_timing.cpp"
+        "wasm-game/cpp-core/src/core/source_timing.cpp",
+        "wasm-game/cpp-core/src/screens/statusbar_renderer.cpp"
       ]
     },
     {
@@ -4676,7 +4678,8 @@
       ],
       "consumers": [
         "wasm-game/cpp-core/src/ai/ai.cpp",
-        "wasm-game/cpp-core/src/core/source_timing.cpp"
+        "wasm-game/cpp-core/src/core/source_timing.cpp",
+        "wasm-game/cpp-core/src/screens/statusbar_renderer.cpp"
       ]
     },
     {
