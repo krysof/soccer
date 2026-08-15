@@ -1191,7 +1191,7 @@ function loadOriginalSpriteRendererFromBin(api) {
 }
 async function loadWasm() {
   const filename = DEBUG ? "soccer_core_cpp.wasm" : "soccer_core_cpp_production.wasm";
-  const relative = DEBUG ? "../strict-tests.8bbf9668.wasm" : "../soccer_core_cpp.84b3a550.wasm";
+  const relative = DEBUG ? "../strict-tests.0a238663.wasm" : "../soccer_core_cpp.288db377.wasm";
   const response = await fetchCoreResponse(filename, assetUrl(relative), rootAssetUrl(filename));
   const bytes = await response.arrayBuffer();
   const result = await WebAssembly.instantiate(bytes, {});
@@ -1945,11 +1945,27 @@ function drawCppLogicalOam(api, view, options = {}) {
   const count = Math.min(api.game_sprite_draw_count() >>> 0, 64);
   const scaleX = view.destW / view.sourceW;
   const scaleY = view.destH / view.sourceH;
+  const videoMask = typeof api.video_mask_mirror === "function"
+    ? api.video_mask_mirror() & 0xFF
+    : 0x1C;
+  const spritesEnabled = (videoMask & 0x10) !== 0;
+  const leftSpriteClip = (videoMask & 0x04) !== 0 ? 0 : 8;
   const filter = typeof options.filter === "function" ? options.filter : null;
   const publishDebug = options.publishDebug !== false;
   const debugTarget = options.debugTarget || "__soccerLogicalOam";
   const commands = [];
   const drawnCommands = [];
+  ctx.save();
+  if (leftSpriteClip !== 0) {
+    ctx.beginPath();
+    ctx.rect(
+      view.destX + leftSpriteClip * scaleX,
+      view.destY,
+      view.destW - leftSpriteClip * scaleX,
+      view.destH,
+    );
+    ctx.clip();
+  }
   for (let index = 0; index < count; index++) {
     const x = api.game_sprite_draw_x(index) & 0xFF;
     const y = api.game_sprite_draw_y(index) & 0xFF;
@@ -1959,12 +1975,15 @@ function drawCppLogicalOam(api, view, options = {}) {
     const palette = api.game_sprite_draw_palette(index) & 0xFF;
     const oamSlot = api.game_sprite_draw_oam_slot(index) & 0xFF;
     const object = api.game_sprite_draw_object(index) & 0xFF;
-    const command = { index, x, y, tile, attribute, bank, palette, oamSlot, object };
+    const ppuY = (y + 1) & 0xFF;
+    const command = {
+      index, x, y, ppuY, tile, attribute, bank, palette, oamSlot, object,
+    };
     const tileCanvas = originalSpriteTile(bank, tile & 0x3F, palette);
     const accepted = !filter || filter(command);
     const canvasX = view.destX + x * scaleX;
-    const canvasY = view.destY + y * scaleY;
-    if (accepted && tileCanvas) {
+    const canvasY = view.destY + ppuY * scaleY;
+    if (spritesEnabled && accepted && tileCanvas) {
       drawOriginalSpriteTile(
         tileCanvas,
         canvasX,
@@ -1983,6 +2002,7 @@ function drawCppLogicalOam(api, view, options = {}) {
     });
     if (DEBUG) commands.push(command);
   }
+  ctx.restore();
   if (DEBUG && publishDebug) {
     window[debugTarget] = {
       source: "cpp-logical-oam",
@@ -1992,6 +2012,9 @@ function drawCppLogicalOam(api, view, options = {}) {
       scaleY,
       tileWidth: 8 * scaleX,
       tileHeight: 8 * scaleY,
+      videoMask,
+      spritesEnabled,
+      leftSpriteClip,
       commands,
       drawnCommands,
     };
