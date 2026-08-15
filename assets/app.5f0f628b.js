@@ -1191,7 +1191,7 @@ function loadOriginalSpriteRendererFromBin(api) {
 }
 async function loadWasm() {
   const filename = DEBUG ? "soccer_core_cpp.wasm" : "soccer_core_cpp_production.wasm";
-  const relative = DEBUG ? "../strict-tests.cbea8caa.wasm" : "../soccer_core_cpp.b2d9f6e1.wasm";
+  const relative = DEBUG ? "../strict-tests.8bbf9668.wasm" : "../soccer_core_cpp.84b3a550.wasm";
   const response = await fetchCoreResponse(filename, assetUrl(relative), rootAssetUrl(filename));
   const bytes = await response.arrayBuffer();
   const result = await WebAssembly.instantiate(bytes, {});
@@ -3522,10 +3522,10 @@ function render(api) {
   const originalField4x3 = originalFieldFullScreenActive(api);
   gameWrap.classList.toggle(
     "original-4x3-screen",
-    phase === PHASE.TITLE || originalScreen === 0x02 || originalScreen === 0x03
+    originalScreen === 0x01 || originalScreen === 0x02 || originalScreen === 0x03
       || originalField4x3,
   );
-  if (phase === PHASE.TITLE) {
+  if (originalScreen === 0x01) {
     drawOriginalSplash(api);
     return;
   }
@@ -3535,6 +3535,17 @@ function render(api) {
   }
   if (originalScreen === 0x03) {
     drawOriginalCreditsScreen(api);
+    return;
+  }
+  if (originalScreen === 0x00 && api.current_brightness
+      && (api.current_brightness() & 0xFF) === 0) {
+    ctx.fillStyle = "#000";
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    if (DEBUG) window.__soccerBlackTransition = {
+      screen: originalScreen,
+      subtype: api.screen_subtype ? api.screen_subtype() & 0xFF : 0,
+      brightness: 0,
+    };
     return;
   }
   const originalSubtype = api.screen_subtype ? api.screen_subtype() : 0;
