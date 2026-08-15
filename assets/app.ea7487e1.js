@@ -1191,7 +1191,7 @@ function loadOriginalSpriteRendererFromBin(api) {
 }
 async function loadWasm() {
   const filename = DEBUG ? "soccer_core_cpp.wasm" : "soccer_core_cpp_production.wasm";
-  const relative = DEBUG ? "../strict-tests.595d55ee.wasm" : "../soccer_core_cpp.7af6c879.wasm";
+  const relative = DEBUG ? "../strict-tests.cbea8caa.wasm" : "../soccer_core_cpp.b2d9f6e1.wasm";
   const response = await fetchCoreResponse(filename, assetUrl(relative), rootAssetUrl(filename));
   const bytes = await response.arrayBuffer();
   const result = await WebAssembly.instantiate(bytes, {});
@@ -1922,12 +1922,13 @@ function resolveOriginalObjectFrame(api, objectIndex) {
   const frame = manifest.frames[frameAddress.toString(16).toUpperCase().padStart(4, "0")];
   return frame ? { animation, groupNumber, frameAddress, frame } : null;
 }
-function drawOriginalSpriteTile(tileCanvas, x, y, attr, drawScale) {
-  const size = 8 * drawScale;
+function drawOriginalSpriteTile(tileCanvas, x, y, attr, drawScaleX, drawScaleY = drawScaleX) {
+  const width = 8 * drawScaleX;
+  const height = 8 * drawScaleY;
   ctx.save();
-  ctx.translate(x + size / 2, y + size / 2);
+  ctx.translate(x + width / 2, y + height / 2);
   ctx.scale(attr & 0x40 ? -1 : 1, attr & 0x80 ? -1 : 1);
-  ctx.drawImage(tileCanvas, -size / 2, -size / 2, size, size);
+  ctx.drawImage(tileCanvas, -width / 2, -height / 2, width, height);
   ctx.restore();
 }
 function drawCppLogicalOam(api, view, options = {}) {
@@ -1944,7 +1945,6 @@ function drawCppLogicalOam(api, view, options = {}) {
   const count = Math.min(api.game_sprite_draw_count() >>> 0, 64);
   const scaleX = view.destW / view.sourceW;
   const scaleY = view.destH / view.sourceH;
-  const drawScale = view.logicalScale || Math.min(scaleX, scaleY);
   const filter = typeof options.filter === "function" ? options.filter : null;
   const publishDebug = options.publishDebug !== false;
   const debugTarget = options.debugTarget || "__soccerLogicalOam";
@@ -1962,16 +1962,25 @@ function drawCppLogicalOam(api, view, options = {}) {
     const command = { index, x, y, tile, attribute, bank, palette, oamSlot, object };
     const tileCanvas = originalSpriteTile(bank, tile & 0x3F, palette);
     const accepted = !filter || filter(command);
+    const canvasX = view.destX + x * scaleX;
+    const canvasY = view.destY + y * scaleY;
     if (accepted && tileCanvas) {
       drawOriginalSpriteTile(
         tileCanvas,
-        view.destX + x * scaleX,
-        view.destY + y * scaleY,
+        canvasX,
+        canvasY,
         attribute,
-        drawScale,
+        scaleX,
+        scaleY,
       );
     }
-    if (DEBUG && accepted) drawnCommands.push(command);
+    if (DEBUG && accepted) drawnCommands.push({
+      ...command,
+      canvasX,
+      canvasY,
+      canvasWidth: 8 * scaleX,
+      canvasHeight: 8 * scaleY,
+    });
     if (DEBUG) commands.push(command);
   }
   if (DEBUG && publishDebug) {
@@ -1979,6 +1988,10 @@ function drawCppLogicalOam(api, view, options = {}) {
       source: "cpp-logical-oam",
       serial: api.game_sprite_draw_serial() >>> 0,
       count,
+      scaleX,
+      scaleY,
+      tileWidth: 8 * scaleX,
+      tileHeight: 8 * scaleY,
       commands,
       drawnCommands,
     };
