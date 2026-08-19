@@ -3852,6 +3852,27 @@
       ]
     },
     {
+      "path": "menu/music-selection-cursor-window-a69f-a79f.bin",
+      "category": "menu",
+      "source": "src/bank_05.asm:A69F",
+      "bank": "05",
+      "address": "0xA69F",
+      "symbol": "off_A69F_00 through sub_A778 dispatch opcode tail",
+      "layout": "256-byte unchecked music cursor-address window; initial option FF aliases opcode bytes at A79D/A79E",
+      "length": 256,
+      "sha256": "e995dfd4279f80ef57b334f3bc17a4d5449e7fd2ed37d42dfbe0e6cf7c5dcc45",
+      "source_ranges": [
+        {
+          "bank": "05",
+          "start": "0xA69F",
+          "length": 256
+        }
+      ],
+      "consumers": [
+        "wasm-game/cpp-core/src/screens/menu_music.cpp"
+      ]
+    },
+    {
       "path": "menu/opponent-grid-87df-882f.bin",
       "category": "menu",
       "source": "src/bank_05.asm:87DF",
